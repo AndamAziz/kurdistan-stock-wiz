@@ -31,7 +31,9 @@ import { ItemImageUpload } from "@/components/items/ItemImageUpload";
 const formSchema = z.object({
   barcode: z.string().min(1, "باڕکۆد پێویستە"),
   name: z.string().min(1, "ناوی مادە پێویستە"),
-  quantity: z.coerce.number().min(1, "ژمارە پێویستە"),
+  boxCount: z.coerce.number().min(0).default(0),
+  pieceCount: z.coerce.number().min(0).default(0),
+  giftQuantity: z.coerce.number().min(0).default(0),
   price: z.coerce.number().min(0, "نرخ پێویستە").default(0),
   weight_kg: z.coerce.number().min(0).optional(),
   weight_gram: z.coerce.number().min(0).optional(),
@@ -50,6 +52,9 @@ type FormData = z.infer<typeof formSchema>;
 interface ReceiptData {
   item: ItemWithRelations;
   quantity: number;
+  boxCount?: number;
+  pieceCount?: number;
+  giftQuantity?: number;
   price: number;
   date: string;
   note?: string;
@@ -73,7 +78,9 @@ export default function StockIn() {
     defaultValues: {
       barcode: "",
       name: "",
-      quantity: 1,
+      boxCount: 0,
+      pieceCount: 0,
+      giftQuantity: 0,
       price: 0,
       weight_kg: undefined,
       weight_gram: undefined,
@@ -94,11 +101,21 @@ export default function StockIn() {
   };
 
   const handleSubmit = (data: FormData) => {
+    const boxQty = data.boxCount || 0;
+    const pieceQty = data.pieceCount || 0;
+    const giftQty = data.giftQuantity || 0;
+    // Gift is included in total for stock tracking
+    const totalQuantity = boxQty + pieceQty + giftQty;
+
+    if (totalQuantity <= 0) {
+      return;
+    }
+
     addItem.mutate({
       barcode: data.barcode,
       name: data.name,
-      current_quantity: data.quantity,
-      total_in: data.quantity,
+      current_quantity: totalQuantity,
+      total_in: totalQuantity,
       brand_id: data.brand_id || undefined,
       category_id: data.category_id || undefined,
       unit: data.unit,
@@ -113,8 +130,8 @@ export default function StockIn() {
           id: newItem?.id || '',
           barcode: data.barcode,
           name: data.name,
-          current_quantity: data.quantity,
-          total_in: data.quantity,
+          current_quantity: totalQuantity,
+          total_in: totalQuantity,
           total_out: 0,
           unit: data.unit,
           min_stock: data.min_stock,
@@ -131,7 +148,10 @@ export default function StockIn() {
 
         setReceiptData({
           item: receiptItem,
-          quantity: data.quantity,
+          quantity: totalQuantity,
+          boxCount: boxQty || undefined,
+          pieceCount: pieceQty || undefined,
+          giftQuantity: giftQty || undefined,
           price: data.price,
           date: data.date_added,
           note: data.note || undefined,
@@ -223,16 +243,44 @@ export default function StockIn() {
                 )}
               />
 
-              {/* Quantity and Price */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Box/Piece/Gift Quantities */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <FormField
                   control={form.control}
-                  name="quantity"
+                  name="boxCount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>عەدەد / کوانتیتی</FormLabel>
+                      <FormLabel>ژمارەی بۆکس</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
+                        <Input type="number" min={0} placeholder="بۆکس" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pieceCount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ژمارەی دانە</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} placeholder="دانە" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="giftQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>هەدیە</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} placeholder="هەدیە" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -244,7 +292,7 @@ export default function StockIn() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>نرخی کڕین (دینار)</FormLabel>
+                      <FormLabel>نرخی تاک (دینار)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
