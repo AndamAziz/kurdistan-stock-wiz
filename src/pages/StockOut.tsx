@@ -31,12 +31,14 @@ import { StockOutInvoiceDialog } from "@/components/invoice/StockOutInvoiceDialo
 interface CartItem {
   item: ItemWithRelations;
   quantity: number;
+  price: number;
   note?: string;
 }
 
 export default function StockOut() {
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [quantity, setQuantity] = useState<string>('');
+  const [price, setPrice] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -77,6 +79,11 @@ export default function StockOut() {
       return;
     }
 
+    if (!price || parseFloat(price) < 0) {
+      toast.error('تکایە نرخ داخڵ بکە');
+      return;
+    }
+
     if (!selectedItemData) {
       toast.error('مادە نەدۆزرایەوە');
       return;
@@ -96,6 +103,7 @@ export default function StockOut() {
       // Update existing item in cart
       const updated = [...cartItems];
       updated[existingIndex].quantity += requestedQty;
+      updated[existingIndex].price = parseFloat(price);
       if (note) updated[existingIndex].note = note;
       setCartItems(updated);
       toast.success('بڕ زیادکرا بۆ مادەی هەبوو لە سەبەتە');
@@ -104,6 +112,7 @@ export default function StockOut() {
       setCartItems([...cartItems, {
         item: selectedItemData,
         quantity: requestedQty,
+        price: parseFloat(price),
         note: note || undefined,
       }]);
       toast.success('مادە زیادکرا بۆ سەبەتە');
@@ -112,6 +121,7 @@ export default function StockOut() {
     // Reset form
     setSelectedItem('');
     setQuantity('');
+    setPrice('');
     setNote('');
     setSearchQuery('');
   };
@@ -310,7 +320,7 @@ export default function StockOut() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">ژمارە</Label>
                     <Input
@@ -319,7 +329,19 @@ export default function StockOut() {
                       max={selectedItemData?.current_quantity || undefined}
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      placeholder="ژمارەی مادە"
+                      placeholder="ژمارە"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">نرخ (دینار)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="250"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="نرخ"
+                      dir="ltr"
                     />
                   </div>
                   <div className="space-y-2">
@@ -388,8 +410,12 @@ export default function StockOut() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-foreground truncate">{cartItem.item.name}</h4>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                           <span>بڕ: <span className="font-semibold text-foreground">{cartItem.quantity}</span></span>
+                          <span>•</span>
+                          <span>نرخ: <span className="font-semibold text-primary">{cartItem.price.toLocaleString()}</span> د.ع</span>
+                          <span>•</span>
+                          <span>کۆ: <span className="font-semibold text-green-600">{(cartItem.quantity * cartItem.price).toLocaleString()}</span> د.ع</span>
                           {cartItem.item.exp_date && (
                             <>
                               <span>•</span>
