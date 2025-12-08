@@ -23,14 +23,14 @@ export function NotificationChecker() {
 
     // Initial check on app load with delay
     const initialTimer = setTimeout(() => {
-      checkAndNotify();
+      checkAndNotify(settings.reminderDays);
     }, 3000);
 
     // Set up recurring interval
     const intervalMs = getIntervalMs();
     if (intervalMs) {
       intervalRef.current = setInterval(() => {
-        checkAndNotify();
+        checkAndNotify(settings.reminderDays);
       }, intervalMs);
     }
 
@@ -40,7 +40,7 @@ export function NotificationChecker() {
         clearInterval(intervalRef.current);
       }
     };
-  }, [user, permission, settings.interval, checkAndNotify, getIntervalMs]);
+  }, [user, permission, settings.interval, settings.reminderDays, checkAndNotify, getIntervalMs]);
 
   return null;
 }

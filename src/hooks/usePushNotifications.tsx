@@ -71,18 +71,18 @@ export function usePushNotifications() {
   }, [state.permission]);
 
   // Check for expiring items and show notifications
-  const checkAndNotify = useCallback(async () => {
+  const checkAndNotify = useCallback(async (reminderDays: number = 30) => {
     if (!user || state.permission !== 'granted') return;
 
     try {
       const today = new Date();
-      const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const reminderDate = new Date(today.getTime() + reminderDays * 24 * 60 * 60 * 1000);
 
       // Fetch items that are expiring soon or have low stock
       const { data: items, error } = await supabase
         .from('items')
         .select('*')
-        .or(`exp_date.lte.${thirtyDaysLater.toISOString().split('T')[0]},current_quantity.lte.min_stock`);
+        .or(`exp_date.lte.${reminderDate.toISOString().split('T')[0]},current_quantity.lte.min_stock`);
 
       if (error) throw error;
 
@@ -93,7 +93,7 @@ export function usePushNotifications() {
       const expiringItems = items?.filter(item => {
         if (!item.exp_date) return false;
         const expDate = new Date(item.exp_date);
-        return expDate > today && expDate <= thirtyDaysLater;
+        return expDate > today && expDate <= reminderDate;
       }) || [];
 
       const lowStockItems = items?.filter(item => 

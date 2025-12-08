@@ -6,12 +6,14 @@ interface NotificationSettings {
   interval: NotificationInterval;
   expiryAlerts: boolean;
   lowStockAlerts: boolean;
+  reminderDays: number;
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
   interval: '1hour',
   expiryAlerts: true,
   lowStockAlerts: true,
+  reminderDays: 30,
 };
 
 const STORAGE_KEY = 'notification-settings';
@@ -23,7 +25,8 @@ export function useNotificationSettings() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        setSettings(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
       } catch {
         setSettings(DEFAULT_SETTINGS);
       }
@@ -62,4 +65,12 @@ export const intervalOptions = [
   { value: '30min', label: 'هەر ٣٠ خولەک' },
   { value: '1hour', label: 'هەر ١ کاتژمێر' },
   { value: 'daily', label: 'ڕۆژانە' },
+] as const;
+
+export const reminderDaysOptions = [
+  { value: 7, label: '٧ ڕۆژ' },
+  { value: 14, label: '١٤ ڕۆژ' },
+  { value: 30, label: '٣٠ ڕۆژ' },
+  { value: 60, label: '٦٠ ڕۆژ' },
+  { value: 90, label: '٩٠ ڕۆژ' },
 ] as const;
