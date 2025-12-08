@@ -32,6 +32,7 @@ const formSchema = z.object({
   barcode: z.string().min(1, "باڕکۆد پێویستە"),
   name: z.string().min(1, "ناوی مادە پێویستە"),
   quantity: z.coerce.number().min(1, "ژمارە پێویستە"),
+  price: z.coerce.number().min(0, "نرخ پێویستە").default(0),
   weight_kg: z.coerce.number().min(0).optional(),
   weight_gram: z.coerce.number().min(0).optional(),
   brand_id: z.string().optional(),
@@ -49,6 +50,7 @@ type FormData = z.infer<typeof formSchema>;
 interface ReceiptData {
   item: ItemWithRelations;
   quantity: number;
+  price: number;
   date: string;
   note?: string;
   weight_kg?: number;
@@ -72,6 +74,7 @@ export default function StockIn() {
       barcode: "",
       name: "",
       quantity: 1,
+      price: 0,
       weight_kg: undefined,
       weight_gram: undefined,
       brand_id: undefined,
@@ -129,6 +132,7 @@ export default function StockIn() {
         setReceiptData({
           item: receiptItem,
           quantity: data.quantity,
+          price: data.price,
           date: data.date_added,
           note: data.note || undefined,
           weight_kg: data.weight_kg || undefined,
@@ -219,20 +223,43 @@ export default function StockIn() {
                 )}
               />
 
-              {/* Quantity */}
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>عەدەد / کوانتیتی</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Quantity and Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>عەدەد / کوانتیتی</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>نرخی کڕین (دینار)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          step="250"
+                          placeholder="نرخ" 
+                          dir="ltr"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Weight - KG and Grams */}
               <div className="grid grid-cols-2 gap-4">

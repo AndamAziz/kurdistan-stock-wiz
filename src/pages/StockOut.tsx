@@ -150,6 +150,7 @@ export default function StockOut() {
           item_id: cartItem.item.id,
           movement_type: 'OUT',
           quantity: cartItem.quantity,
+          price: cartItem.price,
           movement_date: date,
           note: cartItem.note || `بۆ: ${recipientName}`,
           created_by: user?.id,

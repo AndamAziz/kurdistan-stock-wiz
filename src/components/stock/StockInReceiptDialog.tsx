@@ -12,6 +12,7 @@ import { ItemWithRelations } from "@/hooks/useItems";
 interface StockInReceiptData {
   item: ItemWithRelations;
   quantity: number;
+  price: number;
   date: string;
   note?: string;
   weight_kg?: number;
@@ -33,7 +34,8 @@ export function StockInReceiptDialog({
 
   if (!receiptData) return null;
 
-  const { item, quantity, date, note, weight_kg, weight_gram } = receiptData;
+  const { item, quantity, price, date, note, weight_kg, weight_gram } = receiptData;
+  const totalPrice = quantity * price;
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -211,10 +213,18 @@ export function StockInReceiptDialog({
           </div>
           ` : ''}
           
+          ${price > 0 ? `
+          <div class="info-row">
+            <span class="info-label">نرخی کڕین:</span>
+            <span class="info-value">${price.toLocaleString()} د.ع</span>
+          </div>
+          ` : ''}
+          
           <div class="quantity-box">
             <div class="label">ژمارەی داخڵکراو</div>
             <div class="value">${quantity}</div>
             <div class="unit">${item.unit}</div>
+            ${price > 0 ? `<div style="margin-top: 8px; font-size: 16px; color: #059669;">کۆی گشتی: ${totalPrice.toLocaleString()} د.ع</div>` : ''}
           </div>
           
           ${note ? `
@@ -299,11 +309,25 @@ export function StockInReceiptDialog({
             )}
           </div>
 
+          {/* Price Info */}
+          {price > 0 && (
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
+              <span className="text-sm text-muted-foreground">نرخی کڕین:</span>
+              <span className="font-medium text-foreground" dir="ltr">{price.toLocaleString()} د.ع</span>
+            </div>
+          )}
+
           {/* Quantity Box */}
           <div className="rounded-lg border-2 border-success bg-success/5 p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">ژمارەی داخڵکراو</p>
             <p className="text-4xl font-bold text-success">{quantity}</p>
             <p className="text-sm text-success">{item.unit}</p>
+            {price > 0 && (
+              <div className="mt-2 pt-2 border-t border-success/20">
+                <p className="text-sm text-muted-foreground">کۆی گشتی</p>
+                <p className="text-xl font-bold text-success" dir="ltr">{totalPrice.toLocaleString()} د.ع</p>
+              </div>
+            )}
           </div>
 
           {/* Note */}
