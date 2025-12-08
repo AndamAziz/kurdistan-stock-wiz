@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useItems, useStockMovements, useAddStockMovement } from "@/hooks/useItems";
+import { useItems, useCategories, useBrands, useStockMovements, useAddStockMovement, useUpdateItem } from "@/hooks/useItems";
 import { useAuth } from "@/hooks/useAuth";
-import { RefreshCw, Clock, Search, Loader2, ScanBarcode } from "lucide-react";
+import { RefreshCw, Clock, Search, Loader2, ScanBarcode, Save, Edit } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function StockAdjust() {
   const [selectedItem, setSelectedItem] = useState<string>('');
@@ -34,10 +35,24 @@ export default function StockAdjust() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [scannerOpen, setScannerOpen] = useState(false);
 
+  // Edit item fields
+  const [editName, setEditName] = useState<string>('');
+  const [editBarcode, setEditBarcode] = useState<string>('');
+  const [editBrandId, setEditBrandId] = useState<string>('');
+  const [editCategoryId, setEditCategoryId] = useState<string>('');
+  const [editUnit, setEditUnit] = useState<string>('');
+  const [editMinStock, setEditMinStock] = useState<string>('');
+  const [editMfgDate, setEditMfgDate] = useState<string>('');
+  const [editExpDate, setEditExpDate] = useState<string>('');
+  const [editRemindDate, setEditRemindDate] = useState<string>('');
+
   const { user } = useAuth();
   const { data: items } = useItems();
+  const { data: categories } = useCategories();
+  const { data: brands } = useBrands();
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const addMovement = useAddStockMovement();
+  const updateItem = useUpdateItem();
 
   const filteredItems = items?.filter(item => 
     item.name.includes(searchQuery) || item.barcode.includes(searchQuery)
@@ -45,6 +60,33 @@ export default function StockAdjust() {
 
   const selectedItemData = items?.find(item => item.id === selectedItem);
   const adjustMovements = movements?.filter(m => m.movement_type === 'ADJUST').slice(0, 5) || [];
+
+  // Populate edit fields when item is selected
+  useEffect(() => {
+    if (selectedItemData) {
+      setEditName(selectedItemData.name);
+      setEditBarcode(selectedItemData.barcode);
+      setEditBrandId(selectedItemData.brand_id || '');
+      setEditCategoryId(selectedItemData.category_id || '');
+      setEditUnit(selectedItemData.unit);
+      setEditMinStock(selectedItemData.min_stock.toString());
+      setEditMfgDate(selectedItemData.mfg_date || '');
+      setEditExpDate(selectedItemData.exp_date || '');
+      setEditRemindDate(selectedItemData.remind_date || '');
+      setQuantity(selectedItemData.current_quantity.toString());
+    } else {
+      setEditName('');
+      setEditBarcode('');
+      setEditBrandId('');
+      setEditCategoryId('');
+      setEditUnit('');
+      setEditMinStock('');
+      setEditMfgDate('');
+      setEditExpDate('');
+      setEditRemindDate('');
+      setQuantity('');
+    }
+  }, [selectedItemData]);
 
   const handleBarcodeScan = (barcode: string) => {
     const foundItem = items?.find(item => item.barcode === barcode);
@@ -57,7 +99,7 @@ export default function StockAdjust() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmitQuantity = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedItem || quantity === '' || parseInt(quantity) < 0) {
@@ -74,11 +116,30 @@ export default function StockAdjust() {
       created_by: user?.id,
     }, {
       onSuccess: () => {
-        setSelectedItem('');
-        setQuantity('');
         setNote('');
-        setSearchQuery('');
       },
+    });
+  };
+
+  const handleSubmitItemEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedItem || !editName.trim() || !editBarcode.trim()) {
+      toast.error('تکایە ناو و باڕکۆد پڕبکەرەوە');
+      return;
+    }
+
+    updateItem.mutate({
+      id: selectedItem,
+      name: editName.trim(),
+      barcode: editBarcode.trim(),
+      brand_id: editBrandId || null,
+      category_id: editCategoryId || null,
+      unit: editUnit || 'دانە',
+      min_stock: parseInt(editMinStock) || 10,
+      mfg_date: editMfgDate || null,
+      exp_date: editExpDate || null,
+      remind_date: editRemindDate || null,
     });
   };
 
@@ -92,9 +153,9 @@ export default function StockAdjust() {
               <RefreshCw className="h-6 w-6 text-warning" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">ڕاستکردنەوەی ستۆک</h1>
+              <h1 className="text-3xl font-bold text-foreground">ڕاستکردنەوە</h1>
               <p className="mt-1 text-muted-foreground">
-                چاککردنی ژمارەی ڕاستی مادەکان
+                چاککردنی ژمارە و زانیارییەکانی مادە
               </p>
             </div>
           </div>
@@ -103,11 +164,8 @@ export default function StockAdjust() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Form */}
           <div className="rounded-xl border border-border bg-card p-6 shadow-card animate-slide-up">
-            <h2 className="mb-6 text-lg font-semibold text-card-foreground">
-              ڕاستکردنەوەی ژمارە
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Search Section */}
+            <div className="space-y-4 mb-6">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">گەڕان بۆ مادە</Label>
                 <div className="flex gap-2">
@@ -150,74 +208,223 @@ export default function StockAdjust() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              {selectedItemData && (
-                <div className="rounded-lg border border-border bg-muted/50 p-4 animate-scale-in">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">ناو:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.name}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">براند:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.brands?.name || '-'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">ستۆکی ئێستا:</span>
-                      <span className="mr-2 font-semibold text-primary">{selectedItemData.current_quantity}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">یەکە:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.unit}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {selectedItemData ? (
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="info" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    زانیاری مادە
+                  </TabsTrigger>
+                  <TabsTrigger value="quantity" className="gap-2">
+                    <RefreshCw className="h-4 w-4" />
+                    ڕاستکردنەوەی ژمارە
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">ژمارەی ڕاست</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="ژمارەی ڕاستی مادە"
-                />
-                {selectedItemData && quantity !== '' && (
-                  <p className="text-sm text-muted-foreground">
-                    جیاوازی: {parseInt(quantity) - selectedItemData.current_quantity >= 0 ? '+' : ''}{parseInt(quantity) - selectedItemData.current_quantity}
-                  </p>
-                )}
+                {/* Edit Item Info Tab */}
+                <TabsContent value="info" className="mt-4">
+                  <form onSubmit={handleSubmitItemEdit} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">ناو *</Label>
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="ناوی مادە"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">باڕکۆد *</Label>
+                        <Input
+                          value={editBarcode}
+                          onChange={(e) => setEditBarcode(e.target.value)}
+                          placeholder="باڕکۆدی مادە"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">براند</Label>
+                        <Select value={editBrandId} onValueChange={setEditBrandId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="براند هەڵبژێرە" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">-- بێ براند --</SelectItem>
+                            {brands?.map((brand) => (
+                              <SelectItem key={brand.id} value={brand.id}>
+                                {brand.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">هاوپۆل</Label>
+                        <Select value={editCategoryId} onValueChange={setEditCategoryId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="هاوپۆل هەڵبژێرە" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">-- بێ هاوپۆل --</SelectItem>
+                            {categories?.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">یەکە</Label>
+                        <Input
+                          value={editUnit}
+                          onChange={(e) => setEditUnit(e.target.value)}
+                          placeholder="دانە، کیلۆگرام، لیتر..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">کەمترین ستۆک</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editMinStock}
+                          onChange={(e) => setEditMinStock(e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">بەرواری بەرهەمهێنان</Label>
+                        <Input
+                          type="date"
+                          value={editMfgDate}
+                          onChange={(e) => setEditMfgDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">بەرواری بەسەرچوون</Label>
+                        <Input
+                          type="date"
+                          value={editExpDate}
+                          onChange={(e) => setEditExpDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">بەرواری بیرخستنەوە</Label>
+                        <Input
+                          type="date"
+                          value={editRemindDate}
+                          onChange={(e) => setEditRemindDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full gap-2" 
+                      disabled={updateItem.isPending}
+                    >
+                      {updateItem.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Save className="h-5 w-5" />
+                      )}
+                      پاشەکەوتکردنی گۆڕانکارییەکان
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                {/* Quantity Adjust Tab */}
+                <TabsContent value="quantity" className="mt-4">
+                  <form onSubmit={handleSubmitQuantity} className="space-y-4">
+                    <div className="rounded-lg border border-border bg-muted/50 p-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">ناو:</span>
+                          <span className="mr-2 font-medium">{selectedItemData.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">براند:</span>
+                          <span className="mr-2 font-medium">{selectedItemData.brands?.name || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">ستۆکی ئێستا:</span>
+                          <span className="mr-2 font-semibold text-primary">{selectedItemData.current_quantity}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">یەکە:</span>
+                          <span className="mr-2 font-medium">{selectedItemData.unit}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">ژمارەی ڕاست</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        placeholder="ژمارەی ڕاستی مادە"
+                      />
+                      {quantity !== '' && (
+                        <p className="text-sm text-muted-foreground">
+                          جیاوازی: {parseInt(quantity) - selectedItemData.current_quantity >= 0 ? '+' : ''}{parseInt(quantity) - selectedItemData.current_quantity}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">بەروار</Label>
+                      <Input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">هۆکار</Label>
+                      <Textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="نمونە: هەڵەی ژماردن، بەسەرچوون..."
+                        rows={3}
+                      />
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full gap-2 bg-warning hover:bg-warning/90 text-warning-foreground" 
+                      disabled={addMovement.isPending}
+                    >
+                      {addMovement.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-5 w-5" />
+                      )}
+                      ڕاستکردنەوەی ستۆک
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-muted-foreground">
+                <Search className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p>مادەیەک هەڵبژێرە بۆ دیتنی زانیاریەکان و گۆڕانکاری</p>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">بەروار</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">هۆکار</Label>
-                <Textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="نمونە: هەڵەی ژماردن، بەسەرچوون..."
-                  rows={3}
-                />
-              </div>
-
-              <Button type="submit" className="w-full gap-2 bg-warning hover:bg-warning/90 text-warning-foreground" disabled={addMovement.isPending}>
-                {addMovement.isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-5 w-5" />
-                )}
-                ڕاستکردنەوەی ستۆک
-              </Button>
-            </form>
+            )}
           </div>
 
           {/* Recent Adjustments */}
