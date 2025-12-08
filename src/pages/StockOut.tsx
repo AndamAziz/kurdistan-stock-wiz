@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useItems, useStockMovements, useAddStockMovement } from "@/hooks/useItems";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowUpFromLine, Clock, Search, Loader2 } from "lucide-react";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
 
 export default function StockOut() {
   const [selectedItem, setSelectedItem] = useState<string>('');
@@ -31,6 +32,7 @@ export default function StockOut() {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { user } = useAuth();
   const { data: items } = useItems();
@@ -43,6 +45,17 @@ export default function StockOut() {
 
   const selectedItemData = items?.find(item => item.id === selectedItem);
   const outMovements = movements?.filter(m => m.movement_type === 'OUT').slice(0, 5) || [];
+
+  const handleBarcodeScan = (barcode: string) => {
+    const foundItem = items?.find(item => item.barcode === barcode);
+    if (foundItem) {
+      setSelectedItem(foundItem.id);
+      setSearchQuery(foundItem.name);
+      toast.success(`مادەی "${foundItem.name}" هەڵبژێردرا`);
+    } else {
+      toast.error('مادە بە ئەم باڕکۆدە نەدۆزرایەوە');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,14 +115,25 @@ export default function StockOut() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">گەڕان بۆ مادە</Label>
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="گەڕان بە ناو یان باڕکۆد..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pr-10"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="گەڕان بە ناو یان باڕکۆد..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pr-10"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setScannerOpen(true)}
+                    className="shrink-0"
+                  >
+                    <ScanBarcode className="h-5 w-5" />
+                  </Button>
                 </div>
               </div>
 
@@ -247,6 +271,12 @@ export default function StockOut() {
             )}
           </div>
         </div>
+
+        <BarcodeScannerDialog
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onScan={handleBarcodeScan}
+        />
       </div>
     </Layout>
   );
