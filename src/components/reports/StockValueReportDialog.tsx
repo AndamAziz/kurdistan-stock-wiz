@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Package, DollarSign, Boxes, Scale, FileSpreadsheet } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Printer, X, Package, DollarSign, Boxes, FileSpreadsheet, Filter } from "lucide-react";
 import { ItemWithRelations } from "@/hooks/useItems";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -20,6 +21,38 @@ export function StockValueReportDialog({
 }: StockValueReportDialogProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [themeColor, setThemeColor] = useState<string>("#1a7f64");
+  const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  // Get unique brands and categories
+  const brands = useMemo(() => {
+    const uniqueBrands = new Map<string, string>();
+    items.forEach(item => {
+      if (item.brands?.id && item.brands?.name) {
+        uniqueBrands.set(item.brands.id, item.brands.name);
+      }
+    });
+    return Array.from(uniqueBrands, ([id, name]) => ({ id, name }));
+  }, [items]);
+
+  const categories = useMemo(() => {
+    const uniqueCategories = new Map<string, string>();
+    items.forEach(item => {
+      if (item.categories?.id && item.categories?.name) {
+        uniqueCategories.set(item.categories.id, item.categories.name);
+      }
+    });
+    return Array.from(uniqueCategories, ([id, name]) => ({ id, name }));
+  }, [items]);
+
+  // Filter items based on selections
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const brandMatch = selectedBrand === "all" || item.brands?.id === selectedBrand;
+      const categoryMatch = selectedCategory === "all" || item.categories?.id === selectedCategory;
+      return brandMatch && categoryMatch;
+    });
+  }, [items, selectedBrand, selectedCategory]);
 
   useEffect(() => {
     const savedLogo = localStorage.getItem('invoiceLogo');
@@ -42,7 +75,7 @@ export function StockValueReportDialog({
   const handleExportExcel = () => {
     try {
       // Prepare data for Excel
-      const excelData = items.map((item, index) => {
+      const excelData = filteredItems.map((item, index) => {
         let itemTotalValue = 0;
         if (item.box_price && item.box_price > 0) {
           itemTotalValue = (item.box_price || 0) * item.current_quantity;
@@ -114,28 +147,30 @@ export function StockValueReportDialog({
 
   const currentDate = format(new Date(), 'yyyy/MM/dd');
 
-  // Calculate totals
-  const totals = items.reduce((acc, item) => {
-    const boxValue = (item.box_price || 0) * item.current_quantity;
-    const pieceValue = (item.piece_price || 0) * item.current_quantity;
-    const kgValue = (item.price_per_kg || 0) * item.current_quantity;
-    
-    // Estimate total value based on available prices
-    let itemTotalValue = 0;
-    if (item.box_price && item.box_price > 0) {
-      itemTotalValue = boxValue;
-    } else if (item.piece_price && item.piece_price > 0) {
-      itemTotalValue = pieceValue;
-    } else if (item.price_per_kg && item.price_per_kg > 0) {
-      itemTotalValue = kgValue;
-    }
+  // Calculate totals based on filtered items
+  const totals = useMemo(() => {
+    return filteredItems.reduce((acc, item) => {
+      const boxValue = (item.box_price || 0) * item.current_quantity;
+      const pieceValue = (item.piece_price || 0) * item.current_quantity;
+      const kgValue = (item.price_per_kg || 0) * item.current_quantity;
+      
+      // Estimate total value based on available prices
+      let itemTotalValue = 0;
+      if (item.box_price && item.box_price > 0) {
+        itemTotalValue = boxValue;
+      } else if (item.piece_price && item.piece_price > 0) {
+        itemTotalValue = pieceValue;
+      } else if (item.price_per_kg && item.price_per_kg > 0) {
+        itemTotalValue = kgValue;
+      }
 
-    return {
-      totalItems: acc.totalItems + 1,
-      totalQuantity: acc.totalQuantity + item.current_quantity,
-      totalValue: acc.totalValue + itemTotalValue,
-    };
-  }, { totalItems: 0, totalQuantity: 0, totalValue: 0 });
+      return {
+        totalItems: acc.totalItems + 1,
+        totalQuantity: acc.totalQuantity + item.current_quantity,
+        totalValue: acc.totalValue + itemTotalValue,
+      };
+    }, { totalItems: 0, totalQuantity: 0, totalValue: 0 });
+  }, [filteredItems]);
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('en-US') + ' د.ع';
@@ -179,22 +214,67 @@ export function StockValueReportDialog({
         `}</style>
 
         {/* Action Buttons */}
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 p-4 bg-background border-b no-print">
-          <DialogHeader className="flex-1">
-            <DialogTitle className="text-lg font-bold">ڕاپۆرتی نرخ و بەهای ستۆک</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleExportExcel} variant="outline" className="gap-2">
-              <FileSpreadsheet className="h-4 w-4" />
-              Excel
-            </Button>
-            <Button onClick={handlePrint} className="gap-2">
-              <Printer className="h-4 w-4" />
-              پرێنت
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-5 w-5" />
-            </Button>
+        <div className="sticky top-0 z-10 flex flex-col gap-3 p-4 bg-background border-b no-print">
+          <div className="flex items-center justify-between gap-2">
+            <DialogHeader className="flex-1">
+              <DialogTitle className="text-lg font-bold">ڕاپۆرتی نرخ و بەهای ستۆک</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleExportExcel} variant="outline" className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </Button>
+              <Button onClick={handlePrint} className="gap-2">
+                <Printer className="h-4 w-4" />
+                پرێنت
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Filters */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">فلتەر:</span>
+            </div>
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="هەموو براندەکان" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">هەموو براندەکان</SelectItem>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>{brand.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="هەموو هاوپۆلەکان" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">هەموو هاوپۆلەکان</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(selectedBrand !== "all" || selectedCategory !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedBrand("all");
+                  setSelectedCategory("all");
+                }}
+                className="text-muted-foreground"
+              >
+                پاککردنەوەی فلتەر
+              </Button>
+            )}
           </div>
         </div>
 
@@ -252,7 +332,7 @@ export function StockValueReportDialog({
               </tr>
             </thead>
             <tbody>
-              {items.map((item, index) => {
+              {filteredItems.map((item, index) => {
                 // Calculate item total value
                 let itemTotalValue = 0;
                 if (item.box_price && item.box_price > 0) {
