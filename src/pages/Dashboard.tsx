@@ -3,6 +3,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
 import { ItemsListDialog } from "@/components/dashboard/ItemsListDialog";
+import { StockValueReportDialog } from "@/components/reports/StockValueReportDialog";
 import { useItems, useStockMovements } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -21,6 +22,7 @@ import {
   DollarSign,
   TrendingUp,
   Wallet,
+  FileText,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -37,6 +39,7 @@ export default function Dashboard() {
   const [outOfStockOpen, setOutOfStockOpen] = useState(false);
   const [allItemsOpen, setAllItemsOpen] = useState(false);
   const [expiredOpen, setExpiredOpen] = useState(false);
+  const [stockReportOpen, setStockReportOpen] = useState(false);
 
   const handleCheckNotifications = async () => {
     if (permission !== 'granted') {
@@ -145,15 +148,28 @@ export default function Dashboard() {
               بەخێربێیت بۆ سیستمی بەڕێوەبردنی کۆگای باکوری خۆشەویست
             </p>
           </div>
-          <Button
-            onClick={handleCheckNotifications}
-            variant="outline"
-            className="flex items-center gap-2 self-start sm:self-auto"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">پشکنینی ئاگادارکردنەوەکان</span>
-            <span className="sm:hidden">پشکنین</span>
-          </Button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isAdmin && (
+              <Button
+                onClick={() => setStockReportOpen(true)}
+                variant="default"
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">ڕاپۆرتی نرخ</span>
+                <span className="sm:hidden">ڕاپۆرت</span>
+              </Button>
+            )}
+            <Button
+              onClick={handleCheckNotifications}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">پشکنینی ئاگادارکردنەوەکان</span>
+              <span className="sm:hidden">پشکنین</span>
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid - Financial stats only for Admin */}
@@ -336,6 +352,15 @@ export default function Dashboard() {
         items={stats.expiredItems}
         type="expired"
       />
+
+      {/* Stock Value Report Dialog - Admin Only */}
+      {isAdmin && items && (
+        <StockValueReportDialog
+          open={stockReportOpen}
+          onOpenChange={setStockReportOpen}
+          items={items}
+        />
+      )}
     </Layout>
   );
 }
