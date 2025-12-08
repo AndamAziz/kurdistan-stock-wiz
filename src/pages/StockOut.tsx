@@ -12,9 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
-import { useCreateInvoice } from "@/hooks/useInvoices";
+import { useCreateInvoice, useInvoices, useInvoiceWithItems, useDeleteInvoice, Invoice } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil } from "lucide-react";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil, Eye } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +30,17 @@ import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog"
 import { ItemDetailCard } from "@/components/items/ItemDetailCard";
 import { StockOutInvoiceDialog } from "@/components/invoice/StockOutInvoiceDialog";
 import { EditCartItemDialog } from "@/components/stock/EditCartItemDialog";
+import { EditInvoiceDialog } from "@/components/invoice/EditInvoiceDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CartItem {
   item: ItemWithRelations;
@@ -54,15 +66,26 @@ export default function StockOut() {
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   
+  // Invoice management
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [editInvoiceOpen, setEditInvoiceOpen] = useState(false);
+  const [viewInvoiceOpen, setViewInvoiceOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  
   // Cart system
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [recipientName, setRecipientName] = useState<string>('');
   const [recipientPhone, setRecipientPhone] = useState<string>('');
 
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles();
   const { data: items, refetch: refetchItems } = useItems();
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
+  const { data: recentInvoices, isLoading: invoicesLoading } = useInvoices('stock_out');
+  const { data: selectedInvoice } = useInvoiceWithItems(selectedInvoiceId);
   const addMovement = useAddStockMovement();
+  const deleteInvoice = useDeleteInvoice();
   const createInvoice = useCreateInvoice();
 
   const filteredItems = items?.filter(item => 
@@ -570,15 +593,15 @@ export default function StockOut() {
               )}
             </div>
 
-            {/* Recent Movements */}
+            {/* Recent Invoices */}
             <div className="rounded-xl border border-border bg-card shadow-card animate-slide-up" style={{ animationDelay: '150ms' }}>
               <div className="flex items-center gap-3 border-b border-border px-6 py-4">
                 <div className="rounded-lg bg-muted p-2">
                   <Clock className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold text-card-foreground">کۆتا دەرکردنەکان</h3>
+                <h3 className="font-semibold text-card-foreground">کۆتا ئینڤۆیسەکان</h3>
               </div>
-              {movementsLoading ? (
+              {invoicesLoading ? (
                 <div className="flex items-center justify-center h-32">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
@@ -586,31 +609,73 @@ export default function StockOut() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-right">مادە</TableHead>
-                      <TableHead className="text-center">ژمارە</TableHead>
+                      <TableHead className="text-right">وەرگر</TableHead>
+                      <TableHead className="text-center">کۆی گشتی</TableHead>
                       <TableHead className="text-center">بەروار</TableHead>
+                      <TableHead className="text-center w-[100px]">کردارەکان</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {outMovements.length === 0 ? (
+                    {!recentInvoices || recentInvoices.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                          هیچ ڕیکۆردێک نییە
+                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                          هیچ ئینڤۆیسێک نییە
                         </TableCell>
                       </TableRow>
                     ) : (
-                      outMovements.map((movement, index) => (
-                        <TableRow key={movement.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
+                      recentInvoices.slice(0, 5).map((invoice, index) => (
+                        <TableRow key={invoice.id} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
                           <TableCell className="font-medium">
-                            {(movement.items as any)?.name || '-'}
+                            {invoice.recipient_name || '-'}
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className="bg-destructive/10 text-destructive border-destructive/20">
-                              -{movement.quantity}
+                              {invoice.total_amount?.toLocaleString() || 0} د.ع
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center text-muted-foreground text-sm">
-                            {movement.movement_date}
+                            {invoice.invoice_date}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => {
+                                  setSelectedInvoiceId(invoice.id);
+                                  setViewInvoiceOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              {isAdmin && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => {
+                                      setSelectedInvoiceId(invoice.id);
+                                      setEditInvoiceOpen(true);
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4 text-primary" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => {
+                                      setInvoiceToDelete(invoice);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -648,6 +713,88 @@ export default function StockOut() {
           cartItem={editingItem}
           onSave={handleSaveEditedItem}
         />
+
+        {/* Invoice View/Edit Dialog */}
+        {selectedInvoice && (
+          <EditInvoiceDialog
+            open={editInvoiceOpen}
+            onOpenChange={(open) => {
+              setEditInvoiceOpen(open);
+              if (!open) setSelectedInvoiceId(null);
+            }}
+            invoice={selectedInvoice}
+          />
+        )}
+
+        {/* Invoice View Dialog - Reuses the StockOut Invoice layout */}
+        {selectedInvoice && viewInvoiceOpen && (
+          <StockOutInvoiceDialog
+            open={viewInvoiceOpen}
+            onOpenChange={(open) => {
+              setViewInvoiceOpen(open);
+              if (!open) setSelectedInvoiceId(null);
+            }}
+            cartItems={selectedInvoice.items.map(item => ({
+              item: {
+                id: item.item_id || '',
+                name: item.item_name,
+                barcode: item.item_barcode || '',
+                unit: item.item_unit || 'دانە',
+                current_quantity: 0,
+                min_stock: 0,
+                total_in: 0,
+                total_out: 0,
+                date_added: '',
+                created_at: '',
+                updated_at: '',
+                brand_id: null,
+                category_id: null,
+                exp_date: item.exp_date,
+                mfg_date: item.mfg_date,
+                image_url: null,
+                remind_date: null,
+                brands: item.item_brand ? { id: '', name: item.item_brand, created_at: '' } : null,
+                categories: item.item_category ? { id: '', name: item.item_category, created_at: '' } : null,
+              },
+              quantity: item.quantity,
+              boxCount: item.boxes || 0,
+              pieceCount: item.pieces || 0,
+              giftQuantity: item.gifts || 0,
+              price: item.price || 0,
+              note: item.note || undefined,
+            }))}
+            recipientName={selectedInvoice.recipient_name || ''}
+            recipientPhone={selectedInvoice.recipient_phone || ''}
+            movementDate={selectedInvoice.invoice_date}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>سڕینەوەی ئینڤۆیس</AlertDialogTitle>
+              <AlertDialogDescription>
+                ئایا دڵنیایت لە سڕینەوەی ئەم ئینڤۆیسە؟ ئەم کردارە ناگەڕێتەوە.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  if (invoiceToDelete) {
+                    await deleteInvoice.mutateAsync(invoiceToDelete.id);
+                    setInvoiceToDelete(null);
+                    setDeleteDialogOpen(false);
+                  }
+                }}
+              >
+                سڕینەوە
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
