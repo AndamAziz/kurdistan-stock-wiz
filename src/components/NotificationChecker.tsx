@@ -1,22 +1,46 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
 
 export function NotificationChecker() {
   const { user } = useAuth();
   const { permission, checkAndNotify } = usePushNotifications();
+  const { settings, getIntervalMs } = useNotificationSettings();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check for expiring items and low stock when app loads
-    if (user && permission === 'granted') {
-      // Small delay to ensure data is loaded
-      const timer = setTimeout(() => {
-        checkAndNotify();
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    // Clear existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-  }, [user, permission, checkAndNotify]);
+
+    // Only run if user is logged in, permission granted, and interval is not off
+    if (!user || permission !== 'granted' || settings.interval === 'off') {
+      return;
+    }
+
+    // Initial check on app load with delay
+    const initialTimer = setTimeout(() => {
+      checkAndNotify();
+    }, 3000);
+
+    // Set up recurring interval
+    const intervalMs = getIntervalMs();
+    if (intervalMs) {
+      intervalRef.current = setInterval(() => {
+        checkAndNotify();
+      }, intervalMs);
+    }
+
+    return () => {
+      clearTimeout(initialTimer);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [user, permission, settings.interval, checkAndNotify, getIntervalMs]);
 
   return null;
 }

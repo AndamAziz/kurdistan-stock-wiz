@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Settings as SettingsIcon, 
   Bell, 
@@ -16,12 +23,14 @@ import {
   WifiOff,
   Smartphone,
   BellRing,
-  BellOff
+  BellOff,
+  Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { usePWA } from "@/hooks/usePWA";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNotificationSettings, intervalOptions, NotificationInterval } from "@/hooks/useNotificationSettings";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
 
@@ -29,6 +38,7 @@ export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { isInstallable, isInstalled, isOnline, installApp } = usePWA();
   const { permission, isSupported, requestPermission, checkAndNotify } = usePushNotifications();
+  const { settings, updateSettings } = useNotificationSettings();
 
   const handleSave = () => {
     hapticFeedback.success();
@@ -274,19 +284,60 @@ export default function Settings() {
               </div>
             )}
 
+            {/* Auto Check Interval */}
+            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div>
+                  <p className="text-xs sm:text-sm font-medium">پشکنینی خۆکار</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">ماوەی پشکنینی خۆکاری ئاگادارکردنەوەکان</p>
+                </div>
+              </div>
+              <Select
+                value={settings.interval}
+                onValueChange={(value: NotificationInterval) => {
+                  hapticFeedback.selection();
+                  updateSettings({ interval: value });
+                }}
+              >
+                <SelectTrigger className="w-[120px] sm:w-[140px] h-8 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {intervalOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ئاگادار لە بەسەرچوون</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground">ئاگادارکردنەوە پێش بەسەرچوونی مادە</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.expiryAlerts}
+                onCheckedChange={(checked) => {
+                  hapticFeedback.selection();
+                  updateSettings({ expiryAlerts: checked });
+                }}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ئاگادار لە کەم ستۆک</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground">کاتێک ستۆک کەمتر دەبێت لە حەدی کەم</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={settings.lowStockAlerts}
+                onCheckedChange={(checked) => {
+                  hapticFeedback.selection();
+                  updateSettings({ lowStockAlerts: checked });
+                }}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div>
