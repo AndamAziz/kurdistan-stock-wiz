@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
+import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart } from "lucide-react";
 import {
@@ -59,6 +60,7 @@ export default function StockOut() {
   const { data: items, refetch: refetchItems } = useItems();
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const addMovement = useAddStockMovement();
+  const createInvoice = useCreateInvoice();
 
   const filteredItems = items?.filter(item => 
     item.name.includes(searchQuery) || item.barcode.includes(searchQuery)
@@ -181,6 +183,41 @@ export default function StockOut() {
     }
 
     if (successCount === cartItems.length) {
+      // Calculate totals
+      const totalPrice = cartItems.reduce((sum, ci) => sum + (((ci.boxCount || 0) + (ci.pieceCount || 0)) * ci.price), 0);
+      
+      // Save invoice to database
+      const invoiceNumber = `OUT-${Date.now().toString(36).toUpperCase()}`;
+      
+      await createInvoice.mutateAsync({
+        invoice_number: invoiceNumber,
+        invoice_type: 'stock_out',
+        recipient_name: recipientName,
+        recipient_phone: recipientPhone || undefined,
+        total_amount: totalPrice,
+        invoice_date: date,
+        created_by: user?.id,
+        items: cartItems.map(ci => ({
+          item_id: ci.item.id,
+          item_name: ci.item.name,
+          item_brand: ci.item.brands?.name || null,
+          item_category: ci.item.categories?.name || null,
+          item_barcode: ci.item.barcode,
+          item_unit: ci.item.unit,
+          quantity: ci.quantity,
+          boxes: ci.boxCount || 0,
+          pieces: ci.pieceCount || 0,
+          gifts: ci.giftQuantity || 0,
+          weight_kg: 0,
+          weight_gram: 0,
+          price: ci.price,
+          total_price: ((ci.boxCount || 0) + (ci.pieceCount || 0)) * ci.price,
+          exp_date: ci.item.exp_date || null,
+          mfg_date: ci.item.mfg_date || null,
+          note: ci.note || null,
+        })),
+      });
+      
       toast.success(`${successCount} مادە بە سەرکەوتوویی دەرکران`);
       // Open invoice dialog
       setInvoiceOpen(true);

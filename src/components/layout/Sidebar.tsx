@@ -18,6 +18,7 @@ import {
   LogOut,
   Users,
   Menu,
+  FileText,
 } from "lucide-react";
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
   { name: 'ڕاستکردنەوە', href: '/stock-adjust', icon: RefreshCw },
   { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
+  { name: 'ئینڤۆیسەکان', href: '/invoices', icon: FileText },
   { name: 'ئیمپۆرت/ئێکسپۆرت', href: '/import-export', icon: FileSpreadsheet },
 ];
 
