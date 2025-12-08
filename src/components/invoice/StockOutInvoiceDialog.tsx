@@ -652,6 +652,10 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                 <div className="text-center">
                   <div className="w-28 h-8 border-b border-gray-400 mb-1"></div>
                   <p className="text-[8px] text-gray-500">واژووی وەرگر</p>
+                  <div className="mt-2 flex items-center gap-1 justify-center">
+                    <span className="text-[8px] text-gray-400">بەروار:</span>
+                    <div className="w-16 border-b border-gray-300"></div>
+                  </div>
                 </div>
               </div>
             </div>
