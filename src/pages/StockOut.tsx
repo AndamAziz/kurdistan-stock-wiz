@@ -166,18 +166,35 @@ export default function StockOut() {
                   <SelectContent className="max-h-[60vh] z-50">
                     {filteredItems.map((item) => (
                       <SelectItem key={item.id} value={item.id} className="py-3 px-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-base font-semibold tracking-tight text-foreground">
-                            {item.name}
-                          </span>
-                          <div className="flex items-center gap-2 text-xs">
-                            {item.brands && (
-                              <span className="text-primary font-medium">{item.brands.name}</span>
+                        <div className="flex items-center gap-3">
+                          {/* Item Image */}
+                          <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-muted border border-border">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
+                                📦
+                              </div>
                             )}
-                            {item.brands && <span className="text-muted-foreground/50">•</span>}
-                            <span className="text-muted-foreground">
-                              ستۆک: <span className="font-semibold text-foreground">{item.current_quantity}</span> {item.unit}
+                          </div>
+                          {/* Item Details */}
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-base font-semibold tracking-tight text-foreground">
+                              {item.name}
                             </span>
+                            <div className="flex items-center gap-2 text-xs">
+                              {item.brands && (
+                                <span className="text-primary font-medium">{item.brands.name}</span>
+                              )}
+                              {item.brands && <span className="text-muted-foreground/50">•</span>}
+                              <span className="text-muted-foreground">
+                                ستۆک: <span className="font-semibold text-foreground">{item.current_quantity}</span> {item.unit}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </SelectItem>
