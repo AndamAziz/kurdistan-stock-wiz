@@ -184,7 +184,10 @@ export function StockOutInvoiceDialog({
           .items-table thead th:first-child { border-radius: 8px 0 0 0; }
           .items-table thead th:last-child { border-radius: 0 8px 0 0; }
           .items-table tbody tr {
-            border-bottom: 1px solid #eee;
+            border-bottom: 2px solid ${theme.light};
+          }
+          .items-table tbody tr:last-child {
+            border-bottom: none;
           }
           .items-table tbody tr:nth-child(even) {
             background: ${theme.light}40;
@@ -408,12 +411,14 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                         return (
                           <tr 
                             key={index} 
-                            className="border-b border-gray-200"
-                            style={{ backgroundColor: index % 2 === 1 ? `${theme.light}40` : 'transparent' }}
+                            style={{ 
+                              backgroundColor: index % 2 === 1 ? `${theme.light}40` : 'transparent',
+                              borderBottom: `2px solid ${theme.light}`
+                            }}
                           >
                             <td className="py-3 px-2 text-center text-sm font-bold text-gray-700">{index + 1}</td>
                             <td className="py-3 px-2">
-                              <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
+                              <div className="h-8 w-8 rounded overflow-hidden bg-gray-100 border border-gray-200">
                                 {cartItem.item.image_url ? (
                                   <img 
                                     src={cartItem.item.image_url} 
@@ -421,7 +426,7 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">📦</div>
+                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-[10px]">📦</div>
                                 )}
                               </div>
                             </td>
