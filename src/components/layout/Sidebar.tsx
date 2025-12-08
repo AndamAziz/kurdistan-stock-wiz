@@ -58,20 +58,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-16 lg:h-20 items-center justify-center border-b border-sidebar-border/50 px-4 lg:px-6">
+      <div className="flex h-14 lg:h-20 items-center justify-center border-b border-sidebar-border/50 px-3 lg:px-6">
         <div className="text-center">
-          <h1 className="text-lg lg:text-xl font-bold text-sidebar-foreground tracking-tight">
+          <h1 className="text-base lg:text-xl font-bold text-sidebar-foreground tracking-tight">
             باکوری خۆشەویست
           </h1>
-          <p className="text-[10px] lg:text-xs text-sidebar-foreground/50 mt-0.5">
+          <p className="text-[9px] lg:text-xs text-sidebar-foreground/50 mt-0.5">
             سیستمی بەڕێوەبردنی کۆگا
           </p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 lg:px-3 py-4 lg:py-5 overflow-y-auto">
-        <div className="mb-3 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
+      <nav className="flex-1 space-y-0.5 px-2 lg:px-3 py-2 lg:py-5 overflow-y-auto">
+        <div className="mb-1.5 px-2 text-[9px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
           سەرەکی
         </div>
         {navigation.map((item) => (
@@ -80,19 +80,19 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             to={item.href}
             onClick={onNavClick}
             className={cn(
-              "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+              "group flex items-center gap-2 rounded-lg px-2.5 py-2 lg:py-3 text-sm font-medium transition-all duration-200",
               "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
             )}
             activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+            <div className="flex items-center justify-center w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
               <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
             </div>
-            <span>{item.name}</span>
+            <span className="text-[13px] lg:text-sm">{item.name}</span>
           </NavLink>
         ))}
 
-        <div className="mb-3 mt-6 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
+        <div className="mb-1.5 mt-3 px-2 text-[9px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
           ڕێکخستن
         </div>
         {settingsNavigation.map((item) => (
@@ -101,21 +101,21 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             to={item.href}
             onClick={onNavClick}
             className={cn(
-              "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+              "group flex items-center gap-2 rounded-lg px-2.5 py-2 lg:py-3 text-sm font-medium transition-all duration-200",
               "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
             )}
             activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+            <div className="flex items-center justify-center w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
               <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
             </div>
-            <span>{item.name}</span>
+            <span className="text-[13px] lg:text-sm">{item.name}</span>
           </NavLink>
         ))}
 
         {isAdmin && (
           <>
-            <div className="mb-3 mt-6 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
+            <div className="mb-1.5 mt-3 px-2 text-[9px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
               بەڕێوەبەر
             </div>
             {adminNavigation.map((item) => (
@@ -124,15 +124,15 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 to={item.href}
                 onClick={onNavClick}
                 className={cn(
-                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+                  "group flex items-center gap-2 rounded-lg px-2.5 py-2 lg:py-3 text-sm font-medium transition-all duration-200",
                   "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                 )}
                 activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+                <div className="flex items-center justify-center w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
                   <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
                 </div>
-                <span>{item.name}</span>
+                <span className="text-[13px] lg:text-sm">{item.name}</span>
               </NavLink>
             ))}
           </>
