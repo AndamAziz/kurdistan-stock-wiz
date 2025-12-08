@@ -18,6 +18,9 @@ export interface ItemWithRelations {
   image_url: string | null;
   total_in: number;
   total_out: number;
+  box_price: number | null;
+  piece_price: number | null;
+  price_per_kg: number | null;
   brands: { id: string; name: string } | null;
   categories: { id: string; name: string } | null;
 }
@@ -147,6 +150,9 @@ export function useUpdateItem() {
       exp_date?: string | null;
       remind_date?: string | null;
       image_url?: string | null;
+      box_price?: number | null;
+      piece_price?: number | null;
+      price_per_kg?: number | null;
     }) => {
       const { data, error } = await supabase
         .from('items')

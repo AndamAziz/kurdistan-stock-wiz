@@ -184,6 +184,7 @@ export type Database = {
       items: {
         Row: {
           barcode: string
+          box_price: number | null
           brand_id: string | null
           category_id: string | null
           created_at: string
@@ -195,6 +196,8 @@ export type Database = {
           mfg_date: string | null
           min_stock: number
           name: string
+          piece_price: number | null
+          price_per_kg: number | null
           remind_date: string | null
           total_in: number
           total_out: number
@@ -203,6 +206,7 @@ export type Database = {
         }
         Insert: {
           barcode: string
+          box_price?: number | null
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
@@ -214,6 +218,8 @@ export type Database = {
           mfg_date?: string | null
           min_stock?: number
           name: string
+          piece_price?: number | null
+          price_per_kg?: number | null
           remind_date?: string | null
           total_in?: number
           total_out?: number
@@ -222,6 +228,7 @@ export type Database = {
         }
         Update: {
           barcode?: string
+          box_price?: number | null
           brand_id?: string | null
           category_id?: string | null
           created_at?: string
@@ -233,6 +240,8 @@ export type Database = {
           mfg_date?: string | null
           min_stock?: number
           name?: string
+          piece_price?: number | null
+          price_per_kg?: number | null
           remind_date?: string | null
           total_in?: number
           total_out?: number
