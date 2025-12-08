@@ -24,6 +24,8 @@ import { MobileItemCard } from "@/components/items/MobileItemCard";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
+import { AddItemDialog } from "@/components/items/AddItemDialog";
+import { ImagePreviewDialog } from "@/components/items/ImagePreviewDialog";
 import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine } from "lucide-react";
 import {
   Collapsible,
@@ -40,6 +42,8 @@ export default function Items() {
   const [stockFilter, setStockFilter] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
   const { data: items, isLoading, refetch } = useItems();
   const { data: categories } = useCategories();
@@ -178,7 +182,10 @@ export default function Items() {
               بەڕێوەبردنی هەموو مادەکان لە کۆگا
             </p>
           </div>
-          <Button className="gap-2 h-9 sm:h-10 text-xs sm:text-sm w-full sm:w-auto">
+          <Button 
+            className="gap-2 h-9 sm:h-10 text-xs sm:text-sm w-full sm:w-auto"
+            onClick={() => setAddItemOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             زیادکردنی مادە
           </Button>
@@ -381,6 +388,7 @@ export default function Items() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
+                      <TableHead className="text-center font-semibold w-14">وێنە</TableHead>
                       <TableHead className="text-right font-semibold">باڕکۆد</TableHead>
                       <TableHead className="text-right font-semibold">ناو</TableHead>
                       <TableHead className="text-right font-semibold">براند</TableHead>
@@ -393,7 +401,7 @@ export default function Items() {
                   <TableBody>
                     {filteredItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                           هیچ مادەیەک نەدۆزرایەوە
                         </TableCell>
                       </TableRow>
@@ -408,6 +416,26 @@ export default function Items() {
                             className="animate-fade-in hover:bg-muted/30 transition-colors"
                             style={{ animationDelay: `${index * 30}ms` }}
                           >
+                            {/* Item Image */}
+                            <TableCell className="text-center">
+                              {item.image_url ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewImage({ url: item.image_url!, name: item.name })}
+                                  className="h-10 w-10 rounded-lg overflow-hidden border border-border bg-muted mx-auto hover:ring-2 hover:ring-primary/50 transition-all"
+                                >
+                                  <img 
+                                    src={item.image_url} 
+                                    alt={item.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </button>
+                              ) : (
+                                <div className="h-10 w-10 rounded-lg bg-muted border border-border flex items-center justify-center mx-auto text-muted-foreground text-xs">
+                                  📦
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell className="font-mono text-sm text-muted-foreground">
                               {item.barcode}
                             </TableCell>
@@ -469,6 +497,22 @@ export default function Items() {
           onOpenChange={setScannerOpen}
           onScan={handleBarcodeScan}
         />
+
+        {/* Add Item Dialog */}
+        <AddItemDialog
+          open={addItemOpen}
+          onOpenChange={setAddItemOpen}
+        />
+
+        {/* Image Preview Dialog */}
+        {previewImage && (
+          <ImagePreviewDialog
+            open={!!previewImage}
+            onOpenChange={(open) => !open && setPreviewImage(null)}
+            imageUrl={previewImage.url}
+            itemName={previewImage.name}
+          />
+        )}
       </div>
     </Layout>
   );
