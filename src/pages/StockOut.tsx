@@ -453,39 +453,42 @@ export default function StockOut() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">ژمارەی بۆکس <span className="text-destructive">*</span></Label>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">ژمارەی بۆکس <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
-                      placeholder="بۆکس"
+                      placeholder="بۆ"
+                      className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">ژمارەی دانە <span className="text-destructive">*</span></Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">ژمارەی دانە <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
                       value={pieceCount}
                       onChange={(e) => setPieceCount(e.target.value)}
-                      placeholder="دانە"
+                      placeholder="دا"
+                      className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">هەدیە</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">هەدیە</Label>
                     <Input
                       type="number"
                       min="0"
                       value={giftQuantity}
                       onChange={(e) => setGiftQuantity(e.target.value)}
-                      placeholder="هەدیە"
+                      placeholder="هە"
+                      className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">نرخی تاک (دینار) <span className="text-destructive">*</span></Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">نرخی تاک (دینار) <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
@@ -494,6 +497,7 @@ export default function StockOut() {
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="نرخ"
                       dir="ltr"
+                      className="h-9 text-sm px-2"
                     />
                   </div>
                 </div>
