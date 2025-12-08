@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { usePWA } from "@/hooks/usePWA";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { useNotificationSettings, intervalOptions, NotificationInterval } from "@/hooks/useNotificationSettings";
+import { useNotificationSettings, intervalOptions, reminderDaysOptions, NotificationInterval } from "@/hooks/useNotificationSettings";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
 
@@ -339,6 +339,36 @@ export default function Settings() {
                 }}
               />
             </div>
+            
+            {/* Reminder Days Setting */}
+            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+                <div>
+                  <p className="text-xs sm:text-sm font-medium">ڕۆژی بیرخستنەوە</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">چەند ڕۆژ پێش بەسەرچوون ئاگادار بکرێتەوە</p>
+                </div>
+              </div>
+              <Select
+                value={settings.reminderDays.toString()}
+                onValueChange={(value) => {
+                  hapticFeedback.selection();
+                  updateSettings({ reminderDays: parseInt(value) });
+                }}
+              >
+                <SelectTrigger className="w-[100px] sm:w-[120px] h-8 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {reminderDaysOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ڕاپۆرتی ڕۆژانە</p>

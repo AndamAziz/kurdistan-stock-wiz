@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useItems, ItemWithRelations } from "@/hooks/useItems";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { AlertTriangle, Clock, CalendarX, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,13 @@ type FilterType = 'all' | 'expired' | 'soon';
 export default function Expiry() {
   const [filter, setFilter] = useState<FilterType>('all');
   const { data: items, isLoading } = useItems();
+  const { settings } = useNotificationSettings();
 
   const { expiredItems, soonToExpireItems } = useMemo(() => {
     if (!items) return { expiredItems: [], soonToExpireItems: [] };
 
     const today = new Date();
-    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const reminderDate = new Date(today.getTime() + settings.reminderDays * 24 * 60 * 60 * 1000);
 
     const expired = items.filter(item => 
       item.exp_date && new Date(item.exp_date) < today
@@ -31,11 +33,11 @@ export default function Expiry() {
     const soonExpire = items.filter(item => {
       if (!item.exp_date) return false;
       const expDate = new Date(item.exp_date);
-      return expDate > today && expDate <= thirtyDaysLater;
+      return expDate > today && expDate <= reminderDate;
     });
 
     return { expiredItems: expired, soonToExpireItems: soonExpire };
-  }, [items]);
+  }, [items, settings.reminderDays]);
   
   const getFilteredItems = () => {
     switch (filter) {
@@ -66,7 +68,7 @@ export default function Expiry() {
     if (daysUntilExpiry < 0) {
       return { label: 'بەسەرچوو', variant: 'destructive' as const, days: daysUntilExpiry };
     }
-    if (daysUntilExpiry <= 30) {
+    if (daysUntilExpiry <= settings.reminderDays) {
       return { label: `${daysUntilExpiry} ڕۆژ`, variant: 'warning' as const, days: daysUntilExpiry };
     }
     return { label: 'سەلامەت', variant: 'success' as const, days: daysUntilExpiry };
@@ -154,7 +156,7 @@ export default function Expiry() {
                 <Clock className="h-6 w-6 text-warning" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">نزیک بەسەرچوون (30 ڕۆژ)</p>
+                <p className="text-sm text-muted-foreground">نزیک بەسەرچوون ({settings.reminderDays} ڕۆژ)</p>
                 <p className="text-3xl font-bold text-warning">{soonToExpireItems.length}</p>
               </div>
             </div>

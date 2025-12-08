@@ -4,6 +4,7 @@ import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
 import { useItems } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -21,6 +22,7 @@ import { useMemo } from "react";
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
+  const { settings } = useNotificationSettings();
 
   const handleCheckNotifications = async () => {
     if (permission !== 'granted') {
@@ -30,7 +32,7 @@ export default function Dashboard() {
         return;
       }
     }
-    await checkAndNotify();
+    await checkAndNotify(settings.reminderDays);
     toast.success('پشکنینی ئاگادارکردنەوەکان تەواو بوو');
   };
 
@@ -38,7 +40,7 @@ export default function Dashboard() {
     if (!items) return null;
 
     const today = new Date();
-    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const reminderDate = new Date(today.getTime() + settings.reminderDays * 24 * 60 * 60 * 1000);
 
     const expiredItems = items.filter(item => 
       item.exp_date && new Date(item.exp_date) < today
@@ -46,7 +48,7 @@ export default function Dashboard() {
     const soonToExpire = items.filter(item => {
       if (!item.exp_date) return false;
       const expDate = new Date(item.exp_date);
-      return expDate > today && expDate <= thirtyDaysLater;
+      return expDate > today && expDate <= reminderDate;
     });
     const lowStockItems = items.filter(item => 
       item.current_quantity <= item.min_stock && item.current_quantity > 0
@@ -65,7 +67,7 @@ export default function Dashboard() {
       outOfStock,
       topMoving,
     };
-  }, [items]);
+  }, [items, settings.reminderDays]);
 
   if (isLoading || !stats) {
     return (
