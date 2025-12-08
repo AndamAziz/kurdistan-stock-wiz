@@ -14,7 +14,7 @@ import {
 import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
 import { ItemDetailCard } from "@/components/items/ItemDetailCard";
 import { StockOutInvoiceDialog } from "@/components/invoice/StockOutInvoiceDialog";
+import { EditCartItemDialog } from "@/components/stock/EditCartItemDialog";
 
 interface CartItem {
   item: ItemWithRelations;
@@ -50,6 +51,8 @@ export default function StockOut() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   
   // Cart system
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -150,6 +153,22 @@ export default function StockOut() {
   const handleRemoveFromCart = (index: number) => {
     setCartItems(cartItems.filter((_, i) => i !== index));
     toast.success('مادە لابرا لە سەبەتە');
+  };
+
+  const handleEditCartItem = (index: number) => {
+    setEditingItem(cartItems[index]);
+    setEditingIndex(index);
+  };
+
+  const handleSaveEditedItem = (updatedItem: CartItem) => {
+    if (editingIndex === null) return;
+    
+    const updated = [...cartItems];
+    updated[editingIndex] = updatedItem;
+    setCartItems(updated);
+    setEditingItem(null);
+    setEditingIndex(null);
+    toast.success('مادە نوێکرایەوە');
   };
 
   const handleSubmitAll = async () => {
@@ -506,14 +525,24 @@ export default function StockOut() {
                           <p className="text-xs text-muted-foreground mt-1">📝 {cartItem.note}</p>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveFromCart(index)}
-                        className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditCartItem(index)}
+                          className="text-primary hover:text-primary hover:bg-primary/10"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveFromCart(index)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -606,6 +635,18 @@ export default function StockOut() {
           recipientName={recipientName}
           recipientPhone={recipientPhone}
           movementDate={date}
+        />
+
+        <EditCartItemDialog
+          open={editingItem !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingItem(null);
+              setEditingIndex(null);
+            }
+          }}
+          cartItem={editingItem}
+          onSave={handleSaveEditedItem}
         />
       </div>
     </Layout>
