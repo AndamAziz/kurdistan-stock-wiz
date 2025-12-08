@@ -2,6 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
+import { ItemsListDialog } from "@/components/dashboard/ItemsListDialog";
 import { useItems, useStockMovements } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -21,7 +22,7 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
@@ -29,6 +30,13 @@ export default function Dashboard() {
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings } = useNotificationSettings();
   const { isAdmin } = useUserRoles();
+  
+  // Dialog states
+  const [soonToExpireOpen, setSoonToExpireOpen] = useState(false);
+  const [lowStockOpen, setLowStockOpen] = useState(false);
+  const [outOfStockOpen, setOutOfStockOpen] = useState(false);
+  const [allItemsOpen, setAllItemsOpen] = useState(false);
+  const [expiredOpen, setExpiredOpen] = useState(false);
 
   const handleCheckNotifications = async () => {
     if (permission !== 'granted') {
@@ -176,6 +184,8 @@ export default function Dashboard() {
               value={stats.totalItems}
               icon={Package}
               delay={100}
+              clickable
+              onClick={() => setAllItemsOpen(true)}
             />
           </div>
         )}
@@ -188,6 +198,8 @@ export default function Dashboard() {
               value={stats.totalItems}
               icon={Package}
               delay={100}
+              clickable
+              onClick={() => setAllItemsOpen(true)}
             />
           </div>
         )}
@@ -200,6 +212,8 @@ export default function Dashboard() {
             icon={AlertTriangle}
             variant="danger"
             delay={150}
+            clickable
+            onClick={() => setExpiredOpen(true)}
           />
           <StatCard
             title="نزیک بەسەرچوون"
@@ -207,6 +221,8 @@ export default function Dashboard() {
             icon={Clock}
             variant="warning"
             delay={200}
+            clickable
+            onClick={() => setSoonToExpireOpen(true)}
           />
           <StatCard
             title="کەم ستۆک"
@@ -214,6 +230,8 @@ export default function Dashboard() {
             icon={TrendingDown}
             variant="warning"
             delay={300}
+            clickable
+            onClick={() => setLowStockOpen(true)}
           />
           <StatCard
             title="نەماوە"
@@ -221,6 +239,8 @@ export default function Dashboard() {
             icon={PackageX}
             variant="danger"
             delay={350}
+            clickable
+            onClick={() => setOutOfStockOpen(true)}
           />
         </div>
 
@@ -275,6 +295,47 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Dialogs for stat cards */}
+      <ItemsListDialog
+        open={soonToExpireOpen}
+        onOpenChange={setSoonToExpireOpen}
+        title="نزیک بەسەرچوون"
+        items={stats.soonToExpire}
+        type="expiring"
+      />
+      
+      <ItemsListDialog
+        open={lowStockOpen}
+        onOpenChange={setLowStockOpen}
+        title="کەم ستۆک"
+        items={stats.lowStockItems}
+        type="low-stock"
+      />
+      
+      <ItemsListDialog
+        open={outOfStockOpen}
+        onOpenChange={setOutOfStockOpen}
+        title="نەماوە"
+        items={stats.outOfStock}
+        type="out-of-stock"
+      />
+      
+      <ItemsListDialog
+        open={allItemsOpen}
+        onOpenChange={setAllItemsOpen}
+        title="هەموو مادەکان"
+        items={items || []}
+        type="all-items"
+      />
+      
+      <ItemsListDialog
+        open={expiredOpen}
+        onOpenChange={setExpiredOpen}
+        title="بەسەرچوو"
+        items={stats.expiredItems}
+        type="expired"
+      />
     </Layout>
   );
 }
