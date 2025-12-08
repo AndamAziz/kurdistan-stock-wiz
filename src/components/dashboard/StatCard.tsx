@@ -42,27 +42,27 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
   return (
     <div
       className={cn(
-        "rounded-xl border p-6 shadow-card card-hover animate-slide-up",
+        "rounded-lg sm:rounded-xl border p-3 sm:p-4 lg:p-6 shadow-card card-hover animate-slide-up",
         styles.bg,
         styles.border
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-card-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
+          <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-card-foreground">{value}</p>
           {trend && (
             <p className={cn(
-              "text-xs font-medium",
+              "text-[10px] sm:text-xs font-medium",
               trend.isPositive ? "text-success" : "text-destructive"
             )}>
               {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
             </p>
           )}
         </div>
-        <div className={cn("rounded-xl p-3", styles.icon)}>
-          <Icon className="h-6 w-6" />
+        <div className={cn("rounded-lg p-2 sm:p-2.5 lg:p-3 shrink-0", styles.icon)}>
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
         </div>
       </div>
     </div>
