@@ -1,9 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, Package, DollarSign, Boxes, Scale } from "lucide-react";
+import { Printer, X, Package, DollarSign, Boxes, Scale, FileSpreadsheet } from "lucide-react";
 import { ItemWithRelations } from "@/hooks/useItems";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 interface StockValueReportDialogProps {
   open: boolean;
@@ -35,6 +37,79 @@ export function StockValueReportDialog({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportExcel = () => {
+    try {
+      // Prepare data for Excel
+      const excelData = items.map((item, index) => {
+        let itemTotalValue = 0;
+        if (item.box_price && item.box_price > 0) {
+          itemTotalValue = (item.box_price || 0) * item.current_quantity;
+        } else if (item.piece_price && item.piece_price > 0) {
+          itemTotalValue = (item.piece_price || 0) * item.current_quantity;
+        } else if (item.price_per_kg && item.price_per_kg > 0) {
+          itemTotalValue = (item.price_per_kg || 0) * item.current_quantity;
+        }
+
+        return {
+          '#': index + 1,
+          'ناوی مادە': item.name,
+          'باڕکۆد': item.barcode,
+          'براند': item.brands?.name || '-',
+          'هاوپۆل': item.categories?.name || '-',
+          'ستۆک': item.current_quantity,
+          'نرخی بۆکس (د.ع)': item.box_price || 0,
+          'نرخی دانە (د.ع)': item.piece_price || 0,
+          'نرخی کیلۆ (د.ع)': item.price_per_kg || 0,
+          'کۆی بەها (د.ع)': itemTotalValue,
+        };
+      });
+
+      // Add totals row
+      excelData.push({
+        '#': '',
+        'ناوی مادە': 'کۆی گشتی',
+        'باڕکۆد': '',
+        'براند': '',
+        'هاوپۆل': '',
+        'ستۆک': totals.totalQuantity,
+        'نرخی بۆکس (د.ع)': '',
+        'نرخی دانە (د.ع)': '',
+        'نرخی کیلۆ (د.ع)': '',
+        'کۆی بەها (د.ع)': totals.totalValue,
+      } as any);
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 5 },   // #
+        { wch: 30 },  // Name
+        { wch: 15 },  // Barcode
+        { wch: 15 },  // Brand
+        { wch: 15 },  // Category
+        { wch: 10 },  // Stock
+        { wch: 15 },  // Box Price
+        { wch: 15 },  // Piece Price
+        { wch: 15 },  // Kg Price
+        { wch: 18 },  // Total Value
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'ڕاپۆرتی نرخەکان');
+
+      // Generate filename with date
+      const filename = `stock-value-report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      
+      // Save file
+      XLSX.writeFile(wb, filename);
+      toast.success('فایلی Excel دروستکرا');
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error('هەڵە لە دروستکردنی Excel');
+    }
   };
 
   const currentDate = format(new Date(), 'yyyy/MM/dd');
@@ -109,6 +184,10 @@ export function StockValueReportDialog({
             <DialogTitle className="text-lg font-bold">ڕاپۆرتی نرخ و بەهای ستۆک</DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-2">
+            <Button onClick={handleExportExcel} variant="outline" className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel
+            </Button>
             <Button onClick={handlePrint} className="gap-2">
               <Printer className="h-4 w-4" />
               پرێنت
