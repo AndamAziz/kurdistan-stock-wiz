@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Package, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Package, Mail, Lock, Loader2, ShieldCheck } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -13,18 +13,12 @@ const loginSchema = z.object({
   password: z.string().min(6, 'وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت'),
 });
 
-const signupSchema = loginSchema.extend({
-  fullName: z.string().min(2, 'ناو دەبێت لانیکەم ٢ پیت بێت'),
-});
-
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,44 +32,23 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const validation = loginSchema.safeParse({ email, password });
-        if (!validation.success) {
-          toast.error(validation.error.errors[0].message);
-          setLoading(false);
-          return;
-        }
+      const validation = loginSchema.safeParse({ email, password });
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        setLoading(false);
+        return;
+      }
 
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('ئیمەیڵ یان وشەی نهێنی هەڵەیە');
-          } else {
-            toast.error(error.message);
-          }
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('ئیمەیڵ یان وشەی نهێنی هەڵەیە');
         } else {
-          toast.success('بەخێربێیتەوە!');
-          navigate('/');
+          toast.error(error.message);
         }
       } else {
-        const validation = signupSchema.safeParse({ email, password, fullName });
-        if (!validation.success) {
-          toast.error(validation.error.errors[0].message);
-          setLoading(false);
-          return;
-        }
-
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            toast.error('ئەم ئیمەیڵە پێشتر تۆمارکراوە');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('هەژمار دروستکرا! بەخێربێیت');
-          navigate('/');
-        }
+        toast.success('بەخێربێیتەوە!');
+        navigate('/');
       }
     } catch (err) {
       toast.error('هەڵەیەک ڕوویدا');
@@ -85,93 +58,95 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-primary mb-4">
-            <Package className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-sm sm:max-w-md">
+        {/* Logo Section */}
+        <div className="text-center mb-6 sm:mb-8 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 mb-3 sm:mb-4 shadow-lg shadow-primary/25">
+            <Package className="w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">باکوری خۆشەویست</h1>
-          <p className="text-muted-foreground mt-1">سیستمی بەڕێوەبردنی کۆگا</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+            باکوری خۆشەویست
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+            سیستمی بەڕێوەبردنی کۆگا
+          </p>
         </div>
 
         {/* Auth Card */}
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-card animate-slide-up">
-          <h2 className="text-xl font-semibold text-center mb-6">
-            {isLogin ? 'چوونەژوورەوە' : 'دروستکردنی هەژمار'}
-          </h2>
+        <div className="rounded-2xl sm:rounded-3xl border border-border/50 bg-card/95 backdrop-blur-sm p-6 sm:p-8 shadow-xl shadow-black/5 animate-slide-up">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+              چوونەژوورەوە
+            </h2>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">ناوی تەواو</Label>
-                <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="ناوت بنووسە"
-                    className="pr-10"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">ئیمەیڵ</Label>
+              <Label htmlFor="email" className="text-sm font-medium">
+                ئیمەیڵ
+              </Label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@example.com"
-                  className="pr-10"
+                  className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
                   dir="ltr"
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">وشەی نهێنی</Label>
+              <Label htmlFor="password" className="text-sm font-medium">
+                وشەی نهێنی
+              </Label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="pr-10"
+                  className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
                   dir="ltr"
                   disabled={loading}
+                  autoComplete="current-password"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full gap-2" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium gap-2 mt-2 transition-all hover:shadow-lg hover:shadow-primary/25" 
+              disabled={loading}
+            >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isLogin ? 'چوونەژوورەوە' : 'تۆمارکردن'}
+              چوونەژوورەوە
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-              disabled={loading}
-            >
-              {isLogin ? 'هەژمارت نییە؟ تۆمار بکە' : 'هەژمارت هەیە؟ بچۆ ژوورەوە'}
-            </button>
+          {/* Info Notice */}
+          <div className="mt-6 pt-5 border-t border-border/50">
+            <p className="text-xs sm:text-sm text-muted-foreground text-center leading-relaxed">
+              تەنها ئەدمین دەتوانێت بەکارهێنەری نوێ زیاد بکات.
+              <br className="hidden sm:block" />
+              <span className="text-foreground/70">پەیوەندی بکە بە بەڕێوەبەرەوە.</span>
+            </p>
           </div>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-muted-foreground/70 mt-6 sm:mt-8">
+          © {new Date().getFullYear()} باکوری خۆشەویست
+        </p>
       </div>
     </div>
   );
