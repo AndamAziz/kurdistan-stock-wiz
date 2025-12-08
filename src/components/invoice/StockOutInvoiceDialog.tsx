@@ -88,63 +88,75 @@ export function StockOutInvoiceDialog({
         <title>پسولەی دەرچوون - ${invoiceNumber}</title>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <style>
+          @page {
+            size: A4 portrait;
+            margin: 12mm;
+          }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: 'Noto Sans Arabic', sans-serif; 
-            padding: 20px; 
             direction: rtl; 
             background: #fff;
             color: #1a1a1a;
-            font-size: 12px;
+            font-size: 11px;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 8mm;
           }
           .invoice-container {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid ${theme.primary};
-            border-radius: 12px;
+            width: 100%;
+            border: 3px solid ${theme.primary};
+            border-radius: 16px;
             overflow: hidden;
+            background: white;
           }
           .invoice-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            padding: 20px;
+            padding: 24px 28px;
             background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary});
             color: white;
           }
           .header-right {
             text-align: right;
+            min-width: 140px;
           }
           .header-right .customer-label {
             font-size: 10px;
-            opacity: 0.8;
-            margin-bottom: 4px;
+            opacity: 0.85;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
           }
           .header-right .customer-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
+            line-height: 1.3;
           }
           .header-right .customer-phone {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-top: 4px;
+            font-size: 13px;
+            opacity: 0.95;
+            margin-top: 6px;
             direction: ltr;
             text-align: right;
+            font-family: monospace;
           }
           .header-center {
             text-align: center;
             flex: 1;
+            padding: 0 20px;
           }
           .header-center .logo-placeholder {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 8px;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
             background: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
           }
           .header-center .logo-placeholder img {
             width: 100%;
@@ -152,243 +164,301 @@ export function StockOutInvoiceDialog({
             object-fit: contain;
           }
           .header-center .company-name {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
+            letter-spacing: 0.5px;
           }
           .header-center .invoice-type {
-            font-size: 12px;
+            font-size: 13px;
             opacity: 0.9;
-            margin-top: 4px;
+            margin-top: 6px;
           }
           .header-center .invoice-number {
-            font-size: 10px;
+            font-size: 11px;
             font-family: monospace;
-            background: rgba(255,255,255,0.2);
-            padding: 4px 12px;
+            background: rgba(255,255,255,0.25);
+            padding: 6px 16px;
             border-radius: 20px;
-            margin-top: 8px;
+            margin-top: 10px;
             display: inline-block;
+            letter-spacing: 1px;
           }
           .header-left {
             text-align: left;
+            min-width: 140px;
           }
           .header-left .driver-label {
             font-size: 10px;
-            opacity: 0.8;
+            opacity: 0.85;
             margin-bottom: 4px;
           }
           .header-left .driver-name {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
           }
           .header-left .driver-phone {
-            font-size: 11px;
+            font-size: 12px;
             opacity: 0.9;
-            margin-top: 2px;
+            margin-top: 4px;
             direction: ltr;
             text-align: left;
+            font-family: monospace;
           }
           .header-left .date-info {
-            margin-top: 12px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(255,255,255,0.3);
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.35);
           }
           .header-left .date-label {
             font-size: 9px;
             opacity: 0.7;
           }
           .header-left .date-value {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
+            font-family: monospace;
           }
           .items-section {
-            padding: 15px;
+            padding: 20px 24px;
           }
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            border: 1px solid ${theme.light};
-            border-radius: 8px;
+            border: 2px solid ${theme.primary};
+            border-radius: 12px;
             overflow: hidden;
           }
           .items-table thead th {
-            background: ${theme.primary};
+            background: linear-gradient(180deg, ${theme.primary}, ${theme.secondary});
             color: white;
-            padding: 10px 8px;
-            font-size: 10px;
-            font-weight: 600;
+            padding: 14px 10px;
+            font-size: 12px;
+            font-weight: 700;
             text-align: center;
-            border-bottom: 2px solid ${theme.secondary};
+            border-bottom: 3px solid ${theme.secondary};
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
           .items-table tbody tr {
-            border-bottom: 1px solid ${theme.light};
+            border-bottom: 1.5px solid ${theme.light};
+            transition: background 0.2s;
           }
           .items-table tbody tr:nth-child(even) {
-            background: ${theme.light}30;
+            background: ${theme.light}40;
           }
           .items-table tbody tr:last-child {
             border-bottom: none;
           }
           .items-table td {
-            padding: 10px 8px;
-            font-size: 11px;
+            padding: 12px 10px;
+            font-size: 12px;
             text-align: center;
             vertical-align: middle;
           }
           .item-cell {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             text-align: right;
           }
           .item-image {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            border-radius: 4px;
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 8px;
             object-fit: cover;
-            border: 1px solid #ddd;
+            border: 2px solid ${theme.light};
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
           .item-image-placeholder {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            border-radius: 4px;
-            background: #f0f0f0;
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f5f5f5, #e5e5e5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
-            color: #999;
+            font-size: 18px;
+            color: #aaa;
+            border: 2px solid ${theme.light};
           }
           .item-details {
             flex: 1;
           }
           .item-name {
-            font-weight: 600;
-            font-size: 11px;
+            font-weight: 700;
+            font-size: 14px;
             color: #1a1a1a;
+            margin-bottom: 3px;
           }
           .item-brand {
+            font-size: 10px;
+            color: #666;
+            font-weight: 500;
+          }
+          .item-id {
             font-size: 9px;
-            color: #888;
+            color: ${theme.secondary};
+            font-family: monospace;
+            margin-top: 2px;
           }
           .item-note {
-            font-size: 8px;
+            font-size: 9px;
             color: ${theme.secondary};
             font-style: italic;
-            margin-top: 2px;
+            margin-top: 4px;
+            background: ${theme.light}50;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
+          }
+          .qty-cell {
+            font-weight: 700;
+            font-size: 14px;
+            color: #333;
           }
           .gift-cell {
             color: #16a34a;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 14px;
           }
           .price-cell {
             font-family: monospace;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 12px;
+            color: #555;
           }
           .total-cell {
             font-family: monospace;
-            font-weight: 700;
+            font-weight: 800;
+            font-size: 14px;
             color: ${theme.primary};
           }
           .summary-section {
-            padding: 15px;
+            padding: 20px 24px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-            border-top: 2px solid ${theme.light};
+            align-items: center;
+            gap: 24px;
+            border-top: 3px solid ${theme.light};
+            background: ${theme.light}20;
           }
           .summary-left {
             flex: 1;
-          }
-          .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
           }
           .summary-item {
-            background: ${theme.light};
-            padding: 10px;
-            border-radius: 8px;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 10px;
             text-align: center;
+            border: 2px solid ${theme.light};
+            min-width: 80px;
           }
           .summary-item .label {
-            font-size: 9px;
+            font-size: 10px;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
+            font-weight: 500;
           }
           .summary-item .value {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
             color: ${theme.primary};
           }
           .grand-total-box {
-            background: ${theme.primary};
+            background: linear-gradient(135deg, ${theme.primary}, ${theme.secondary});
             color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 18px 32px;
+            border-radius: 14px;
             text-align: center;
-            min-width: 150px;
+            min-width: 180px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
           }
           .grand-total-box .label {
-            font-size: 10px;
-            opacity: 0.9;
-            margin-bottom: 4px;
+            font-size: 11px;
+            opacity: 0.95;
+            margin-bottom: 6px;
+            font-weight: 500;
           }
           .grand-total-box .value {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 800;
             font-family: monospace;
           }
           .grand-total-box .currency {
-            font-size: 11px;
+            font-size: 12px;
             opacity: 0.9;
+            margin-top: 4px;
           }
           .invoice-footer {
-            padding: 15px 20px;
+            padding: 18px 24px;
             background: ${theme.light};
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
+            border-top: 2px solid ${theme.primary}30;
           }
           .footer-thanks {
-            font-size: 10px;
-            color: #666;
+            font-size: 11px;
+            color: #555;
           }
           .signature-area {
             text-align: center;
           }
           .signature-line {
-            width: 120px;
-            border-bottom: 1px solid #333;
-            height: 30px;
-            margin-bottom: 4px;
+            width: 140px;
+            border-bottom: 2px solid #333;
+            height: 35px;
+            margin-bottom: 6px;
           }
           .signature-label {
+            font-size: 10px;
+            color: #555;
+            font-weight: 500;
+          }
+          .signature-date {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+          }
+          .signature-date span {
             font-size: 9px;
             color: #666;
+          }
+          .signature-date-line {
+            width: 80px;
+            border-bottom: 1px solid #999;
           }
           .qr-section {
             text-align: center;
           }
           .qr-box {
             background: white;
-            padding: 6px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e5e5e5;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 2px solid ${theme.light};
             display: inline-block;
           }
           .qr-label {
-            font-size: 7px;
-            color: #999;
-            margin-top: 4px;
+            font-size: 8px;
+            color: #888;
+            margin-top: 6px;
           }
           @media print { 
-            body { padding: 10px; }
-            .invoice-container { border-width: 1px; }
+            body { 
+              padding: 0;
+              width: 100%;
+            }
+            .invoice-container { 
+              border-width: 2px;
+            }
           }
         </style>
       </head>
@@ -532,60 +602,69 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                 </div>
               </div>
 
-              {/* Items Table */}
-              <div className="p-3 sm:p-4">
-                <div className="overflow-x-auto -mx-1">
-                  <table className="w-full border-collapse min-w-[500px]" style={{ border: `1px solid ${theme.light}`, borderRadius: '8px', overflow: 'hidden' }}>
+              {/* Items Table - A4 Professional Design */}
+              <div className="p-4 sm:p-5">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse" style={{ border: `2px solid ${theme.primary}`, borderRadius: '12px', overflow: 'hidden' }}>
                     <thead>
-                      <tr style={{ backgroundColor: theme.primary }}>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>#</th>
-                        <th className="py-2 px-2 text-right text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>مادە</th>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>بۆکس</th>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>دانە</th>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>🎁</th>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>نرخ</th>
-                        <th className="py-2 px-2 text-center text-[9px] sm:text-[10px] font-semibold text-white border-b-2" style={{ borderColor: theme.secondary }}>کۆ</th>
+                      <tr style={{ background: `linear-gradient(180deg, ${theme.primary}, ${theme.secondary})` }}>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '40px' }}>#</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '60px' }}>وێنە</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '80px' }}>ئایدی</th>
+                        <th className="py-3 px-3 text-right text-[10px] sm:text-xs font-bold text-white">ناوی مادە</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '70px' }}>عەدەد</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '60px' }}>🎁</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '90px' }}>نرخی تاک</th>
+                        <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '100px' }}>کۆی نرخ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cartItems.map((cartItem, index) => {
-                        const itemTotal = ((cartItem.boxCount || 0) + (cartItem.pieceCount || 0)) * cartItem.price;
+                        const totalQty = (cartItem.boxCount || 0) + (cartItem.pieceCount || 0);
+                        const itemTotal = totalQty * cartItem.price;
                         return (
                           <tr 
                             key={index} 
                             style={{ 
-                              backgroundColor: index % 2 === 1 ? `${theme.light}30` : 'transparent',
-                              borderBottom: `1px solid ${theme.light}`
+                              backgroundColor: index % 2 === 1 ? `${theme.light}40` : 'white',
+                              borderBottom: `1.5px solid ${theme.light}`
                             }}
                           >
-                            <td className="py-2 px-2 text-center text-[10px] font-bold text-gray-600">{index + 1}</td>
-                            <td className="py-2 px-2">
-                              <div className="flex items-center gap-2">
-                                {cartItem.item.image_url ? (
-                                  <img 
-                                    src={cartItem.item.image_url} 
-                                    alt={cartItem.item.name}
-                                    style={{ width: '26px', height: '26px', minWidth: '26px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #ddd' }}
-                                  />
-                                ) : (
-                                  <div style={{ width: '26px', height: '26px', minWidth: '26px', borderRadius: '4px', background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#999' }}>📦</div>
-                                )}
-                                <div style={{ flex: 1 }}>
-                                  <div className="font-semibold text-[10px] sm:text-[11px] text-black">{cartItem.item.name}</div>
-                                  {cartItem.item.brands && (
-                                    <div className="text-[8px] text-gray-500">{cartItem.item.brands.name}</div>
-                                  )}
-                                  {cartItem.note && (
-                                    <div className="text-[7px] italic mt-0.5" style={{ color: theme.secondary }}>📝 {cartItem.note}</div>
-                                  )}
-                                </div>
-                              </div>
+                            <td className="py-3 px-2 text-center text-sm font-bold" style={{ color: theme.primary }}>{index + 1}</td>
+                            <td className="py-3 px-2 text-center">
+                              {cartItem.item.image_url ? (
+                                <img 
+                                  src={cartItem.item.image_url} 
+                                  alt={cartItem.item.name}
+                                  style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', border: `2px solid ${theme.light}`, margin: '0 auto', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}
+                                />
+                              ) : (
+                                <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: `linear-gradient(135deg, #f5f5f5, #e5e5e5)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: '#aaa', margin: '0 auto', border: `2px solid ${theme.light}` }}>📦</div>
+                              )}
                             </td>
-                            <td className="py-2 px-2 text-center font-semibold text-[10px]">{cartItem.boxCount || '-'}</td>
-                            <td className="py-2 px-2 text-center font-semibold text-[10px]">{cartItem.pieceCount || '-'}</td>
-                            <td className="py-2 px-2 text-center font-semibold text-[10px] text-green-600">{cartItem.giftQuantity || '-'}</td>
-                            <td className="py-2 px-2 text-center font-mono text-[10px]" dir="ltr">{cartItem.price.toLocaleString()}</td>
-                            <td className="py-2 px-2 text-center font-mono font-bold text-[10px]" dir="ltr" style={{ color: theme.primary }}>{itemTotal.toLocaleString()}</td>
+                            <td className="py-3 px-2 text-center">
+                              <span className="text-[10px] sm:text-xs font-mono px-2 py-1 rounded" style={{ background: theme.light, color: theme.secondary }}>
+                                {cartItem.item.barcode?.slice(-8) || cartItem.item.id.slice(0, 8)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              <div className="font-bold text-sm text-black">{cartItem.item.name}</div>
+                              {cartItem.item.brands && (
+                                <div className="text-[10px] text-gray-500 mt-0.5">{cartItem.item.brands.name}</div>
+                              )}
+                              {cartItem.note && (
+                                <div className="text-[9px] italic mt-1 px-2 py-1 rounded inline-block" style={{ background: `${theme.light}50`, color: theme.secondary }}>📝 {cartItem.note}</div>
+                              )}
+                            </td>
+                            <td className="py-3 px-2 text-center">
+                              <div className="font-bold text-base text-gray-800">{totalQty}</div>
+                              {(cartItem.boxCount || 0) > 0 && (cartItem.pieceCount || 0) > 0 && (
+                                <div className="text-[8px] text-gray-500 mt-0.5">({cartItem.boxCount}📦 + {cartItem.pieceCount})</div>
+                              )}
+                            </td>
+                            <td className="py-3 px-2 text-center font-bold text-base text-green-600">{cartItem.giftQuantity || '-'}</td>
+                            <td className="py-3 px-2 text-center font-mono text-sm font-semibold text-gray-600" dir="ltr">{cartItem.price.toLocaleString()}</td>
+                            <td className="py-3 px-2 text-center font-mono text-base font-bold" dir="ltr" style={{ color: theme.primary }}>{itemTotal.toLocaleString()}</td>
                           </tr>
                         );
                       })}
@@ -594,67 +673,67 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                 </div>
               </div>
 
-              {/* Summary Section */}
-              <div className="p-3 sm:p-4 flex flex-wrap justify-between items-start gap-3" style={{ borderTop: `2px solid ${theme.light}` }}>
+              {/* Summary Section - Enhanced A4 */}
+              <div className="p-4 sm:p-5 flex flex-wrap justify-between items-center gap-4" style={{ borderTop: `3px solid ${theme.light}`, background: `${theme.light}20` }}>
                 {/* Left - Summary Grid */}
-                <div className="flex gap-2 flex-wrap flex-1">
-                  <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: theme.light }}>
-                    <p className="text-[8px] text-gray-500 mb-1">کۆی بۆکس</p>
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{totalBoxes}</p>
+                <div className="flex gap-3 flex-wrap flex-1">
+                  <div className="text-center px-5 py-3 rounded-xl bg-white" style={{ border: `2px solid ${theme.light}` }}>
+                    <p className="text-[9px] text-gray-500 mb-1 font-medium">کۆی بۆکس</p>
+                    <p className="text-xl font-extrabold" style={{ color: theme.primary }}>{totalBoxes}</p>
                   </div>
-                  <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: theme.light }}>
-                    <p className="text-[8px] text-gray-500 mb-1">کۆی دانە</p>
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{totalPieces}</p>
+                  <div className="text-center px-5 py-3 rounded-xl bg-white" style={{ border: `2px solid ${theme.light}` }}>
+                    <p className="text-[9px] text-gray-500 mb-1 font-medium">کۆی دانە</p>
+                    <p className="text-xl font-extrabold" style={{ color: theme.primary }}>{totalPieces}</p>
                   </div>
                   {totalGifts > 0 && (
-                    <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: theme.light }}>
-                      <p className="text-[8px] text-gray-500 mb-1">🎁 هەدیە</p>
-                      <p className="text-lg font-bold text-green-600">{totalGifts}</p>
+                    <div className="text-center px-5 py-3 rounded-xl bg-white" style={{ border: `2px solid ${theme.light}` }}>
+                      <p className="text-[9px] text-gray-500 mb-1 font-medium">🎁 هەدیە</p>
+                      <p className="text-xl font-extrabold text-green-600">{totalGifts}</p>
                     </div>
                   )}
-                  <div className="text-center px-4 py-2 rounded-lg" style={{ backgroundColor: theme.light }}>
-                    <p className="text-[8px] text-gray-500 mb-1">ژمارەی مادە</p>
-                    <p className="text-lg font-bold" style={{ color: theme.primary }}>{cartItems.length}</p>
+                  <div className="text-center px-5 py-3 rounded-xl bg-white" style={{ border: `2px solid ${theme.light}` }}>
+                    <p className="text-[9px] text-gray-500 mb-1 font-medium">ژمارەی مادە</p>
+                    <p className="text-xl font-extrabold" style={{ color: theme.primary }}>{cartItems.length}</p>
                   </div>
                 </div>
 
                 {/* Right - Grand Total */}
                 <div 
-                  className="text-center px-5 py-3 rounded-xl text-white"
-                  style={{ backgroundColor: theme.primary }}
+                  className="text-center px-7 py-4 rounded-2xl text-white"
+                  style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, boxShadow: '0 6px 20px rgba(0,0,0,0.15)' }}
                 >
-                  <p className="text-[9px] opacity-90 mb-1">کۆی گشتی</p>
-                  <p className="text-xl sm:text-2xl font-bold font-mono" dir="ltr">{totalPrice.toLocaleString()}</p>
-                  <p className="text-[10px] opacity-90">دینار</p>
+                  <p className="text-[10px] opacity-95 mb-1 font-medium">کۆی گشتی</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold font-mono" dir="ltr">{totalPrice.toLocaleString()}</p>
+                  <p className="text-[11px] opacity-90 mt-1">دینار</p>
                 </div>
               </div>
 
-              {/* Footer with QR Code */}
-              <div className="p-3 sm:p-4 flex justify-between items-end" style={{ backgroundColor: theme.light }}>
-                <div className="text-[9px] text-gray-500">
-                  <p>✨ سوپاس بۆ هاوکاریکردنتان</p>
-                  <p className="mt-0.5">{invoiceSettings.companyName}</p>
+              {/* Footer with QR Code - Enhanced */}
+              <div className="p-4 sm:p-5 flex justify-between items-end" style={{ backgroundColor: theme.light }}>
+                <div className="text-[10px] text-gray-600">
+                  <p className="font-medium">✨ سوپاس بۆ هاوکاریکردنتان</p>
+                  <p className="mt-1 font-semibold" style={{ color: theme.primary }}>{invoiceSettings.companyName}</p>
                 </div>
                 
                 {/* QR Code */}
                 <div className="text-center">
-                  <div className="bg-white p-1.5 rounded-lg shadow-sm border border-gray-200">
+                  <div className="bg-white p-2 rounded-xl shadow-sm" style={{ border: `2px solid ${theme.light}` }}>
                     <QRCodeSVG 
                       value={qrData} 
-                      size={60}
+                      size={70}
                       level="M"
                       fgColor={theme.primary}
                     />
                   </div>
-                  <p className="text-[7px] text-gray-400 mt-1">زانیاری پسولە</p>
+                  <p className="text-[8px] text-gray-500 mt-1.5">زانیاری پسولە</p>
                 </div>
 
                 <div className="text-center">
-                  <div className="w-28 h-8 border-b border-gray-400 mb-1"></div>
-                  <p className="text-[8px] text-gray-500">واژووی وەرگر</p>
-                  <div className="mt-2 flex items-center gap-1 justify-center">
-                    <span className="text-[8px] text-gray-400">بەروار:</span>
-                    <div className="w-16 border-b border-gray-300"></div>
+                  <div className="w-32 h-9 border-b-2 border-gray-400 mb-1.5"></div>
+                  <p className="text-[9px] text-gray-600 font-medium">واژووی وەرگر</p>
+                  <div className="mt-2 flex items-center gap-1.5 justify-center">
+                    <span className="text-[9px] text-gray-500">بەروار:</span>
+                    <div className="w-20 border-b border-gray-400"></div>
                   </div>
                 </div>
               </div>
