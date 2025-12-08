@@ -250,12 +250,12 @@ export default function StockAdjust() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">براند</Label>
-                        <Select value={editBrandId} onValueChange={setEditBrandId}>
+                        <Select value={editBrandId || "none"} onValueChange={(val) => setEditBrandId(val === "none" ? "" : val)}>
                           <SelectTrigger>
                             <SelectValue placeholder="براند هەڵبژێرە" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-- بێ براند --</SelectItem>
+                            <SelectItem value="none">-- بێ براند --</SelectItem>
                             {brands?.map((brand) => (
                               <SelectItem key={brand.id} value={brand.id}>
                                 {brand.name}
@@ -266,12 +266,12 @@ export default function StockAdjust() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">هاوپۆل</Label>
-                        <Select value={editCategoryId} onValueChange={setEditCategoryId}>
+                        <Select value={editCategoryId || "none"} onValueChange={(val) => setEditCategoryId(val === "none" ? "" : val)}>
                           <SelectTrigger>
                             <SelectValue placeholder="هاوپۆل هەڵبژێرە" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">-- بێ هاوپۆل --</SelectItem>
+                            <SelectItem value="none">-- بێ هاوپۆل --</SelectItem>
                             {categories?.map((cat) => (
                               <SelectItem key={cat.id} value={cat.id}>
                                 {cat.name}
