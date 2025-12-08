@@ -15,7 +15,8 @@ interface StockInReceiptData {
   boxCount?: number;
   pieceCount?: number;
   giftQuantity?: number;
-  price: number;
+  boxPrice?: number;
+  piecePrice?: number;
   date: string;
   note?: string;
   weight_kg?: number;
@@ -37,10 +38,11 @@ export function StockInReceiptDialog({
 
   if (!receiptData) return null;
 
-  const { item, quantity, boxCount, pieceCount, giftQuantity, price, date, note, weight_kg, weight_gram } = receiptData;
-  // Price only applies to box + pieces, not gifts
-  const paidQuantity = (boxCount || 0) + (pieceCount || 0);
-  const totalPrice = paidQuantity * price;
+  const { item, quantity, boxCount, pieceCount, giftQuantity, boxPrice, piecePrice, date, note, weight_kg, weight_gram } = receiptData;
+  // Calculate total price from box and piece prices
+  const boxTotal = (boxCount || 0) * (boxPrice || 0);
+  const pieceTotal = (pieceCount || 0) * (piecePrice || 0);
+  const totalPrice = boxTotal + pieceTotal;
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -218,22 +220,26 @@ export function StockInReceiptDialog({
           </div>
           ` : ''}
           
-          ${price > 0 ? `
+          ${(boxPrice && boxPrice > 0) || (piecePrice && piecePrice > 0) ? `
           <div class="info-row">
             <span class="info-label">نرخی کڕین:</span>
-            <span class="info-value">${price.toLocaleString()} د.ع</span>
+            <span class="info-value">
+              ${boxPrice && boxPrice > 0 ? `بۆکس: ${boxPrice.toLocaleString()} د.ع` : ''}
+              ${boxPrice && piecePrice && boxPrice > 0 && piecePrice > 0 ? ' | ' : ''}
+              ${piecePrice && piecePrice > 0 ? `دانە: ${piecePrice.toLocaleString()} د.ع` : ''}
+            </span>
           </div>
           ` : ''}
           
           <div class="quantity-box">
             <div class="label">ژمارەی داخڵکراو</div>
             <div style="display: flex; justify-content: center; gap: 20px; margin: 10px 0;">
-              ${boxCount ? `<div><span class="value" style="font-size: 24px;">${boxCount}</span> <span class="unit">بۆکس</span></div>` : ''}
-              ${pieceCount ? `<div><span class="value" style="font-size: 24px;">${pieceCount}</span> <span class="unit">دانە</span></div>` : ''}
+              ${boxCount ? `<div><span class="value" style="font-size: 24px;">${boxCount}</span> <span class="unit">بۆکس</span>${boxPrice && boxPrice > 0 ? `<div style="font-size: 11px; color: #666;">${(boxCount * boxPrice).toLocaleString()} د.ع</div>` : ''}</div>` : ''}
+              ${pieceCount ? `<div><span class="value" style="font-size: 24px;">${pieceCount}</span> <span class="unit">دانە</span>${piecePrice && piecePrice > 0 ? `<div style="font-size: 11px; color: #666;">${(pieceCount * piecePrice).toLocaleString()} د.ع</div>` : ''}</div>` : ''}
               ${giftQuantity ? `<div><span class="value" style="font-size: 24px;">${giftQuantity}</span> <span class="unit">🎁 هەدیە</span></div>` : ''}
             </div>
             <div style="font-size: 14px; color: #666; margin-top: 5px;">کۆی گشتی: ${quantity} ${item.unit}</div>
-            ${price > 0 ? `<div style="margin-top: 8px; font-size: 16px; color: #059669;">کۆی نرخ: ${totalPrice.toLocaleString()} د.ع</div>` : ''}
+            ${totalPrice > 0 ? `<div style="margin-top: 8px; font-size: 16px; color: #059669;">کۆی نرخ: ${totalPrice.toLocaleString()} د.ع</div>` : ''}
           </div>
           
           ${note ? `
@@ -319,10 +325,14 @@ export function StockInReceiptDialog({
           </div>
 
           {/* Price Info */}
-          {price > 0 && (
+          {((boxPrice && boxPrice > 0) || (piecePrice && piecePrice > 0)) && (
             <div className="flex justify-between items-center py-1 border-b border-border/50">
               <span className="text-sm text-muted-foreground">نرخی کڕین:</span>
-              <span className="font-medium text-foreground" dir="ltr">{price.toLocaleString()} د.ع</span>
+              <span className="font-medium text-foreground text-sm">
+                {boxPrice && boxPrice > 0 && `بۆکس: ${boxPrice.toLocaleString()} د.ع`}
+                {boxPrice && piecePrice && boxPrice > 0 && piecePrice > 0 && ' | '}
+                {piecePrice && piecePrice > 0 && `دانە: ${piecePrice.toLocaleString()} د.ع`}
+              </span>
             </div>
           )}
 
@@ -334,12 +344,18 @@ export function StockInReceiptDialog({
                 <div>
                   <p className="text-2xl font-bold text-success">{boxCount}</p>
                   <p className="text-xs text-success">بۆکس</p>
+                  {boxPrice && boxPrice > 0 && (
+                    <p className="text-[10px] text-muted-foreground">{(boxCount * boxPrice).toLocaleString()} د.ع</p>
+                  )}
                 </div>
               ) : null}
               {pieceCount ? (
                 <div>
                   <p className="text-2xl font-bold text-success">{pieceCount}</p>
                   <p className="text-xs text-success">دانە</p>
+                  {piecePrice && piecePrice > 0 && (
+                    <p className="text-[10px] text-muted-foreground">{(pieceCount * piecePrice).toLocaleString()} د.ع</p>
+                  )}
                 </div>
               ) : null}
               {giftQuantity ? (
@@ -350,7 +366,7 @@ export function StockInReceiptDialog({
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground mt-2">کۆی گشتی: {quantity} {item.unit}</p>
-            {price > 0 && (
+            {totalPrice > 0 && (
               <div className="mt-2 pt-2 border-t border-success/20">
                 <p className="text-sm text-muted-foreground">کۆی نرخ</p>
                 <p className="text-xl font-bold text-success" dir="ltr">{totalPrice.toLocaleString()} د.ع</p>
