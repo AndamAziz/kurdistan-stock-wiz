@@ -5,6 +5,7 @@ import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
 import { useItems, useStockMovements } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -18,6 +19,7 @@ import {
   Bell,
   DollarSign,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -26,6 +28,7 @@ export default function Dashboard() {
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings } = useNotificationSettings();
+  const { isAdmin } = useUserRoles();
 
   const handleCheckNotifications = async () => {
     if (permission !== 'granted') {
@@ -71,6 +74,25 @@ export default function Dashboard() {
       ?.filter(m => m.movement_type === 'IN')
       .reduce((sum, m) => sum + ((m.price as number || 0) * m.quantity), 0) || 0;
 
+    // Calculate total stock value based on IN movements price per item
+    // This is an estimation - total value = sum of (current_quantity * average_purchase_price)
+    const stockValueByItem = new Map<string, { totalCost: number; totalQty: number }>();
+    movements?.filter(m => m.movement_type === 'IN').forEach(m => {
+      const existing = stockValueByItem.get(m.item_id) || { totalCost: 0, totalQty: 0 };
+      existing.totalCost += (m.price as number || 0) * m.quantity;
+      existing.totalQty += m.quantity;
+      stockValueByItem.set(m.item_id, existing);
+    });
+
+    let totalStockValue = 0;
+    items.forEach(item => {
+      const purchaseData = stockValueByItem.get(item.id);
+      if (purchaseData && purchaseData.totalQty > 0) {
+        const avgPrice = purchaseData.totalCost / purchaseData.totalQty;
+        totalStockValue += item.current_quantity * avgPrice;
+      }
+    });
+
     return {
       totalItems: items.length,
       totalQuantity: items.reduce((sum, item) => sum + item.current_quantity, 0),
@@ -81,6 +103,7 @@ export default function Dashboard() {
       topMoving,
       totalSales,
       totalPurchases,
+      totalStockValue,
     };
   }, [items, movements, settings.reminderDays]);
 
@@ -125,27 +148,48 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-          <StatCard
-            title="کۆی فرۆشراو"
-            value={`${formatCurrency(stats.totalSales)} د.ع`}
-            icon={DollarSign}
-            variant="success"
-            delay={0}
-          />
-          <StatCard
-            title="کۆی کڕاو"
-            value={`${formatCurrency(stats.totalPurchases)} د.ع`}
-            icon={TrendingUp}
-            delay={50}
-          />
-          <StatCard
-            title="کۆی مادەکان"
-            value={stats.totalItems}
-            icon={Package}
-            delay={100}
-          />
+        {/* Stats Grid - Financial stats only for Admin */}
+        {isAdmin && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+            <StatCard
+              title="کۆی فرۆشراو"
+              value={`${formatCurrency(stats.totalSales)} د.ع`}
+              icon={DollarSign}
+              variant="success"
+              delay={0}
+            />
+            <StatCard
+              title="کۆی کڕاو"
+              value={`${formatCurrency(stats.totalPurchases)} د.ع`}
+              icon={TrendingUp}
+              delay={50}
+            />
+            <StatCard
+              title="نرخی ستۆک"
+              value={`${formatCurrency(stats.totalStockValue)} د.ع`}
+              icon={Wallet}
+              variant="success"
+              delay={75}
+            />
+            <StatCard
+              title="کۆی مادەکان"
+              value={stats.totalItems}
+              icon={Package}
+              delay={100}
+            />
+          </div>
+        )}
+
+        {/* Basic Stats - visible to all */}
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 ${isAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-4'}`}>
+          {!isAdmin && (
+            <StatCard
+              title="کۆی مادەکان"
+              value={stats.totalItems}
+              icon={Package}
+              delay={100}
+            />
+          )}
           <StatCard
             title="کۆی ستۆک"
             value={stats.totalQuantity}

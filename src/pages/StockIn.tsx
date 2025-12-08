@@ -34,7 +34,8 @@ const formSchema = z.object({
   boxCount: z.coerce.number().min(0).default(0),
   pieceCount: z.coerce.number().min(0).default(0),
   giftQuantity: z.coerce.number().min(0).default(0),
-  price: z.coerce.number().min(0, "نرخ پێویستە").default(0),
+  boxPrice: z.coerce.number().min(0).default(0),
+  piecePrice: z.coerce.number().min(0).default(0),
   weight_kg: z.coerce.number().min(0).optional(),
   weight_gram: z.coerce.number().min(0).optional(),
   brand_id: z.string().optional(),
@@ -55,7 +56,8 @@ interface ReceiptData {
   boxCount?: number;
   pieceCount?: number;
   giftQuantity?: number;
-  price: number;
+  boxPrice?: number;
+  piecePrice?: number;
   date: string;
   note?: string;
   weight_kg?: number;
@@ -81,7 +83,8 @@ export default function StockIn() {
       boxCount: 0,
       pieceCount: 0,
       giftQuantity: 0,
-      price: 0,
+      boxPrice: 0,
+      piecePrice: 0,
       weight_kg: undefined,
       weight_gram: undefined,
       brand_id: undefined,
@@ -152,7 +155,8 @@ export default function StockIn() {
           boxCount: boxQty || undefined,
           pieceCount: pieceQty || undefined,
           giftQuantity: giftQty || undefined,
-          price: data.price,
+          boxPrice: data.boxPrice || undefined,
+          piecePrice: data.piecePrice || undefined,
           date: data.date_added,
           note: data.note || undefined,
           weight_kg: data.weight_kg || undefined,
@@ -287,20 +291,47 @@ export default function StockIn() {
                   )}
                 />
 
+              </div>
+
+              {/* Prices for Box and Piece */}
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="price"
+                  name="boxPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>نرخی تاک (دینار)</FormLabel>
+                      <FormLabel>نرخی بۆکس (دینار)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
                           min={0} 
                           step="250"
-                          placeholder="نرخ" 
+                          placeholder="نرخی هەر بۆکسێک" 
                           dir="ltr"
                           {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="piecePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>نرخی دانە (دینار)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          step="250"
+                          placeholder="نرخی هەر دانەیەک" 
+                          dir="ltr"
+                          {...field} 
+                          value={field.value || ''}
                         />
                       </FormControl>
                       <FormMessage />
