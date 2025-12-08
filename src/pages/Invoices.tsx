@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { useInvoices, useInvoiceWithItems, useDeleteInvoice, Invoice } from "@/hooks/useInvoices";
 import { useUserRoles } from "@/hooks/useUserRoles";
-import { FileText, Search, Eye, Printer, Trash2, ArrowDownToLine, ArrowUpFromLine, Loader2, Send } from "lucide-react";
+import { FileText, Search, Eye, Printer, Trash2, ArrowDownToLine, ArrowUpFromLine, Loader2, Send, Pencil } from "lucide-react";
+import { EditInvoiceDialog } from "@/components/invoice/EditInvoiceDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useInvoiceSettings, colorThemes } from "@/pages/Settings";
@@ -40,6 +41,7 @@ export default function Invoices() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'stock_in' | 'stock_out'>('all');
   
   const { isAdmin } = useUserRoles();
@@ -63,6 +65,11 @@ export default function Invoices() {
   const handleViewInvoice = (invoice: Invoice) => {
     setSelectedInvoiceId(invoice.id);
     setPreviewOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setSelectedInvoiceId(invoice.id);
+    setEditOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -381,9 +388,21 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                                 size="icon"
                                 onClick={() => handleViewInvoice(invoice)}
                                 className="h-8 w-8"
+                                title="بینین"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
+                              {isAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditInvoice(invoice)}
+                                  className="h-8 w-8"
+                                  title="دەستکاری"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
                               {isAdmin && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
@@ -528,6 +547,14 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Edit Invoice Dialog */}
+        <EditInvoiceDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          invoice={selectedInvoice}
+          onSuccess={() => setSelectedInvoiceId(null)}
+        />
       </div>
     </Layout>
   );
