@@ -15,7 +15,7 @@ import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } f
 import { useCreateInvoice, useInvoices, useInvoiceWithItems, useDeleteInvoice, Invoice } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
-import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil, Eye } from "lucide-react";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil, Eye, MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -41,6 +41,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CartItem {
   item: ItemWithRelations;
@@ -665,45 +671,49 @@ export default function StockOut() {
                             {invoice.invoice_date}
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => {
-                                  setSelectedInvoiceId(invoice.id);
-                                  setViewInvoiceOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                              {isAdmin && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => {
-                                      setSelectedInvoiceId(invoice.id);
-                                      setEditInvoiceOpen(true);
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4 text-primary" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => {
-                                      setInvoiceToDelete(invoice);
-                                      setDeleteDialogOpen(true);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedInvoiceId(invoice.id);
+                                    setViewInvoiceOpen(true);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  بینین
+                                </DropdownMenuItem>
+                                {isAdmin && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedInvoiceId(invoice.id);
+                                        setEditInvoiceOpen(true);
+                                      }}
+                                      className="gap-2"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                      دەستکاری
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setInvoiceToDelete(invoice);
+                                        setDeleteDialogOpen(true);
+                                      }}
+                                      className="gap-2 text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      سڕینەوە
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
