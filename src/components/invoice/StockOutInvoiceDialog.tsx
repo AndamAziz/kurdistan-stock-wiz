@@ -15,6 +15,7 @@ import { toast } from "sonner";
 interface CartItem {
   item: ItemWithRelations;
   quantity: number;
+  price: number;
   note?: string;
 }
 
@@ -42,6 +43,7 @@ export function StockOutInvoiceDialog({
   const invoiceNumber = `OUT-${Date.now().toString(36).toUpperCase()}`;
   const today = format(new Date(), "yyyy/MM/dd");
   const totalItems = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
+  const totalPrice = cartItems.reduce((sum, ci) => sum + (ci.quantity * ci.price), 0);
 
   const handlePrint = () => {
     const printContent = invoiceRef.current;
@@ -102,7 +104,7 @@ export function StockOutInvoiceDialog({
     }
 
     let itemsList = cartItems.map((ci, idx) => 
-      `${idx + 1}. ${ci.item.name} (${ci.quantity} ${ci.item.unit})${ci.item.exp_date ? ` - بەسەرچوون: ${ci.item.exp_date}` : ''}${ci.note ? ` - ${ci.note}` : ''}`
+      `${idx + 1}. ${ci.item.name} (${ci.quantity} × ${ci.price.toLocaleString()} = ${(ci.quantity * ci.price).toLocaleString()} د.ع)${ci.item.exp_date ? ` - بەسەرچوون: ${ci.item.exp_date}` : ''}${ci.note ? ` - ${ci.note}` : ''}`
     ).join('\n');
 
     const message = `
@@ -115,7 +117,8 @@ export function StockOutInvoiceDialog({
 ${itemsList}
 
 ━━━━━━━━━━━━━━━━
-📊 کۆی گشتی: ${totalItems} دانە
+📊 کۆی دانە: ${totalItems}
+💰 کۆی گشتی: ${totalPrice.toLocaleString()} د.ع
 
 *باکوری خۆشەویست*
 سیستەمی بەڕێوەبردنی کۆگا
@@ -183,6 +186,8 @@ ${itemsList}
                   <th className="text-right py-2 px-1">#</th>
                   <th className="text-right py-2 px-1">ناوی مادە</th>
                   <th className="text-center py-2 px-1">بڕ</th>
+                  <th className="text-center py-2 px-1">نرخ</th>
+                  <th className="text-center py-2 px-1">کۆ</th>
                   <th className="text-right py-2 px-1">بەسەرچوون</th>
                 </tr>
               </thead>
@@ -205,9 +210,12 @@ ${itemsList}
                     </td>
                     <td className="py-2 px-1 text-center font-semibold">
                       {cartItem.quantity}
-                      <span className="text-xs text-muted-foreground block">
-                        {cartItem.item.unit}
-                      </span>
+                    </td>
+                    <td className="py-2 px-1 text-center text-muted-foreground" dir="ltr">
+                      {cartItem.price.toLocaleString()}
+                    </td>
+                    <td className="py-2 px-1 text-center font-semibold text-primary" dir="ltr">
+                      {(cartItem.quantity * cartItem.price).toLocaleString()}
                     </td>
                     <td className="py-2 px-1 text-destructive text-xs">
                       {cartItem.item.exp_date || '-'}
@@ -218,10 +226,15 @@ ${itemsList}
             </table>
 
             {/* Total */}
-            <div className="bg-primary/10 rounded-lg p-3 text-center">
-              <span className="text-muted-foreground">کۆی گشتی: </span>
-              <span className="font-bold text-lg">{totalItems}</span>
-              <span className="text-muted-foreground"> دانە</span>
+            <div className="bg-primary/10 rounded-lg p-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">کۆی دانە:</span>
+                <span className="font-semibold">{totalItems}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold">
+                <span>کۆی گشتی:</span>
+                <span className="text-primary" dir="ltr">{totalPrice.toLocaleString()} د.ع</span>
+              </div>
             </div>
 
             <Separator className="my-3" />
