@@ -2,13 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
-import {
-  getDashboardStats,
-  getExpiredItems,
-  getLowStockItems,
-  getSoonToExpireItems,
-  getTopMovingItems,
-} from "@/lib/mockData";
+import { useItems } from "@/hooks/useItems";
 import {
   Package,
   PackageCheck,
@@ -16,14 +10,55 @@ import {
   PackageX,
   Clock,
   TrendingDown,
+  Loader2,
 } from "lucide-react";
+import { useMemo } from "react";
 
 export default function Dashboard() {
-  const stats = getDashboardStats();
-  const expiredItems = getExpiredItems();
-  const lowStockItems = getLowStockItems();
-  const soonToExpire = getSoonToExpireItems();
-  const topItems = getTopMovingItems();
+  const { data: items, isLoading } = useItems();
+
+  const stats = useMemo(() => {
+    if (!items) return null;
+
+    const today = new Date();
+    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const expiredItems = items.filter(item => 
+      item.exp_date && new Date(item.exp_date) < today
+    );
+    const soonToExpire = items.filter(item => {
+      if (!item.exp_date) return false;
+      const expDate = new Date(item.exp_date);
+      return expDate > today && expDate <= thirtyDaysLater;
+    });
+    const lowStockItems = items.filter(item => 
+      item.current_quantity <= item.min_stock && item.current_quantity > 0
+    );
+    const outOfStock = items.filter(item => item.current_quantity === 0);
+    const topMoving = [...items]
+      .sort((a, b) => b.total_out - a.total_out)
+      .slice(0, 5);
+
+    return {
+      totalItems: items.length,
+      totalQuantity: items.reduce((sum, item) => sum + item.current_quantity, 0),
+      expiredItems,
+      soonToExpire,
+      lowStockItems,
+      outOfStock,
+      topMoving,
+    };
+  }, [items]);
+
+  if (isLoading || !stats) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -53,28 +88,28 @@ export default function Dashboard() {
           />
           <StatCard
             title="بەسەرچوو"
-            value={stats.expiredItems}
+            value={stats.expiredItems.length}
             icon={AlertTriangle}
             variant="danger"
             delay={200}
           />
           <StatCard
             title="نزیک بەسەرچوون"
-            value={stats.soonToExpire}
+            value={stats.soonToExpire.length}
             icon={Clock}
             variant="warning"
             delay={300}
           />
           <StatCard
             title="کەم ستۆک"
-            value={stats.lowStockItems}
+            value={stats.lowStockItems.length}
             icon={TrendingDown}
             variant="warning"
             delay={400}
           />
           <StatCard
             title="نەماوە"
-            value={stats.outOfStock}
+            value={stats.outOfStock.length}
             icon={PackageX}
             variant="danger"
             delay={500}
@@ -89,9 +124,27 @@ export default function Dashboard() {
               ئاگادارکردنەوەکان
             </h2>
             <AlertsList
-              expiredItems={expiredItems}
-              lowStockItems={lowStockItems}
-              soonToExpire={soonToExpire}
+              expiredItems={stats.expiredItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                expDate: item.exp_date || '',
+                quantity: item.current_quantity,
+                minStock: item.min_stock,
+              }))}
+              lowStockItems={stats.lowStockItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                expDate: item.exp_date || '',
+                quantity: item.current_quantity,
+                minStock: item.min_stock,
+              }))}
+              soonToExpire={stats.soonToExpire.map(item => ({
+                id: item.id,
+                name: item.name,
+                expDate: item.exp_date || '',
+                quantity: item.current_quantity,
+                minStock: item.min_stock,
+              }))}
             />
           </div>
 
@@ -100,7 +153,17 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold text-foreground">
               زۆرترین فرۆشراو
             </h2>
-            <TopItemsTable items={topItems} title="5 مادەی زۆرترین خەرجکراو" />
+            <TopItemsTable 
+              items={stats.topMoving.map(item => ({
+                id: item.id,
+                name: item.name,
+                brand: item.brands?.name || '-',
+                quantity: item.current_quantity,
+                minStock: item.min_stock,
+                totalOut: item.total_out,
+              }))} 
+              title="5 مادەی زۆرترین خەرجکراو" 
+            />
           </div>
         </div>
       </div>

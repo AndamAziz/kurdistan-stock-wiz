@@ -2,28 +2,24 @@ import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { brands } from "@/lib/mockData";
-import { Building2, Plus, Edit, Trash2, Package } from "lucide-react";
-import { toast } from "sonner";
+import { useBrands, useAddBrand, useDeleteBrand } from "@/hooks/useItems";
+import { Building2, Plus, Trash2, Loader2 } from "lucide-react";
 
 export default function Brands() {
   const [newBrand, setNewBrand] = useState('');
+  const { data: brands, isLoading } = useBrands();
+  const addBrand = useAddBrand();
+  const deleteBrand = useDeleteBrand();
 
   const handleAdd = () => {
-    if (!newBrand.trim()) {
-      toast.error('تکایە ناوی براند بنووسە');
-      return;
-    }
-    toast.success(`براندی "${newBrand}" زیادکرا`);
-    setNewBrand('');
+    if (!newBrand.trim()) return;
+    addBrand.mutate(newBrand, {
+      onSuccess: () => setNewBrand(''),
+    });
   };
 
-  const handleEdit = (name: string) => {
-    toast.info(`دەستکاری ${name}`);
-  };
-
-  const handleDelete = (name: string) => {
-    toast.error(`سڕینەوەی ${name}`);
+  const handleDelete = (id: string) => {
+    deleteBrand.mutate(id);
   };
 
   return (
@@ -55,57 +51,49 @@ export default function Brands() {
               onChange={(e) => setNewBrand(e.target.value)}
               placeholder="ناوی براند..."
               className="flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
-            <Button onClick={handleAdd} className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button onClick={handleAdd} className="gap-2" disabled={addBrand.isPending}>
+              {addBrand.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               زیادکردن
             </Button>
           </div>
         </div>
 
         {/* Brands Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {brands.map((brand, index) => (
-            <div
-              key={brand.id}
-              className="rounded-xl border border-border bg-card p-6 shadow-card card-hover animate-slide-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-accent/10 p-2">
-                    <Building2 className="h-5 w-5 text-accent" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-card-foreground">{brand.name}</h3>
-                    <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                      <Package className="h-3 w-3" />
-                      <span>{brand.itemCount} مادە</span>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {brands?.map((brand, index) => (
+              <div
+                key={brand.id}
+                className="rounded-xl border border-border bg-card p-6 shadow-card card-hover animate-slide-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-accent/10 p-2">
+                      <Building2 className="h-5 w-5 text-accent" />
                     </div>
+                    <h3 className="font-semibold text-card-foreground">{brand.name}</h3>
                   </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-muted-foreground hover:text-accent"
-                    onClick={() => handleEdit(brand.name)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(brand.name)}
+                    onClick={() => handleDelete(brand.id)}
+                    disabled={deleteBrand.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

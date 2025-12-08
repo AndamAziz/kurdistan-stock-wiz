@@ -1,11 +1,18 @@
 import { cn } from "@/lib/utils";
 import { AlertTriangle, PackageX, Clock } from "lucide-react";
-import { Item } from "@/lib/mockData";
+
+interface AlertItem {
+  id: string;
+  name: string;
+  expDate: string;
+  quantity: number;
+  minStock: number;
+}
 
 interface AlertsListProps {
-  expiredItems: Item[];
-  lowStockItems: Item[];
-  soonToExpire: Item[];
+  expiredItems: AlertItem[];
+  lowStockItems: AlertItem[];
+  soonToExpire: AlertItem[];
 }
 
 export function AlertsList({ expiredItems, lowStockItems, soonToExpire }: AlertsListProps) {
@@ -14,7 +21,7 @@ export function AlertsList({ expiredItems, lowStockItems, soonToExpire }: Alerts
       id: `exp-${item.id}`,
       type: 'expired' as const,
       title: item.name,
-      message: `بەسەرچووە لە ${new Date(item.expDate).toLocaleDateString('ku')}`,
+      message: `بەسەرچووە لە ${item.expDate ? new Date(item.expDate).toLocaleDateString('ku') : '-'}`,
       icon: AlertTriangle,
     })),
     ...lowStockItems.map(item => ({
@@ -28,7 +35,7 @@ export function AlertsList({ expiredItems, lowStockItems, soonToExpire }: Alerts
       id: `soon-${item.id}`,
       type: 'soonExpire' as const,
       title: item.name,
-      message: `دەبەسەرچێت لە ${new Date(item.expDate).toLocaleDateString('ku')}`,
+      message: `دەبەسەرچێت لە ${item.expDate ? new Date(item.expDate).toLocaleDateString('ku') : '-'}`,
       icon: Clock,
     })),
   ].slice(0, 8);

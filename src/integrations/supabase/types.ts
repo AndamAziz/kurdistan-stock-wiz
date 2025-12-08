@@ -14,7 +14,189 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      brands: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      items: {
+        Row: {
+          barcode: string
+          brand_id: string | null
+          category_id: string | null
+          created_at: string
+          current_quantity: number
+          date_added: string
+          exp_date: string | null
+          id: string
+          image_url: string | null
+          mfg_date: string | null
+          min_stock: number
+          name: string
+          remind_date: string | null
+          total_in: number
+          total_out: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          barcode: string
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          current_quantity?: number
+          date_added?: string
+          exp_date?: string | null
+          id?: string
+          image_url?: string | null
+          mfg_date?: string | null
+          min_stock?: number
+          name: string
+          remind_date?: string | null
+          total_in?: number
+          total_out?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          current_quantity?: number
+          date_added?: string
+          exp_date?: string | null
+          id?: string
+          image_url?: string | null
+          mfg_date?: string | null
+          min_stock?: number
+          name?: string
+          remind_date?: string | null
+          total_in?: number
+          total_out?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          movement_date: string
+          movement_type: string
+          note: string | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          movement_date?: string
+          movement_type: string
+          note?: string | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          movement_date?: string
+          movement_type?: string
+          note?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
