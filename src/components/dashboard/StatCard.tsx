@@ -11,6 +11,8 @@ interface StatCardProps {
   };
   variant?: 'default' | 'success' | 'warning' | 'danger';
   delay?: number;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 const variantStyles = {
@@ -44,16 +46,18 @@ const variantStyles = {
   },
 };
 
-export function StatCard({ title, value, icon: Icon, trend, variant = 'default', delay = 0 }: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, trend, variant = 'default', delay = 0, onClick, clickable = false }: StatCardProps) {
   const styles = variantStyles[variant];
   
   return (
     <div
+      onClick={onClick}
       className={cn(
         "relative overflow-hidden rounded-2xl border-2 p-3 sm:p-4 lg:p-5",
         "shadow-card hover:shadow-lg transition-all duration-300 ease-out",
         "transform hover:-translate-y-0.5 animate-slide-up",
-        styles.bg
+        styles.bg,
+        clickable && "cursor-pointer active:scale-[0.98]"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
