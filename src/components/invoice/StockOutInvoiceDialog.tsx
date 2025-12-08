@@ -11,6 +11,7 @@ import { FileText, Printer, Send, Download } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useInvoiceSettings, colorThemes } from "@/pages/Settings";
+import { QRCodeSVG } from "qrcode.react";
 
 interface CartItem {
   item: ItemWithRelations;
@@ -57,6 +58,17 @@ export function StockOutInvoiceDialog({
   const totalPrice = cartItems.reduce((sum, ci) => sum + (((ci.boxCount || 0) + (ci.pieceCount || 0)) * ci.price), 0);
 
   const theme = colorThemes[invoiceSettings.colorTheme];
+
+  // QR Code data containing invoice summary
+  const qrData = JSON.stringify({
+    inv: invoiceNumber,
+    date: movementDate,
+    customer: recipientName,
+    phone: recipientPhone,
+    items: cartItems.length,
+    total: totalPrice,
+    company: invoiceSettings.companyName
+  });
 
   const handlePrint = () => {
     const printContent = invoiceRef.current;
@@ -358,6 +370,22 @@ export function StockOutInvoiceDialog({
             font-size: 9px;
             color: #666;
           }
+          .qr-section {
+            text-align: center;
+          }
+          .qr-box {
+            background: white;
+            padding: 6px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e5e5;
+            display: inline-block;
+          }
+          .qr-label {
+            font-size: 7px;
+            color: #999;
+            margin-top: 4px;
+          }
           @media print { 
             body { padding: 10px; }
             .invoice-container { border-width: 1px; }
@@ -601,12 +629,26 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* Footer with QR Code */}
               <div className="p-3 sm:p-4 flex justify-between items-end" style={{ backgroundColor: theme.light }}>
                 <div className="text-[9px] text-gray-500">
                   <p>✨ سوپاس بۆ هاوکاریکردنتان</p>
                   <p className="mt-0.5">{invoiceSettings.companyName}</p>
                 </div>
+                
+                {/* QR Code */}
+                <div className="text-center">
+                  <div className="bg-white p-1.5 rounded-lg shadow-sm border border-gray-200">
+                    <QRCodeSVG 
+                      value={qrData} 
+                      size={60}
+                      level="M"
+                      fgColor={theme.primary}
+                    />
+                  </div>
+                  <p className="text-[7px] text-gray-400 mt-1">زانیاری پسولە</p>
+                </div>
+
                 <div className="text-center">
                   <div className="w-28 h-8 border-b border-gray-400 mb-1"></div>
                   <p className="text-[8px] text-gray-500">واژووی وەرگر</p>
