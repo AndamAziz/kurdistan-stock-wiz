@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X } from "lucide-react";
+import { Printer, X, Check } from "lucide-react";
 import { ItemWithRelations } from "@/hooks/useItems";
 
 interface StockInReceiptData {
@@ -14,6 +14,7 @@ interface StockInReceiptData {
   quantity: number;
   date: string;
   note?: string;
+  weight_kg?: number;
 }
 
 interface StockInReceiptDialogProps {
@@ -31,7 +32,7 @@ export function StockInReceiptDialog({
 
   if (!receiptData) return null;
 
-  const { item, quantity, date, note } = receiptData;
+  const { item, quantity, date, note, weight_kg } = receiptData;
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -88,7 +89,7 @@ export function StockInReceiptDialog({
           .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #f0f0f0;
           }
           .info-row:last-child {
@@ -169,14 +170,45 @@ export function StockInReceiptDialog({
           </div>
           
           <div class="info-row">
+            <span class="info-label">هاوپۆل:</span>
+            <span class="info-value">${item.categories?.name || '-'}</span>
+          </div>
+          
+          <div class="info-row">
             <span class="info-label">باڕکۆد:</span>
             <span class="info-value" style="font-family: monospace;">${item.barcode}</span>
           </div>
           
           <div class="info-row">
-            <span class="info-label">بەروار:</span>
+            <span class="info-label">یەکە:</span>
+            <span class="info-value">${item.unit}</span>
+          </div>
+          
+          ${weight_kg ? `
+          <div class="info-row">
+            <span class="info-label">کێش:</span>
+            <span class="info-value">${weight_kg} کیلۆگرام</span>
+          </div>
+          ` : ''}
+          
+          <div class="info-row">
+            <span class="info-label">بەرواری داخڵکردن:</span>
             <span class="info-value">${date}</span>
           </div>
+          
+          ${item.mfg_date ? `
+          <div class="info-row">
+            <span class="info-label">بەرواری ئنتاج:</span>
+            <span class="info-value">${item.mfg_date}</span>
+          </div>
+          ` : ''}
+          
+          ${item.exp_date ? `
+          <div class="info-row">
+            <span class="info-label">بەرواری بەسەرچوون:</span>
+            <span class="info-value">${item.exp_date}</span>
+          </div>
+          ` : ''}
           
           <div class="quantity-box">
             <div class="label">ژمارەی داخڵکراو</div>
@@ -209,33 +241,59 @@ export function StockInReceiptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-success">
-            <span>📦</span>
-            پسوڵەی داخڵکردن
+            <Check className="h-5 w-5" />
+            مادەکە بە سەرکەوتوویی داخڵکرا
           </DialogTitle>
         </DialogHeader>
 
         <div ref={printRef} className="space-y-4">
           {/* Item Info */}
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-            <div className="flex justify-between items-center">
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
               <span className="text-sm text-muted-foreground">ناوی مادە:</span>
               <span className="font-semibold text-foreground">{item.name}</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
               <span className="text-sm text-muted-foreground">براند:</span>
               <span className="font-medium text-foreground">{item.brands?.name || '-'}</span>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
+              <span className="text-sm text-muted-foreground">هاوپۆل:</span>
+              <span className="font-medium text-foreground">{item.categories?.name || '-'}</span>
+            </div>
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
               <span className="text-sm text-muted-foreground">باڕکۆد:</span>
               <span className="font-mono text-sm text-muted-foreground">{item.barcode}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">بەروار:</span>
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
+              <span className="text-sm text-muted-foreground">یەکە:</span>
+              <span className="font-medium text-foreground">{item.unit}</span>
+            </div>
+            {weight_kg && (
+              <div className="flex justify-between items-center py-1 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">کێش:</span>
+                <span className="font-medium text-foreground">{weight_kg} کیلۆگرام</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center py-1 border-b border-border/50">
+              <span className="text-sm text-muted-foreground">بەرواری داخڵکردن:</span>
               <span className="font-medium text-foreground">{date}</span>
             </div>
+            {item.mfg_date && (
+              <div className="flex justify-between items-center py-1 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">بەرواری ئنتاج:</span>
+                <span className="font-medium text-foreground">{item.mfg_date}</span>
+              </div>
+            )}
+            {item.exp_date && (
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm text-muted-foreground">بەرواری بەسەرچوون:</span>
+                <span className="font-medium text-foreground">{item.exp_date}</span>
+              </div>
+            )}
           </div>
 
           {/* Quantity Box */}
@@ -257,19 +315,19 @@ export function StockInReceiptDialog({
         {/* Actions */}
         <div className="flex gap-3 mt-4">
           <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1 gap-2"
+          >
+            <X className="h-4 w-4" />
+            داخستن
+          </Button>
+          <Button 
             onClick={handlePrint}
             className="flex-1 gap-2 bg-success hover:bg-success/90"
           >
             <Printer className="h-4 w-4" />
-            چاپکردن
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="gap-2"
-          >
-            <X className="h-4 w-4" />
-            داخستن
+            پرێنتی پسوڵە
           </Button>
         </div>
       </DialogContent>
