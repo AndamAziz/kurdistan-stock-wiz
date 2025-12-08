@@ -23,12 +23,15 @@ import {
 import { MobileItemCard } from "@/components/items/MobileItemCard";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
-import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown } from "lucide-react";
+import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
+import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { hapticFeedback } from "@/lib/haptics";
+import { toast } from "sonner";
 
 export default function Items() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +39,7 @@ export default function Items() {
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const { data: items, isLoading, refetch } = useItems();
   const { data: categories } = useCategories();
@@ -44,6 +48,19 @@ export default function Items() {
   const handleRefresh = useCallback(async () => {
     await refetch();
   }, [refetch]);
+
+  const handleBarcodeScan = useCallback((barcode: string) => {
+    hapticFeedback.success();
+    setSearchQuery(barcode);
+    
+    // Check if item exists
+    const found = items?.find(item => item.barcode === barcode);
+    if (found) {
+      toast.success(`مادەی "${found.name}" دۆزرایەوە`);
+    } else {
+      toast.info(`باڕکۆد: ${barcode} - مادە نەدۆزرایەوە`);
+    }
+  }, [items]);
 
   const { containerRef, isRefreshing, pullDistance, threshold } = usePullToRefresh({
     onRefresh: handleRefresh,
@@ -170,14 +187,24 @@ export default function Items() {
         {/* Search and Filters */}
         <div className="rounded-lg sm:rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card animate-slide-up">
           {/* Search - Always visible */}
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="گەڕان بە ناو یان باڕکۆد..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10 h-9 sm:h-10 text-sm"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="گەڕان بە ناو یان باڕکۆد..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 h-9 sm:h-10 text-sm"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 shrink-0"
+              onClick={() => setScannerOpen(true)}
+            >
+              <ScanLine className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Mobile Filters Collapsible */}
@@ -435,6 +462,13 @@ export default function Items() {
             </div>
           </>
         )}
+
+        {/* Barcode Scanner Dialog */}
+        <BarcodeScannerDialog
+          open={scannerOpen}
+          onOpenChange={setScannerOpen}
+          onScan={handleBarcodeScan}
+        />
       </div>
     </Layout>
   );
