@@ -15,6 +15,9 @@ import { useInvoiceSettings, colorThemes } from "@/pages/Settings";
 interface CartItem {
   item: ItemWithRelations;
   quantity: number;
+  boxCount?: number;
+  pieceCount?: number;
+  giftQuantity?: number;
   price: number;
   note?: string;
 }
@@ -43,8 +46,11 @@ export function StockOutInvoiceDialog({
 
   const invoiceNumber = `OUT-${Date.now().toString(36).toUpperCase()}`;
   const today = format(new Date(), "yyyy/MM/dd");
-  const totalItems = cartItems.reduce((sum, ci) => sum + ci.quantity, 0);
-  const totalPrice = cartItems.reduce((sum, ci) => sum + (ci.quantity * ci.price), 0);
+  const totalBoxes = cartItems.reduce((sum, ci) => sum + (ci.boxCount || 0), 0);
+  const totalPieces = cartItems.reduce((sum, ci) => sum + (ci.pieceCount || 0), 0);
+  const totalGifts = cartItems.reduce((sum, ci) => sum + (ci.giftQuantity || 0), 0);
+  const totalItems = totalBoxes + totalPieces;
+  const totalPrice = cartItems.reduce((sum, ci) => sum + (((ci.boxCount || 0) + (ci.pieceCount || 0)) * ci.price), 0);
 
   const theme = colorThemes[invoiceSettings.colorTheme];
 
@@ -265,9 +271,19 @@ export function StockOutInvoiceDialog({
       return;
     }
 
-    let itemsList = cartItems.map((ci, idx) => 
-      `${idx + 1}. ${ci.item.name}\n   📦 ${ci.quantity} × ${ci.price.toLocaleString()} = *${(ci.quantity * ci.price).toLocaleString()}* د.ع${ci.item.exp_date ? `\n   ⏰ بەسەرچوون: ${ci.item.exp_date}` : ''}${ci.note ? `\n   📝 ${ci.note}` : ''}`
-    ).join('\n\n');
+    let itemsList = cartItems.map((ci, idx) => {
+      const boxQty = ci.boxCount || 0;
+      const pieceQty = ci.pieceCount || 0;
+      const giftQty = ci.giftQuantity || 0;
+      const itemTotal = (boxQty + pieceQty) * ci.price;
+      
+      let qtyParts = [];
+      if (boxQty > 0) qtyParts.push(`📦 بۆکس: ${boxQty}`);
+      if (pieceQty > 0) qtyParts.push(`🔢 دانە: ${pieceQty}`);
+      if (giftQty > 0) qtyParts.push(`🎁 هەدیە: ${giftQty}`);
+      
+      return `${idx + 1}. *${ci.item.name}*\n   ${qtyParts.join(' | ')}\n   💰 نرخی تاک: ${ci.price.toLocaleString()} د.ع\n   🧾 کۆی نرخ: *${itemTotal.toLocaleString()}* د.ع${ci.note ? `\n   📝 ${ci.note}` : ''}`;
+    }).join('\n\n');
 
     const message = `
 ╔══════════════════════╗
@@ -288,8 +304,9 @@ ${itemsList}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-📊 *کۆی دانە:* ${totalItems}
-💰 *کۆی گشتی:* *${totalPrice.toLocaleString()}* د.ع
+📦 *کۆی بۆکس:* ${totalBoxes}
+🔢 *کۆی دانە:* ${totalPieces}
+${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی گشتی:* *${totalPrice.toLocaleString()}* د.ع
 
 ━━━━━━━━━━━━━━━━━━━━
 ✨ سوپاس بۆ هاوکاریکردنتان ✨
@@ -371,54 +388,83 @@ ${itemsList}
 
                 {/* Items Table */}
                 <div className="overflow-x-auto mb-6">
-                  <table className="w-full border-collapse min-w-[500px]">
+                  <table className="w-full border-collapse min-w-[700px]">
                     <thead>
                       <tr style={{ backgroundColor: theme.primary }}>
-                        <th className="py-3 px-3 text-right text-xs font-semibold uppercase tracking-wider text-white rounded-tr-lg">#</th>
-                        <th className="py-3 px-3 text-right text-xs font-semibold uppercase tracking-wider text-white">ناوی مادە</th>
-                        <th className="py-3 px-3 text-center text-xs font-semibold uppercase tracking-wider text-white">بڕ</th>
-                        <th className="py-3 px-3 text-center text-xs font-semibold uppercase tracking-wider text-white">نرخ</th>
-                        <th className="py-3 px-3 text-center text-xs font-semibold uppercase tracking-wider text-white">کۆ</th>
-                        <th className="py-3 px-3 text-right text-xs font-semibold uppercase tracking-wider text-white rounded-tl-lg">بەسەرچوون</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white rounded-tr-lg">#</th>
+                        <th className="py-3 px-2 text-right text-xs font-semibold uppercase tracking-wider text-white">وێنە</th>
+                        <th className="py-3 px-2 text-right text-xs font-semibold uppercase tracking-wider text-white">ناوی مادە</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">باڕکۆد</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">بۆکس</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">دانە</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">🎁</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">نرخی تاک</th>
+                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white rounded-tl-lg">کۆی نرخ</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {cartItems.map((cartItem, index) => (
-                        <tr 
-                          key={index} 
-                          className="border-b border-gray-200"
-                          style={{ backgroundColor: index % 2 === 1 ? `${theme.light}40` : 'transparent' }}
-                        >
-                          <td className="py-4 px-3 text-sm text-gray-500">{index + 1}</td>
-                          <td className="py-4 px-3">
-                            <div className="font-semibold text-black">{cartItem.item.name}</div>
-                            {cartItem.item.brands && (
-                              <div className="text-xs text-gray-500 mt-1">{cartItem.item.brands.name}</div>
-                            )}
-                            {cartItem.note && (
-                              <div className="text-xs mt-1 italic" style={{ color: theme.secondary }}>📝 {cartItem.note}</div>
-                            )}
-                          </td>
-                          <td className="py-4 px-3 text-center font-semibold">{cartItem.quantity}</td>
-                          <td className="py-4 px-3 text-center font-mono" dir="ltr">{cartItem.price.toLocaleString()}</td>
-                          <td className="py-4 px-3 text-center font-mono font-semibold" dir="ltr">{(cartItem.quantity * cartItem.price).toLocaleString()}</td>
-                          <td className="py-4 px-3 text-destructive text-sm font-medium">
-                            {cartItem.item.exp_date || '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {cartItems.map((cartItem, index) => {
+                        const itemTotal = ((cartItem.boxCount || 0) + (cartItem.pieceCount || 0)) * cartItem.price;
+                        return (
+                          <tr 
+                            key={index} 
+                            className="border-b border-gray-200"
+                            style={{ backgroundColor: index % 2 === 1 ? `${theme.light}40` : 'transparent' }}
+                          >
+                            <td className="py-3 px-2 text-center text-sm font-bold text-gray-700">{index + 1}</td>
+                            <td className="py-3 px-2">
+                              <div className="h-10 w-10 rounded-md overflow-hidden bg-gray-100 border border-gray-200">
+                                {cartItem.item.image_url ? (
+                                  <img 
+                                    src={cartItem.item.image_url} 
+                                    alt={cartItem.item.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">📦</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-2">
+                              <div className="font-semibold text-black text-sm">{cartItem.item.name}</div>
+                              {cartItem.item.brands && (
+                                <div className="text-xs text-gray-500">{cartItem.item.brands.name}</div>
+                              )}
+                              {cartItem.note && (
+                                <div className="text-xs mt-1 italic" style={{ color: theme.secondary }}>📝 {cartItem.note}</div>
+                              )}
+                            </td>
+                            <td className="py-3 px-2 text-center font-mono text-xs text-gray-600">{cartItem.item.barcode}</td>
+                            <td className="py-3 px-2 text-center font-semibold">{cartItem.boxCount || '-'}</td>
+                            <td className="py-3 px-2 text-center font-semibold">{cartItem.pieceCount || '-'}</td>
+                            <td className="py-3 px-2 text-center font-semibold text-green-600">{cartItem.giftQuantity || '-'}</td>
+                            <td className="py-3 px-2 text-center font-mono text-sm" dir="ltr">{cartItem.price.toLocaleString()}</td>
+                            <td className="py-3 px-2 text-center font-mono font-bold text-sm" dir="ltr" style={{ color: theme.primary }}>{itemTotal.toLocaleString()}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Total Section */}
                 <div className="flex justify-end">
-                  <div className="w-full sm:w-72 rounded-lg overflow-hidden border-2" style={{ borderColor: theme.light }}>
-                    <div className="flex justify-between px-5 py-3 border-b" style={{ borderColor: theme.light }}>
-                      <span className="text-gray-600 text-sm">کۆی دانە</span>
-                      <span className="font-semibold">{totalItems}</span>
+                  <div className="w-full sm:w-80 rounded-lg overflow-hidden border-2" style={{ borderColor: theme.light }}>
+                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
+                      <span className="text-gray-600 text-sm">کۆی بۆکس</span>
+                      <span className="font-semibold">{totalBoxes}</span>
                     </div>
-                    <div className="flex justify-between px-5 py-3 border-b" style={{ borderColor: theme.light }}>
+                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
+                      <span className="text-gray-600 text-sm">کۆی دانە</span>
+                      <span className="font-semibold">{totalPieces}</span>
+                    </div>
+                    {totalGifts > 0 && (
+                      <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
+                        <span className="text-gray-600 text-sm">🎁 کۆی هەدیە</span>
+                        <span className="font-semibold text-green-600">{totalGifts}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
                       <span className="text-gray-600 text-sm">کۆی مادە</span>
                       <span className="font-semibold">{cartItems.length}</span>
                     </div>

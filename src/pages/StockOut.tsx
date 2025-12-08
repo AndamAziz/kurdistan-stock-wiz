@@ -31,13 +31,18 @@ import { StockOutInvoiceDialog } from "@/components/invoice/StockOutInvoiceDialo
 interface CartItem {
   item: ItemWithRelations;
   quantity: number;
+  boxCount?: number;
+  pieceCount?: number;
+  giftQuantity?: number;
   price: number;
   note?: string;
 }
 
 export default function StockOut() {
   const [selectedItem, setSelectedItem] = useState<string>('');
-  const [quantity, setQuantity] = useState<string>('');
+  const [boxCount, setBoxCount] = useState<string>('');
+  const [pieceCount, setPieceCount] = useState<string>('');
+  const [giftQuantity, setGiftQuantity] = useState<string>('');
   const [price, setPrice] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState<string>('');
@@ -74,7 +79,12 @@ export default function StockOut() {
   };
 
   const handleAddToCart = () => {
-    if (!selectedItem || !quantity || parseInt(quantity) <= 0) {
+    const boxQty = parseInt(boxCount) || 0;
+    const pieceQty = parseInt(pieceCount) || 0;
+    const giftQty = parseInt(giftQuantity) || 0;
+    const totalQuantity = boxQty + pieceQty + giftQty;
+
+    if (!selectedItem || totalQuantity <= 0) {
       toast.error('تکایە مادە هەڵبژێرە و ژمارە داخڵ بکە');
       return;
     }
@@ -92,9 +102,8 @@ export default function StockOut() {
     // Check if already in cart
     const existingIndex = cartItems.findIndex(ci => ci.item.id === selectedItem);
     const currentCartQty = existingIndex >= 0 ? cartItems[existingIndex].quantity : 0;
-    const requestedQty = parseInt(quantity);
 
-    if (requestedQty + currentCartQty > selectedItemData.current_quantity) {
+    if (totalQuantity + currentCartQty > selectedItemData.current_quantity) {
       toast.error(`ژمارەی داواکراو زیاترە لەوەی هەیە (${selectedItemData.current_quantity - currentCartQty} ماوە)`);
       return;
     }
@@ -102,7 +111,10 @@ export default function StockOut() {
     if (existingIndex >= 0) {
       // Update existing item in cart
       const updated = [...cartItems];
-      updated[existingIndex].quantity += requestedQty;
+      updated[existingIndex].quantity += totalQuantity;
+      updated[existingIndex].boxCount = (updated[existingIndex].boxCount || 0) + boxQty;
+      updated[existingIndex].pieceCount = (updated[existingIndex].pieceCount || 0) + pieceQty;
+      updated[existingIndex].giftQuantity = (updated[existingIndex].giftQuantity || 0) + giftQty;
       updated[existingIndex].price = parseFloat(price);
       if (note) updated[existingIndex].note = note;
       setCartItems(updated);
@@ -111,7 +123,10 @@ export default function StockOut() {
       // Add new item to cart
       setCartItems([...cartItems, {
         item: selectedItemData,
-        quantity: requestedQty,
+        quantity: totalQuantity,
+        boxCount: boxQty || undefined,
+        pieceCount: pieceQty || undefined,
+        giftQuantity: giftQty || undefined,
         price: parseFloat(price),
         note: note || undefined,
       }]);
@@ -120,7 +135,9 @@ export default function StockOut() {
 
     // Reset form
     setSelectedItem('');
-    setQuantity('');
+    setBoxCount('');
+    setPieceCount('');
+    setGiftQuantity('');
     setPrice('');
     setNote('');
     setSearchQuery('');
@@ -321,20 +338,39 @@ export default function StockOut() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">ژمارە</Label>
+                    <Label className="text-sm font-medium">ژمارەی بۆکس</Label>
                     <Input
                       type="number"
-                      min="1"
-                      max={selectedItemData?.current_quantity || undefined}
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      placeholder="ژمارە"
+                      min="0"
+                      value={boxCount}
+                      onChange={(e) => setBoxCount(e.target.value)}
+                      placeholder="بۆکس"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">نرخ (دینار)</Label>
+                    <Label className="text-sm font-medium">ژمارەی دانە</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={pieceCount}
+                      onChange={(e) => setPieceCount(e.target.value)}
+                      placeholder="دانە"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">هەدیە</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={giftQuantity}
+                      onChange={(e) => setGiftQuantity(e.target.value)}
+                      placeholder="هەدیە"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">نرخی تاک (دینار)</Label>
                     <Input
                       type="number"
                       min="0"
@@ -345,14 +381,15 @@ export default function StockOut() {
                       dir="ltr"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">تێبینی</Label>
-                    <Input
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="تێبینی..."
-                    />
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">تێبینی</Label>
+                  <Input
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="تێبینی..."
+                  />
                 </div>
 
                 <Button 
@@ -412,20 +449,22 @@ export default function StockOut() {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-foreground truncate">{cartItem.item.name}</h4>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-                          <span>بڕ: <span className="font-semibold text-foreground">{cartItem.quantity}</span></span>
+                          {cartItem.boxCount ? (
+                            <span>بۆکس: <span className="font-semibold text-foreground">{cartItem.boxCount}</span></span>
+                          ) : null}
+                          {cartItem.pieceCount ? (
+                            <span>دانە: <span className="font-semibold text-foreground">{cartItem.pieceCount}</span></span>
+                          ) : null}
+                          {cartItem.giftQuantity ? (
+                            <span className="text-green-600">🎁 هەدیە: <span className="font-semibold">{cartItem.giftQuantity}</span></span>
+                          ) : null}
                           <span>•</span>
-                          <span>نرخ: <span className="font-semibold text-primary">{cartItem.price.toLocaleString()}</span> د.ع</span>
+                          <span>نرخی تاک: <span className="font-semibold text-primary">{cartItem.price.toLocaleString()}</span> د.ع</span>
                           <span>•</span>
-                          <span>کۆ: <span className="font-semibold text-green-600">{(cartItem.quantity * cartItem.price).toLocaleString()}</span> د.ع</span>
-                          {cartItem.item.exp_date && (
-                            <>
-                              <span>•</span>
-                              <span className="text-destructive">بەسەرچوون: {cartItem.item.exp_date}</span>
-                            </>
-                          )}
+                          <span>کۆ: <span className="font-semibold text-green-600">{(((cartItem.boxCount || 0) + (cartItem.pieceCount || 0)) * cartItem.price).toLocaleString()}</span> د.ع</span>
                         </div>
                         {cartItem.note && (
-                          <p className="text-xs text-muted-foreground mt-1">تێبینی: {cartItem.note}</p>
+                          <p className="text-xs text-muted-foreground mt-1">📝 {cartItem.note}</p>
                         )}
                       </div>
                       <Button
