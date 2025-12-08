@@ -15,6 +15,7 @@ import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import ImportExport from "./pages/ImportExport";
 import Settings from "./pages/Settings";
+import UserRoles from "./pages/UserRoles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
             <Route path="/import-export" element={<ProtectedRoute><ImportExport /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
