@@ -31,13 +31,17 @@ import { ItemImageUpload } from "@/components/items/ItemImageUpload";
 const formSchema = z.object({
   barcode: z.string().min(1, "باڕکۆد پێویستە"),
   name: z.string().min(1, "ناوی مادە پێویستە"),
+  itemType: z.enum(["beverage", "grocery"]).default("beverage"),
+  // Beverage quantities
   boxCount: z.coerce.number().min(0).default(0),
   pieceCount: z.coerce.number().min(0).default(0),
   giftQuantity: z.coerce.number().min(0).default(0),
   boxPrice: z.coerce.number().min(0).default(0),
   piecePrice: z.coerce.number().min(0).default(0),
-  weight_kg: z.coerce.number().min(0).optional(),
-  weight_gram: z.coerce.number().min(0).optional(),
+  // Grocery quantities (weight-based)
+  weight_kg: z.coerce.number().min(0).default(0),
+  weight_gram: z.coerce.number().min(0).default(0),
+  pricePerKg: z.coerce.number().min(0).default(0),
   brand_id: z.string().optional(),
   category_id: z.string().optional(),
   unit: z.string().default("دانە"),
@@ -53,6 +57,7 @@ type FormData = z.infer<typeof formSchema>;
 interface ReceiptData {
   item: ItemWithRelations;
   quantity: number;
+  itemType: "beverage" | "grocery";
   boxCount?: number;
   pieceCount?: number;
   giftQuantity?: number;
@@ -62,6 +67,7 @@ interface ReceiptData {
   note?: string;
   weight_kg?: number;
   weight_gram?: number;
+  pricePerKg?: number;
 }
 
 export default function StockIn() {
@@ -80,13 +86,15 @@ export default function StockIn() {
     defaultValues: {
       barcode: "",
       name: "",
+      itemType: "beverage",
       boxCount: 0,
       pieceCount: 0,
       giftQuantity: 0,
       boxPrice: 0,
       piecePrice: 0,
-      weight_kg: undefined,
-      weight_gram: undefined,
+      weight_kg: 0,
+      weight_gram: 0,
+      pricePerKg: 0,
       brand_id: undefined,
       category_id: undefined,
       unit: "دانە",
@@ -98,17 +106,27 @@ export default function StockIn() {
     },
   });
 
+  const itemType = form.watch("itemType");
+
   const handleBarcodeScan = (barcode: string) => {
     form.setValue("barcode", barcode);
     setScannerOpen(false);
   };
 
   const handleSubmit = (data: FormData) => {
-    const boxQty = data.boxCount || 0;
-    const pieceQty = data.pieceCount || 0;
-    const giftQty = data.giftQuantity || 0;
-    // Gift is included in total for stock tracking
-    const totalQuantity = boxQty + pieceQty + giftQty;
+    let totalQuantity = 0;
+    
+    if (data.itemType === "beverage") {
+      const boxQty = data.boxCount || 0;
+      const pieceQty = data.pieceCount || 0;
+      const giftQty = data.giftQuantity || 0;
+      totalQuantity = boxQty + pieceQty + giftQty;
+    } else {
+      // For grocery, use weight as quantity (in grams)
+      const kgInGrams = (data.weight_kg || 0) * 1000;
+      const grams = data.weight_gram || 0;
+      totalQuantity = kgInGrams + grams;
+    }
 
     if (totalQuantity <= 0) {
       return;
@@ -121,14 +139,13 @@ export default function StockIn() {
       total_in: totalQuantity,
       brand_id: data.brand_id || undefined,
       category_id: data.category_id || undefined,
-      unit: data.unit,
+      unit: data.itemType === "grocery" ? "گرام" : data.unit,
       min_stock: data.min_stock,
       mfg_date: data.mfg_date || undefined,
       exp_date: data.exp_date || undefined,
       image_url: imageUrl || undefined,
     }, {
       onSuccess: (newItem) => {
-        // Create receipt data for the new item
         const receiptItem: ItemWithRelations = {
           id: newItem?.id || '',
           barcode: data.barcode,
@@ -136,7 +153,7 @@ export default function StockIn() {
           current_quantity: totalQuantity,
           total_in: totalQuantity,
           total_out: 0,
-          unit: data.unit,
+          unit: data.itemType === "grocery" ? "گرام" : data.unit,
           min_stock: data.min_stock,
           brand_id: data.brand_id || null,
           category_id: data.category_id || null,
@@ -152,19 +169,20 @@ export default function StockIn() {
         setReceiptData({
           item: receiptItem,
           quantity: totalQuantity,
-          boxCount: boxQty || undefined,
-          pieceCount: pieceQty || undefined,
-          giftQuantity: giftQty || undefined,
+          itemType: data.itemType,
+          boxCount: data.boxCount || undefined,
+          pieceCount: data.pieceCount || undefined,
+          giftQuantity: data.giftQuantity || undefined,
           boxPrice: data.boxPrice || undefined,
           piecePrice: data.piecePrice || undefined,
           date: data.date_added,
           note: data.note || undefined,
           weight_kg: data.weight_kg || undefined,
           weight_gram: data.weight_gram || undefined,
+          pricePerKg: data.pricePerKg || undefined,
         });
         setReceiptOpen(true);
         
-        // Reset form
         form.reset();
         setImageUrl(null);
       },
@@ -247,143 +265,202 @@ export default function StockIn() {
                 )}
               />
 
-              {/* Box/Piece/Gift Quantities */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <FormField
-                  control={form.control}
-                  name="boxCount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ژمارەی بۆکس</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} placeholder="بۆکس" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Item Type Selection */}
+              <FormField
+                control={form.control}
+                name="itemType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>جۆری مادە</FormLabel>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={field.value === "beverage" ? "default" : "outline"}
+                        className="flex-1 text-sm"
+                        onClick={() => field.onChange("beverage")}
+                      >
+                        🥤 خواردنەوە (بۆکس/دانە)
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={field.value === "grocery" ? "default" : "outline"}
+                        className="flex-1 text-sm"
+                        onClick={() => field.onChange("grocery")}
+                      >
+                        🛒 گرۆسەری (کیلۆ/گرام)
+                      </Button>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="pieceCount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ژمارەی دانە</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} placeholder="دانە" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Beverage: Box/Piece/Gift Quantities */}
+              {itemType === "beverage" && (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="boxCount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">ژمارەی بۆکس</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={0} placeholder="بۆکس" {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="giftQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>هەدیە</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} placeholder="هەدیە" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="pieceCount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">ژمارەی دانە</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={0} placeholder="دانە" {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              </div>
+                    <FormField
+                      control={form.control}
+                      name="giftQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">هەدیە</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={0} placeholder="هەدیە" {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              {/* Prices for Box and Piece */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="boxPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>نرخی بۆکس (دینار)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          step="250"
-                          placeholder="نرخی هەر بۆکسێک" 
-                          dir="ltr"
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  {/* Prices for Box and Piece */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="boxPrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">نرخی بۆکس (دینار)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={0} 
+                              step="250"
+                              placeholder="نرخ" 
+                              dir="ltr"
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="piecePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>نرخی دانە (دینار)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          step="250"
-                          placeholder="نرخی هەر دانەیەک" 
-                          dir="ltr"
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    <FormField
+                      control={form.control}
+                      name="piecePrice"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">نرخی دانە (دینار)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={0} 
+                              step="250"
+                              placeholder="نرخ" 
+                              dir="ltr"
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
 
-              {/* Weight - KG and Grams */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="weight_kg"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>کێش (کیلۆگرام)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          step="0.01"
-                          placeholder="کیلۆگرام" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Grocery: Weight-based quantities */}
+              {itemType === "grocery" && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="weight_kg"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">کێش (کیلۆگرام)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={0} 
+                              step="0.5"
+                              placeholder="کیلۆگرام" 
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="weight_gram"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>کێش (گرام)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0} 
-                          step="1"
-                          placeholder="گرام" 
-                          {...field} 
-                          value={field.value || ''}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                    <FormField
+                      control={form.control}
+                      name="weight_gram"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs sm:text-sm">کێش (گرام)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={0} 
+                              step="50"
+                              placeholder="گرام" 
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Price per KG */}
+                  <FormField
+                    control={form.control}
+                    name="pricePerKg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs sm:text-sm">نرخی هەر کیلۆگرامێک (دینار)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            step="250"
+                            placeholder="نرخی کیلۆگرام" 
+                            dir="ltr"
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               {/* Brand & Category */}
               <div className="grid grid-cols-2 gap-4">
