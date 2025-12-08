@@ -320,20 +320,37 @@ export default function StockIn() {
                       <Button
                         type="button"
                         variant={field.value === "beverage" ? "default" : "outline"}
-                        className="flex-1 text-sm"
+                        size="sm"
+                        className="flex-1 text-xs h-8 px-2"
                         onClick={() => field.onChange("beverage")}
                       >
-                        🥤 خواردنەوە (بۆکس/دانە)
+                        🥤 خواردنەوە
                       </Button>
                       <Button
                         type="button"
                         variant={field.value === "grocery" ? "default" : "outline"}
-                        className="flex-1 text-sm"
+                        size="sm"
+                        className="flex-1 text-xs h-8 px-2"
                         onClick={() => field.onChange("grocery")}
                       >
-                        🛒 گرۆسەری (کیلۆ/گرام)
+                        🛒 گرۆسەری
                       </Button>
                     </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Item Description */}
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>وەسف (بۆ نموونە: 250ml، 260g)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="وەسفی مادە بنوسە..." {...field} />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
