@@ -16,23 +16,31 @@ interface StatCardProps {
 const variantStyles = {
   default: {
     bg: 'bg-card',
-    icon: 'bg-primary/10 text-primary',
-    border: 'border-border',
+    iconBg: 'bg-gradient-to-br from-primary/20 to-primary/5',
+    iconColor: 'text-primary',
+    border: 'border-border hover:border-primary/30',
+    glow: 'hover:shadow-[0_0_20px_-5px_hsl(var(--primary)/0.2)]',
   },
   success: {
     bg: 'bg-card',
-    icon: 'bg-success/10 text-success',
-    border: 'border-success/20',
+    iconBg: 'bg-gradient-to-br from-success/20 to-success/5',
+    iconColor: 'text-success',
+    border: 'border-success/20 hover:border-success/40',
+    glow: 'hover:shadow-[0_0_20px_-5px_hsl(var(--success)/0.2)]',
   },
   warning: {
     bg: 'bg-card',
-    icon: 'bg-warning/10 text-warning',
-    border: 'border-warning/20',
+    iconBg: 'bg-gradient-to-br from-warning/20 to-warning/5',
+    iconColor: 'text-warning',
+    border: 'border-warning/20 hover:border-warning/40',
+    glow: 'hover:shadow-[0_0_20px_-5px_hsl(var(--warning)/0.2)]',
   },
   danger: {
     bg: 'bg-card',
-    icon: 'bg-destructive/10 text-destructive',
-    border: 'border-destructive/20',
+    iconBg: 'bg-gradient-to-br from-destructive/20 to-destructive/5',
+    iconColor: 'text-destructive',
+    border: 'border-destructive/20 hover:border-destructive/40',
+    glow: 'hover:shadow-[0_0_20px_-5px_hsl(var(--destructive)/0.2)]',
   },
 };
 
@@ -42,27 +50,56 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
   return (
     <div
       className={cn(
-        "rounded-lg sm:rounded-xl border p-3 sm:p-4 lg:p-6 shadow-card card-hover animate-slide-up",
+        "relative overflow-hidden rounded-xl sm:rounded-2xl border p-4 sm:p-5 lg:p-6",
+        "shadow-sm hover:shadow-lg transition-all duration-300 ease-out",
+        "transform hover:-translate-y-0.5 animate-slide-up",
         styles.bg,
-        styles.border
+        styles.border,
+        styles.glow
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="space-y-1 sm:space-y-2 min-w-0 flex-1">
-          <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-muted-foreground truncate">{title}</p>
-          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-card-foreground">{value}</p>
+      {/* Decorative gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-muted/20 pointer-events-none" />
+      
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="space-y-2 sm:space-y-3 min-w-0 flex-1">
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground/80 truncate">
+            {title}
+          </p>
+          <p className={cn(
+            "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight number-display",
+            variant === 'success' && 'text-success',
+            variant === 'warning' && 'text-warning',
+            variant === 'danger' && 'text-destructive',
+            variant === 'default' && 'text-foreground'
+          )}>
+            {value}
+          </p>
           {trend && (
-            <p className={cn(
-              "text-[10px] sm:text-xs font-medium",
-              trend.isPositive ? "text-success" : "text-destructive"
+            <div className={cn(
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
+              trend.isPositive 
+                ? "bg-success/10 text-success" 
+                : "bg-destructive/10 text-destructive"
             )}>
-              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
-            </p>
+              <span className="text-sm">{trend.isPositive ? '↑' : '↓'}</span>
+              {Math.abs(trend.value)}%
+            </div>
           )}
         </div>
-        <div className={cn("rounded-lg p-2 sm:p-2.5 lg:p-3 shrink-0", styles.icon)}>
-          <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+        
+        {/* Icon container with enhanced styling */}
+        <div className={cn(
+          "shrink-0 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 lg:p-4",
+          "transition-transform duration-300 hover:scale-105",
+          "shadow-sm",
+          styles.iconBg
+        )}>
+          <Icon className={cn(
+            "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 transition-all duration-300",
+            styles.iconColor
+          )} strokeWidth={2} />
         </div>
       </div>
     </div>

@@ -56,20 +56,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-16 lg:h-20 items-center justify-center border-b border-sidebar-border px-4 lg:px-6">
+      <div className="flex h-16 lg:h-20 items-center justify-center border-b border-sidebar-border/50 px-4 lg:px-6">
         <div className="text-center">
-          <h1 className="text-lg lg:text-xl font-bold text-sidebar-foreground">
+          <h1 className="text-lg lg:text-xl font-bold text-sidebar-foreground tracking-tight">
             باکوری خۆشەویست
           </h1>
-          <p className="text-[10px] lg:text-xs text-sidebar-foreground/60">
+          <p className="text-[10px] lg:text-xs text-sidebar-foreground/50 mt-0.5">
             سیستمی بەڕێوەبردنی کۆگا
           </p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 lg:px-3 py-3 lg:py-4 overflow-y-auto">
-        <div className="mb-2 px-3 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+      <nav className="flex-1 space-y-1 px-2 lg:px-3 py-4 lg:py-5 overflow-y-auto">
+        <div className="mb-3 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
           سەرەکی
         </div>
         {navigation.map((item) => (
@@ -78,17 +78,19 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             to={item.href}
             onClick={onNavClick}
             className={cn(
-              "group flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2 lg:py-2.5 text-xs lg:text-sm font-medium transition-all duration-200",
-              "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+              "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
             )}
-            activeClassName="bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+            activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
           >
-            <item.icon className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+              <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
+            </div>
             <span>{item.name}</span>
           </NavLink>
         ))}
 
-        <div className="mb-2 mt-4 lg:mt-6 px-3 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+        <div className="mb-3 mt-6 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
           ڕێکخستن
         </div>
         {settingsNavigation.map((item) => (
@@ -97,19 +99,21 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             to={item.href}
             onClick={onNavClick}
             className={cn(
-              "group flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2 lg:py-2.5 text-xs lg:text-sm font-medium transition-all duration-200",
-              "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+              "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
             )}
-            activeClassName="bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+            activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
           >
-            <item.icon className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+              <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
+            </div>
             <span>{item.name}</span>
           </NavLink>
         ))}
 
         {isAdmin && (
           <>
-            <div className="mb-2 mt-4 lg:mt-6 px-3 text-[10px] lg:text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+            <div className="mb-3 mt-6 px-3 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-sidebar-foreground/30">
               بەڕێوەبەر
             </div>
             {adminNavigation.map((item) => (
@@ -118,12 +122,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 to={item.href}
                 onClick={onNavClick}
                 className={cn(
-                  "group flex items-center gap-2 lg:gap-3 rounded-lg px-3 py-2 lg:py-2.5 text-xs lg:text-sm font-medium transition-all duration-200",
-                  "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 lg:py-3 text-sm font-medium transition-all duration-200",
+                  "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
                 )}
-                activeClassName="bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
               >
-                <item.icon className="h-4 w-4 lg:h-5 lg:w-5 shrink-0" />
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent/30 group-[.active]:bg-white/10 transition-all duration-200">
+                  <item.icon className="h-4 w-4 lg:h-[18px] lg:w-[18px]" strokeWidth={2} />
+                </div>
                 <span>{item.name}</span>
               </NavLink>
             ))}
@@ -132,19 +138,19 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-3 lg:p-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1">
-            <div className="flex h-8 w-8 lg:h-10 lg:w-10 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
-              <span className="text-xs lg:text-sm font-bold">
+      <div className="border-t border-sidebar-border/50 p-3 lg:p-4">
+        <div className="flex items-center justify-between gap-3 p-2 rounded-xl bg-sidebar-accent/30">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 text-sidebar-primary-foreground shadow-md shrink-0">
+              <span className="text-sm font-bold">
                 {user?.email?.charAt(0).toUpperCase() || 'ب'}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs lg:text-sm font-medium text-sidebar-foreground truncate">
+              <p className="text-sm font-semibold text-sidebar-foreground truncate">
                 {user?.user_metadata?.full_name || 'بەکارهێنەر'}
               </p>
-              <p className="text-[10px] lg:text-xs text-sidebar-foreground/60 truncate">
+              <p className="text-[11px] text-sidebar-foreground/50 truncate">
                 {user?.email}
               </p>
             </div>
@@ -153,7 +159,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             variant="ghost"
             size="icon"
             onClick={handleSignOut}
-            className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent h-8 w-8 lg:h-9 lg:w-9 shrink-0"
+            className="text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 h-9 w-9 rounded-lg shrink-0 transition-colors duration-200"
           >
             <LogOut className="h-4 w-4" />
           </Button>
@@ -167,14 +173,14 @@ export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 right-0 left-0 z-50 h-14 bg-gradient-sidebar border-b border-sidebar-border flex items-center justify-between px-4">
-        <h1 className="text-base font-bold text-sidebar-foreground">
+      <header className="lg:hidden fixed top-0 right-0 left-0 z-50 h-14 bg-gradient-sidebar border-b border-sidebar-border/50 flex items-center justify-between px-4 shadow-lg">
+        <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">
           باکوری خۆشەویست
         </h1>
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-sidebar-foreground"
+          className="text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl h-10 w-10"
           onClick={() => onOpenChange?.(!isOpen)}
         >
           <Menu className="h-5 w-5" />
@@ -183,13 +189,13 @@ export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
 
       {/* Mobile Sheet */}
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-64 p-0 border-l border-sidebar-border">
+        <SheetContent side="right" className="w-72 p-0 border-l border-sidebar-border/50">
           <SidebarContent onNavClick={() => onOpenChange?.(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block fixed right-0 top-0 z-40 h-screen w-60 xl:w-64 shadow-sidebar">
+      <aside className="hidden lg:block fixed right-0 top-0 z-40 h-screen w-60 xl:w-64 shadow-2xl">
         <SidebarContent />
       </aside>
     </>
