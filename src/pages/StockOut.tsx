@@ -82,9 +82,11 @@ export default function StockOut() {
     const boxQty = parseInt(boxCount) || 0;
     const pieceQty = parseInt(pieceCount) || 0;
     const giftQty = parseInt(giftQuantity) || 0;
-    const totalQuantity = boxQty + pieceQty + giftQty;
+    // Gift is NOT counted in total quantity for stock deduction - only box + pieces
+    const totalQuantity = boxQty + pieceQty;
+    const totalWithGift = boxQty + pieceQty + giftQty;
 
-    if (!selectedItem || totalQuantity <= 0) {
+    if (!selectedItem || totalWithGift <= 0) {
       toast.error('تکایە مادە هەڵبژێرە و ژمارە داخڵ بکە');
       return;
     }
@@ -103,7 +105,7 @@ export default function StockOut() {
     const existingIndex = cartItems.findIndex(ci => ci.item.id === selectedItem);
     const currentCartQty = existingIndex >= 0 ? cartItems[existingIndex].quantity : 0;
 
-    if (totalQuantity + currentCartQty > selectedItemData.current_quantity) {
+    if (totalWithGift + currentCartQty > selectedItemData.current_quantity) {
       toast.error(`ژمارەی داواکراو زیاترە لەوەی هەیە (${selectedItemData.current_quantity - currentCartQty} ماوە)`);
       return;
     }
@@ -111,7 +113,7 @@ export default function StockOut() {
     if (existingIndex >= 0) {
       // Update existing item in cart
       const updated = [...cartItems];
-      updated[existingIndex].quantity += totalQuantity;
+      updated[existingIndex].quantity += totalWithGift;
       updated[existingIndex].boxCount = (updated[existingIndex].boxCount || 0) + boxQty;
       updated[existingIndex].pieceCount = (updated[existingIndex].pieceCount || 0) + pieceQty;
       updated[existingIndex].giftQuantity = (updated[existingIndex].giftQuantity || 0) + giftQty;
@@ -123,7 +125,7 @@ export default function StockOut() {
       // Add new item to cart
       setCartItems([...cartItems, {
         item: selectedItemData,
-        quantity: totalQuantity,
+        quantity: totalWithGift,
         boxCount: boxQty || undefined,
         pieceCount: pieceQty || undefined,
         giftQuantity: giftQty || undefined,
