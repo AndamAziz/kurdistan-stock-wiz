@@ -196,6 +196,75 @@ export function useUpdateInvoice() {
   });
 }
 
+interface UpdateInvoiceItemData {
+  id: string;
+  boxes?: number;
+  pieces?: number;
+  gifts?: number;
+  quantity?: number;
+  weight_kg?: number;
+  weight_gram?: number;
+  price?: number;
+  total_price?: number;
+  note?: string | null;
+}
+
+export function useUpdateInvoiceItems() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      invoiceId, 
+      items, 
+      deletedItemIds 
+    }: { 
+      invoiceId: string; 
+      items: UpdateInvoiceItemData[]; 
+      deletedItemIds: string[];
+    }) => {
+      // Delete removed items
+      if (deletedItemIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('invoice_items')
+          .delete()
+          .in('id', deletedItemIds);
+        
+        if (deleteError) throw deleteError;
+      }
+      
+      // Update remaining items
+      for (const item of items) {
+        const { error } = await supabase
+          .from('invoice_items')
+          .update({
+            boxes: item.boxes,
+            pieces: item.pieces,
+            gifts: item.gifts,
+            quantity: item.quantity,
+            weight_kg: item.weight_kg,
+            weight_gram: item.weight_gram,
+            price: item.price,
+            total_price: item.total_price,
+            note: item.note,
+          })
+          .eq('id', item.id);
+        
+        if (error) throw error;
+      }
+      
+      return true;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', variables.invoiceId] });
+    },
+    onError: (error) => {
+      console.error('Error updating invoice items:', error);
+      toast.error('هەڵە لە نوێکردنەوەی مادەکان');
+    },
+  });
+}
+
 export function useDeleteInvoice() {
   const queryClient = useQueryClient();
   
