@@ -323,16 +323,16 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+      <DialogContent className="sm:max-w-3xl max-h-[95vh] overflow-y-auto p-0 w-[95vw] sm:w-auto">
+        <DialogHeader className="p-4 sm:p-6 pb-0">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             پسولەی دەرچوون لە کۆگا
           </DialogTitle>
         </DialogHeader>
 
         {/* Invoice Preview */}
-        <div className="p-6 pt-4">
+        <div className="p-4 sm:p-6 pt-3 sm:pt-4">
           <div
             ref={invoiceRef}
             className="border border-border rounded-xl bg-white text-black overflow-hidden shadow-lg"
@@ -340,69 +340,68 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
             <div className="invoice-wrapper p-0">
               {/* Header */}
               <div 
-                className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 text-white"
+                className="flex flex-col sm:flex-row justify-between items-center gap-3 p-4 sm:p-6 text-white"
                 style={{ backgroundColor: theme.primary }}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {invoiceSettings.logoUrl && (
                     <img 
                       src={invoiceSettings.logoUrl} 
                       alt="Logo" 
-                      className="h-14 w-14 rounded-lg bg-white p-1.5 object-contain"
+                      className="h-10 w-10 sm:h-14 sm:w-14 rounded-lg bg-white p-1 object-contain"
                     />
                   )}
                   <div>
-                    <h1 className="text-2xl font-bold">{invoiceSettings.companyName}</h1>
-                    <p className="text-sm opacity-90">سیستەمی بەڕێوەبردنی کۆگا</p>
+                    <h1 className="text-lg sm:text-2xl font-bold">{invoiceSettings.companyName}</h1>
+                    <p className="text-xs sm:text-sm opacity-90">سیستەمی بەڕێوەبردنی کۆگا</p>
                   </div>
                 </div>
-                <div className="text-center sm:text-left bg-white/15 px-5 py-3 rounded-lg">
-                  <h2 className="text-lg font-bold">پسولەی دەرچوون</h2>
-                  <p className="text-xs font-mono opacity-90">{invoiceNumber}</p>
+                <div className="text-center sm:text-left bg-white/15 px-3 sm:px-5 py-2 sm:py-3 rounded-lg">
+                  <h2 className="text-sm sm:text-lg font-bold">پسولەی دەرچوون</h2>
+                  <p className="text-[10px] sm:text-xs font-mono opacity-90">{invoiceNumber}</p>
                 </div>
               </div>
 
               {/* Body */}
               <div 
-                className="p-6 border-x-2 border-b-2 rounded-b-xl"
+                className="p-3 sm:p-6 border-x-2 border-b-2 rounded-b-xl"
                 style={{ borderColor: theme.light }}
               >
                 {/* Meta Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <div 
-                    className="p-4 rounded-lg border-r-4"
+                    className="p-3 sm:p-4 rounded-lg border-r-4"
                     style={{ backgroundColor: theme.light, borderRightColor: theme.primary }}
                   >
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">زانیاری وەرگر</p>
-                    <p className="text-lg font-semibold text-black">{recipientName}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-1">زانیاری وەرگر</p>
+                    <p className="text-sm sm:text-lg font-semibold text-black">{recipientName}</p>
                     {recipientPhone && (
-                      <p className="text-sm text-gray-600 mt-1" dir="ltr">{recipientPhone}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1" dir="ltr">{recipientPhone}</p>
                     )}
                   </div>
                   <div 
-                    className="p-4 rounded-lg border-r-4"
+                    className="p-3 sm:p-4 rounded-lg border-r-4"
                     style={{ backgroundColor: theme.light, borderRightColor: theme.primary }}
                   >
-                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">زانیاری پسولە</p>
-                    <p className="text-lg font-semibold text-black">{movementDate}</p>
-                    <p className="text-sm text-gray-600 mt-1">چاپکرا: {today}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-1">زانیاری پسولە</p>
+                    <p className="text-sm sm:text-lg font-semibold text-black">{movementDate}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">چاپکرا: {today}</p>
                   </div>
                 </div>
 
-                {/* Items Table */}
-                <div className="overflow-x-auto mb-6">
-                  <table className="w-full border-collapse min-w-[700px]">
+                {/* Items Table - Mobile Optimized */}
+                <div className="overflow-x-auto mb-4 sm:mb-6 -mx-3 sm:mx-0">
+                  <table className="w-full border-collapse min-w-[600px] text-xs sm:text-sm">
                     <thead>
                       <tr style={{ backgroundColor: theme.primary }}>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white rounded-tr-lg">#</th>
-                        <th className="py-3 px-2 text-right text-xs font-semibold uppercase tracking-wider text-white">وێنە</th>
-                        <th className="py-3 px-2 text-right text-xs font-semibold uppercase tracking-wider text-white">ناوی مادە</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">باڕکۆد</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">بۆکس</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">دانە</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">🎁</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white">نرخی تاک</th>
-                        <th className="py-3 px-2 text-center text-xs font-semibold uppercase tracking-wider text-white rounded-tl-lg">کۆی نرخ</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white rounded-tr-lg">#</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">وێنە</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">ناوی مادە</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">بۆکس</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">دانە</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">🎁</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white">نرخ</th>
+                        <th className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-white rounded-tl-lg">کۆ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -416,9 +415,9 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                               borderBottom: `2px solid ${theme.light}`
                             }}
                           >
-                            <td className="py-3 px-2 text-center text-sm font-bold text-gray-700">{index + 1}</td>
-                            <td className="py-3 px-2">
-                              <div className="h-8 w-8 rounded overflow-hidden bg-gray-100 border border-gray-200">
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-xs font-bold text-gray-700">{index + 1}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2">
+                              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded overflow-hidden bg-gray-100 border border-gray-200">
                                 {cartItem.item.image_url ? (
                                   <img 
                                     src={cartItem.item.image_url} 
@@ -426,25 +425,24 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-[10px]">📦</div>
+                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-[8px]">📦</div>
                                 )}
                               </div>
                             </td>
-                            <td className="py-3 px-2">
-                              <div className="font-semibold text-black text-sm">{cartItem.item.name}</div>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2">
+                              <div className="font-semibold text-black text-xs sm:text-sm">{cartItem.item.name}</div>
                               {cartItem.item.brands && (
-                                <div className="text-xs text-gray-500">{cartItem.item.brands.name}</div>
+                                <div className="text-[10px] sm:text-xs text-gray-500">{cartItem.item.brands.name}</div>
                               )}
                               {cartItem.note && (
-                                <div className="text-xs mt-1 italic" style={{ color: theme.secondary }}>📝 {cartItem.note}</div>
+                                <div className="text-[9px] sm:text-xs mt-0.5 italic" style={{ color: theme.secondary }}>📝 {cartItem.note}</div>
                               )}
                             </td>
-                            <td className="py-3 px-2 text-center font-mono text-xs text-gray-600">{cartItem.item.barcode}</td>
-                            <td className="py-3 px-2 text-center font-semibold">{cartItem.boxCount || '-'}</td>
-                            <td className="py-3 px-2 text-center font-semibold">{cartItem.pieceCount || '-'}</td>
-                            <td className="py-3 px-2 text-center font-semibold text-green-600">{cartItem.giftQuantity || '-'}</td>
-                            <td className="py-3 px-2 text-center font-mono text-sm" dir="ltr">{cartItem.price.toLocaleString()}</td>
-                            <td className="py-3 px-2 text-center font-mono font-bold text-sm" dir="ltr" style={{ color: theme.primary }}>{itemTotal.toLocaleString()}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center font-semibold text-xs">{cartItem.boxCount || '-'}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center font-semibold text-xs">{cartItem.pieceCount || '-'}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center font-semibold text-green-600 text-xs">{cartItem.giftQuantity || '-'}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center font-mono text-xs" dir="ltr">{cartItem.price.toLocaleString()}</td>
+                            <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center font-mono font-bold text-xs" dir="ltr" style={{ color: theme.primary }}>{itemTotal.toLocaleString()}</td>
                           </tr>
                         );
                       })}
@@ -454,44 +452,44 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
 
                 {/* Total Section */}
                 <div className="flex justify-end">
-                  <div className="w-full sm:w-80 rounded-lg overflow-hidden border-2" style={{ borderColor: theme.light }}>
-                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
-                      <span className="text-gray-600 text-sm">کۆی بۆکس</span>
+                  <div className="w-full sm:w-72 rounded-lg overflow-hidden border-2 text-sm" style={{ borderColor: theme.light }}>
+                    <div className="flex justify-between px-3 sm:px-5 py-2 border-b" style={{ borderColor: theme.light }}>
+                      <span className="text-gray-600 text-xs sm:text-sm">کۆی بۆکس</span>
                       <span className="font-semibold">{totalBoxes}</span>
                     </div>
-                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
-                      <span className="text-gray-600 text-sm">کۆی دانە</span>
+                    <div className="flex justify-between px-3 sm:px-5 py-2 border-b" style={{ borderColor: theme.light }}>
+                      <span className="text-gray-600 text-xs sm:text-sm">کۆی دانە</span>
                       <span className="font-semibold">{totalPieces}</span>
                     </div>
                     {totalGifts > 0 && (
-                      <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
-                        <span className="text-gray-600 text-sm">🎁 کۆی هەدیە</span>
+                      <div className="flex justify-between px-3 sm:px-5 py-2 border-b" style={{ borderColor: theme.light }}>
+                        <span className="text-gray-600 text-xs sm:text-sm">🎁 کۆی هەدیە</span>
                         <span className="font-semibold text-green-600">{totalGifts}</span>
                       </div>
                     )}
-                    <div className="flex justify-between px-5 py-2.5 border-b" style={{ borderColor: theme.light }}>
-                      <span className="text-gray-600 text-sm">کۆی مادە</span>
+                    <div className="flex justify-between px-3 sm:px-5 py-2 border-b" style={{ borderColor: theme.light }}>
+                      <span className="text-gray-600 text-xs sm:text-sm">کۆی مادە</span>
                       <span className="font-semibold">{cartItems.length}</span>
                     </div>
                     <div 
-                      className="flex justify-between items-center px-5 py-4 text-white"
+                      className="flex justify-between items-center px-3 sm:px-5 py-3 text-white"
                       style={{ backgroundColor: theme.primary }}
                     >
-                      <span className="text-sm font-medium">کۆی گشتی</span>
-                      <span className="text-xl font-bold font-mono" dir="ltr">{totalPrice.toLocaleString()} د.ع</span>
+                      <span className="text-xs sm:text-sm font-medium">کۆی گشتی</span>
+                      <span className="text-base sm:text-xl font-bold font-mono" dir="ltr">{totalPrice.toLocaleString()} د.ع</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="mt-10 pt-6 border-t-2 border-dashed border-gray-300 flex flex-col sm:flex-row justify-between items-start gap-6">
-                  <div className="text-xs text-gray-500">
+                <div className="mt-6 sm:mt-10 pt-4 sm:pt-6 border-t-2 border-dashed border-gray-300 flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6">
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     <p>✨ سوپاس بۆ هاوکاریکردنتان</p>
                     <p className="mt-1">{invoiceSettings.companyName} - سیستەمی بەڕێوەبردنی کۆگا</p>
                   </div>
                   <div className="text-left">
-                    <div className="w-44 h-10 border-b border-black mb-1"></div>
-                    <p className="text-xs text-gray-500">واژووی وەرگر</p>
+                    <div className="w-32 sm:w-44 h-8 sm:h-10 border-b border-black mb-1"></div>
+                    <p className="text-[10px] sm:text-xs text-gray-500">واژووی وەرگر</p>
                   </div>
                 </div>
               </div>
@@ -500,18 +498,18 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 p-6 pt-0">
-          <Button onClick={handlePrint} variant="outline" className="flex-1 gap-2 h-12">
-            <Printer className="h-5 w-5" />
-            چاپکردن
+        <div className="flex flex-wrap gap-2 p-4 sm:p-6 pt-0">
+          <Button onClick={handlePrint} variant="outline" className="flex-1 gap-1.5 h-10 sm:h-12 text-sm sm:text-base">
+            <Printer className="h-4 w-4 sm:h-5 sm:w-5" />
+            چاپ
           </Button>
-          <Button onClick={handleDownloadPDF} variant="outline" className="flex-1 gap-2 h-12">
-            <Download className="h-5 w-5" />
+          <Button onClick={handleDownloadPDF} variant="outline" className="flex-1 gap-1.5 h-10 sm:h-12 text-sm sm:text-base">
+            <Download className="h-4 w-4 sm:h-5 sm:w-5" />
             PDF
           </Button>
           {recipientPhone && (
-            <Button onClick={handleWhatsApp} className="flex-1 gap-2 h-12 bg-green-600 hover:bg-green-700">
-              <Send className="h-5 w-5" />
+            <Button onClick={handleWhatsApp} className="flex-1 gap-1.5 h-10 sm:h-12 bg-green-600 hover:bg-green-700 text-sm sm:text-base">
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               WhatsApp
             </Button>
           )}
