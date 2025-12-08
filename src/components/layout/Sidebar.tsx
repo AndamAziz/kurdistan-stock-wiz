@@ -3,7 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   LayoutDashboard,
   Package,
@@ -17,9 +17,7 @@ import {
   LogOut,
   Users,
   Menu,
-  X,
 } from "lucide-react";
-import { useState } from "react";
 
 const navigation = [
   { name: 'داشبۆرد', href: '/', icon: LayoutDashboard },
@@ -39,6 +37,11 @@ const settingsNavigation = [
 const adminNavigation = [
   { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
 ];
+
+interface SidebarProps {
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, signOut } = useAuth();
@@ -158,9 +161,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   );
 }
 
-export function Sidebar() {
-  const [open, setOpen] = useState(false);
-
+export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
@@ -168,17 +169,22 @@ export function Sidebar() {
         <h1 className="text-base font-bold text-sidebar-foreground">
           باکوری خۆشەویست
         </h1>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-sidebar-foreground">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-64 p-0 border-l border-sidebar-border">
-            <SidebarContent onNavClick={() => setOpen(false)} />
-          </SheetContent>
-        </Sheet>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-sidebar-foreground"
+          onClick={() => onOpenChange?.(!isOpen)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </header>
+
+      {/* Mobile Sheet */}
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-64 p-0 border-l border-sidebar-border">
+          <SidebarContent onNavClick={() => onOpenChange?.(false)} />
+        </SheetContent>
+      </Sheet>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block fixed right-0 top-0 z-40 h-screen w-60 xl:w-64 shadow-sidebar">
