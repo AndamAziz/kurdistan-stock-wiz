@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,8 @@ import { hapticFeedback } from "@/lib/haptics";
 import { toast } from "sonner";
 
 export default function Items() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
@@ -48,6 +50,16 @@ export default function Items() {
   const { data: items, isLoading, refetch } = useItems();
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
+
+  // Sync URL search param with search query
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      setSearchQuery(searchFromUrl);
+      // Clear the URL param after setting the search
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleRefresh = useCallback(async () => {
     await refetch();

@@ -7,7 +7,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Package, Calendar, Tag, AlertTriangle, TrendingDown, PackageX } from "lucide-react";
+import { Package, Calendar, Tag, AlertTriangle, TrendingDown, PackageX, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ItemWithBrand {
   id: string;
@@ -29,6 +30,8 @@ interface ItemsListDialogProps {
 }
 
 export function ItemsListDialog({ open, onOpenChange, title, items, type }: ItemsListDialogProps) {
+  const navigate = useNavigate();
+
   const getIcon = () => {
     switch (type) {
       case 'expiring':
@@ -60,6 +63,12 @@ export function ItemsListDialog({ open, onOpenChange, title, items, type }: Item
     return null;
   };
 
+  const handleItemClick = (item: ItemWithBrand) => {
+    onOpenChange(false);
+    // Navigate to items page with search query set to item name
+    navigate(`/items?search=${encodeURIComponent(item.name)}`);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[80vh]">
@@ -82,11 +91,15 @@ export function ItemsListDialog({ open, onOpenChange, title, items, type }: Item
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-2 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors"
+                  onClick={() => handleItemClick(item)}
+                  className="flex flex-col gap-2 p-3 rounded-xl border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-sm truncate">{item.name}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{item.name}</h4>
+                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
+                      </div>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {item.brands?.name && (
                           <Badge variant="outline" className="text-[10px] px-1.5">
