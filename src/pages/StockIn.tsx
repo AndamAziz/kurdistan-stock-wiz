@@ -1,9 +1,19 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -11,12 +21,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useItems, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
+import { useAddItem, useCategories, useBrands, ItemWithRelations } from "@/hooks/useItems";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowDownToLine, Search, Loader2, ScanBarcode, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowDownToLine, Loader2, ScanBarcode, FileText } from "lucide-react";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
 import { StockInReceiptDialog } from "@/components/stock/StockInReceiptDialog";
+import { ItemImageUpload } from "@/components/items/ItemImageUpload";
+
+const formSchema = z.object({
+  barcode: z.string().min(1, "باڕکۆد پێویستە"),
+  name: z.string().min(1, "ناوی مادە پێویستە"),
+  quantity: z.coerce.number().min(1, "ژمارە پێویستە"),
+  weight_kg: z.coerce.number().min(0).optional(),
+  brand_id: z.string().optional(),
+  category_id: z.string().optional(),
+  unit: z.string().default("دانە"),
+  min_stock: z.coerce.number().min(0).default(10),
+  date_added: z.string().default(() => new Date().toISOString().split('T')[0]),
+  mfg_date: z.string().optional(),
+  exp_date: z.string().optional(),
+  note: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface ReceiptData {
   item: ItemWithRelations;
@@ -26,69 +53,86 @@ interface ReceiptData {
 }
 
 export default function StockIn() {
-  const [selectedItem, setSelectedItem] = useState<string>('');
-  const [quantity, setQuantity] = useState<string>('');
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [note, setNote] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
   const { user } = useAuth();
-  const { data: items } = useItems();
-  const addMovement = useAddStockMovement();
+  const { data: categories } = useCategories();
+  const { data: brands } = useBrands();
+  const addItem = useAddItem();
 
-  const filteredItems = items?.filter(item => 
-    item.name.includes(searchQuery) || item.barcode.includes(searchQuery)
-  ) || [];
-
-  const selectedItemData = items?.find(item => item.id === selectedItem);
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      barcode: "",
+      name: "",
+      quantity: 1,
+      weight_kg: undefined,
+      brand_id: undefined,
+      category_id: undefined,
+      unit: "دانە",
+      min_stock: 10,
+      date_added: new Date().toISOString().split('T')[0],
+      mfg_date: "",
+      exp_date: "",
+      note: "",
+    },
+  });
 
   const handleBarcodeScan = (barcode: string) => {
-    const foundItem = items?.find(item => item.barcode === barcode);
-    if (foundItem) {
-      setSelectedItem(foundItem.id);
-      setSearchQuery(foundItem.name);
-      toast.success(`مادەی "${foundItem.name}" هەڵبژێردرا`);
-    } else {
-      toast.error('مادە بە ئەم باڕکۆدە نەدۆزرایەوە');
-    }
+    form.setValue("barcode", barcode);
+    setScannerOpen(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedItem || !quantity || parseInt(quantity) <= 0) {
-      toast.error('تکایە زانیارییەکان بە تەواوی پڕبکەرەوە');
-      return;
-    }
-
-    addMovement.mutate({
-      item_id: selectedItem,
-      movement_type: 'IN',
-      quantity: parseInt(quantity),
-      movement_date: date,
-      note: note || undefined,
-      created_by: user?.id,
+  const handleSubmit = (data: FormData) => {
+    addItem.mutate({
+      barcode: data.barcode,
+      name: data.name,
+      current_quantity: data.quantity,
+      total_in: data.quantity,
+      brand_id: data.brand_id || undefined,
+      category_id: data.category_id || undefined,
+      unit: data.unit,
+      min_stock: data.min_stock,
+      mfg_date: data.mfg_date || undefined,
+      exp_date: data.exp_date || undefined,
+      image_url: imageUrl || undefined,
     }, {
-      onSuccess: () => {
-        // Show receipt dialog
-        if (selectedItemData) {
-          setReceiptData({
-            item: selectedItemData,
-            quantity: parseInt(quantity),
-            date: date,
-            note: note || undefined,
-          });
-          setReceiptOpen(true);
-        }
+      onSuccess: (newItem) => {
+        // Create receipt data for the new item
+        const receiptItem: ItemWithRelations = {
+          id: newItem?.id || '',
+          barcode: data.barcode,
+          name: data.name,
+          current_quantity: data.quantity,
+          total_in: data.quantity,
+          total_out: 0,
+          unit: data.unit,
+          min_stock: data.min_stock,
+          brand_id: data.brand_id || null,
+          category_id: data.category_id || null,
+          mfg_date: data.mfg_date || null,
+          exp_date: data.exp_date || null,
+          remind_date: null,
+          image_url: imageUrl || null,
+          date_added: data.date_added,
+          brands: brands?.find(b => b.id === data.brand_id) || null,
+          categories: categories?.find(c => c.id === data.category_id) || null,
+        };
+
+        setReceiptData({
+          item: receiptItem,
+          quantity: data.quantity,
+          date: data.date_added,
+          note: data.note || undefined,
+        });
+        setReceiptOpen(true);
         
         // Reset form
-        setSelectedItem('');
-        setQuantity('');
-        setNote('');
-        setSearchQuery('');
+        form.reset();
+        setImageUrl(null);
       },
     });
   };
@@ -105,156 +149,270 @@ export default function StockIn() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">داخڵکردن بۆ کۆگا</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                زیادکردنی مادە بۆ ستۆک
+                زیادکردنی مادەی نوێ بۆ ستۆک
               </p>
             </div>
           </div>
         </div>
 
-        {/* Form - Full Width */}
+        {/* Form */}
         <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up max-w-2xl mx-auto">
           <h2 className="mb-6 text-lg font-semibold text-card-foreground">
-            داخڵکردنی مادە
+            داخڵکردنی مادەی نوێ
           </h2>
           
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">گەڕان بۆ مادە</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="گەڕان بە ناو یان باڕکۆد..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pr-10"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setScannerOpen(true)}
-                  className="shrink-0"
-                >
-                  <ScanBarcode className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">مادە</Label>
-              <Select value={selectedItem} onValueChange={setSelectedItem}>
-                <SelectTrigger>
-                  <SelectValue placeholder="مادەیەک هەڵبژێرە" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[60vh] z-50">
-                  {filteredItems.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        {/* Item Image */}
-                        <div className="h-8 w-8 shrink-0 rounded-md overflow-hidden bg-muted border border-border">
-                          {item.image_url ? (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-muted-foreground text-[10px]">
-                              📦
-                            </div>
-                          )}
-                        </div>
-                        {/* Item Details */}
-                        <div className="flex flex-col gap-0 min-w-0">
-                          <span className="text-xs font-medium tracking-tight text-foreground truncate max-w-[180px]">
-                            {item.name}
-                          </span>
-                          <div className="flex items-center gap-1.5 text-[10px]">
-                            {item.brands && (
-                              <span className="text-primary font-medium truncate max-w-[60px]">{item.brands.name}</span>
-                            )}
-                            {item.brands && <span className="text-muted-foreground/50">•</span>}
-                            <span className="text-muted-foreground">
-                              <span className="font-medium text-foreground">{item.current_quantity}</span> {item.unit}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedItemData && (
-              <div className="rounded-lg border border-border bg-muted/50 p-4 animate-scale-in">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">ناو:</span>
-                    <span className="mr-2 font-medium">{selectedItemData.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">براند:</span>
-                    <span className="mr-2 font-medium">{selectedItemData.brands?.name || '-'}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">ستۆکی ئێستا:</span>
-                    <span className="mr-2 font-semibold text-primary">{selectedItemData.current_quantity}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">یەکە:</span>
-                    <span className="mr-2 font-medium">{selectedItemData.unit}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+              {/* Image Upload */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">ژمارە</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="ژمارەی مادە"
+                <FormLabel>وێنەی مادە</FormLabel>
+                <ItemImageUpload
+                  currentImageUrl={imageUrl}
+                  onImageUploaded={setImageUrl}
+                  onImageRemoved={() => setImageUrl(null)}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">بەروار</Label>
-                <Input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">تێبینی</Label>
-              <Textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="نمونە: کڕا لە کۆمپانیای..."
-                rows={3}
+              {/* Barcode with scanner */}
+              <FormField
+                control={form.control}
+                name="barcode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>باڕکۆد</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="باڕکۆدی مادە" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setScannerOpen(true)}
+                      >
+                        <ScanBarcode className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <Button type="submit" className="w-full gap-2 h-11" disabled={addMovement.isPending}>
-              {addMovement.isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  <ArrowDownToLine className="h-5 w-5" />
-                  <FileText className="h-4 w-4" />
-                </>
-              )}
-              داخڵکردن + پسوڵە
-            </Button>
-          </form>
+              {/* Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ناوی مادە</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ناوی مادە" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Quantity & Weight */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>عەدەد / کوانتیتی</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="weight_kg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>کێش (کیلۆگرام)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          step="0.01"
+                          placeholder="کێشی مادە بە کیلۆ" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Brand & Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="brand_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>براند</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="هەڵبژێرە" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {brands?.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id}>
+                              {brand.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>هاوپۆل (کاتەگۆری)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="هەڵبژێرە" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Unit & Min Stock */}
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>یەکە (یونت)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="دانە، کیلۆ، گرام..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="min_stock"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>کەمترین ستۆک</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="date_added"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>بەرواری داخڵکردن</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="mfg_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>بەرواری ئنتاج</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="exp_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>بەرواری بەسەرچوون</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Note */}
+              <FormField
+                control={form.control}
+                name="note"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>تێبینی</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="نمونە: کڕا لە کۆمپانیای..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Submit */}
+              <Button type="submit" className="w-full gap-2 h-11" disabled={addItem.isPending}>
+                {addItem.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    <ArrowDownToLine className="h-5 w-5" />
+                    <FileText className="h-4 w-4" />
+                  </>
+                )}
+                داخڵکردن + پسوڵە
+              </Button>
+            </form>
+          </Form>
         </div>
 
         <BarcodeScannerDialog
