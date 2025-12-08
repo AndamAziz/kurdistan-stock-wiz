@@ -200,6 +200,8 @@ export function StockOutInvoiceDialog({
           .item-name { font-weight: 600; color: #1a1a1a; }
           .item-brand { font-size: 11px; color: #888; margin-top: 2px; }
           .item-note { font-size: 10px; color: ${theme.secondary}; margin-top: 3px; font-style: italic; }
+          .item-image { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; border: 1px solid #e5e5e5; }
+          .item-image-placeholder { width: 32px; height: 32px; border-radius: 4px; background: #f5f5f5; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center; font-size: 12px; }
           .text-center { text-align: center; }
           .text-left { text-align: left; }
           .exp-date { color: #dc2626; font-weight: 500; }
@@ -417,17 +419,19 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                           >
                             <td className="py-2 sm:py-3 px-1.5 sm:px-2 text-center text-xs font-bold text-gray-700">{index + 1}</td>
                             <td className="py-2 sm:py-3 px-1.5 sm:px-2">
-                              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded overflow-hidden bg-gray-100 border border-gray-200">
-                                {cartItem.item.image_url ? (
-                                  <img 
-                                    src={cartItem.item.image_url} 
-                                    alt={cartItem.item.name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-gray-400 text-[8px]">📦</div>
-                                )}
-                              </div>
+                              {cartItem.item.image_url ? (
+                                <img 
+                                  src={cartItem.item.image_url} 
+                                  alt={cartItem.item.name}
+                                  className="item-image"
+                                  style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #e5e5e5' }}
+                                />
+                              ) : (
+                                <div 
+                                  className="item-image-placeholder"
+                                  style={{ width: '32px', height: '32px', borderRadius: '4px', background: '#f5f5f5', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}
+                                >📦</div>
+                              )}
                             </td>
                             <td className="py-2 sm:py-3 px-1.5 sm:px-2">
                               <div className="font-semibold text-black text-xs sm:text-sm">{cartItem.item.name}</div>
