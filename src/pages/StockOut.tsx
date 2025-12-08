@@ -11,9 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useItems, useStockMovements, useAddStockMovement } from "@/hooks/useItems";
+import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode } from "lucide-react";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,6 +25,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
+import { ItemDetailCard } from "@/components/items/ItemDetailCard";
+import { InvoiceDialog } from "@/components/invoice/InvoiceDialog";
+
+interface InvoiceItem {
+  item: ItemWithRelations;
+  quantity: number;
+  note?: string;
+}
 
 export default function StockOut() {
   const [selectedItem, setSelectedItem] = useState<string>('');
@@ -33,6 +41,8 @@ export default function StockOut() {
   const [note, setNote] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceItem, setInvoiceItem] = useState<InvoiceItem | null>(null);
 
   const { user } = useAuth();
   const { data: items } = useItems();
@@ -79,6 +89,16 @@ export default function StockOut() {
       created_by: user?.id,
     }, {
       onSuccess: () => {
+        // Save for invoice
+        if (selectedItemData) {
+          setInvoiceItem({
+            item: selectedItemData,
+            quantity: parseInt(quantity),
+            note: note || undefined,
+          });
+          setInvoiceOpen(true);
+        }
+        
         setSelectedItem('');
         setQuantity('');
         setNote('');
@@ -156,26 +176,10 @@ export default function StockOut() {
                 </Select>
               </div>
 
+              {/* Full Item Details Card */}
               {selectedItemData && (
-                <div className="rounded-lg border border-border bg-muted/50 p-4 animate-scale-in">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">ناو:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.name}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">براند:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.brands?.name || '-'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">ستۆکی ئێستا:</span>
-                      <span className="mr-2 font-semibold text-primary">{selectedItemData.current_quantity}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">یەکە:</span>
-                      <span className="mr-2 font-medium">{selectedItemData.unit}</span>
-                    </div>
-                  </div>
+                <div className="animate-scale-in">
+                  <ItemDetailCard item={selectedItemData} showFullDetails={true} />
                 </div>
               )}
 
@@ -214,9 +218,12 @@ export default function StockOut() {
                 {addMovement.isPending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <ArrowUpFromLine className="h-5 w-5" />
+                  <>
+                    <ArrowUpFromLine className="h-5 w-5" />
+                    <FileText className="h-4 w-4" />
+                  </>
                 )}
-                دەرکردن لە کۆگا
+                دەرکردن + ئینڤۆیس
               </Button>
             </form>
           </div>
@@ -276,6 +283,13 @@ export default function StockOut() {
           open={scannerOpen}
           onOpenChange={setScannerOpen}
           onScan={handleBarcodeScan}
+        />
+
+        <InvoiceDialog
+          open={invoiceOpen}
+          onOpenChange={setInvoiceOpen}
+          invoiceItem={invoiceItem}
+          movementDate={date}
         />
       </div>
     </Layout>
