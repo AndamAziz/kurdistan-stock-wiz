@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 interface UseBarcodeScanner {
@@ -6,38 +6,66 @@ interface UseBarcodeScanner {
   error: string | null;
   startScanning: () => Promise<void>;
   stopScanning: () => Promise<void>;
-  scannerRef: React.RefObject<HTMLDivElement>;
 }
 
-export function useBarcodeScanner(onScan: (barcode: string) => void): UseBarcodeScanner {
+export function useBarcodeScanner(
+  onScan: (barcode: string) => void,
+  containerId: string = 'barcode-scanner'
+): UseBarcodeScanner {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const isStoppingRef = useRef(false);
+
+  const stopScanning = useCallback(async () => {
+    if (isStoppingRef.current) return;
+    isStoppingRef.current = true;
+
+    try {
+      const scanner = html5QrCodeRef.current;
+      if (scanner) {
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.SCANNING) {
+          await scanner.stop();
+        }
+        // Clear the scanner instance
+        try {
+          await scanner.clear();
+        } catch (e) {
+          // Ignore clear errors
+        }
+        html5QrCodeRef.current = null;
+      }
+      setIsScanning(false);
+    } catch (err) {
+      console.error('Error stopping scanner:', err);
+    } finally {
+      isStoppingRef.current = false;
+    }
+  }, []);
 
   const startScanning = useCallback(async () => {
-    if (!scannerRef.current) {
+    const container = document.getElementById(containerId);
+    if (!container) {
       setError('Scanner container not found');
       return;
     }
 
     try {
       setError(null);
-      
-      // Create scanner instance if not exists
-      if (!html5QrCodeRef.current) {
-        html5QrCodeRef.current = new Html5Qrcode('barcode-scanner');
-      }
 
+      // Stop any existing scanner first
+      await stopScanning();
+
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Create new scanner instance
+      html5QrCodeRef.current = new Html5Qrcode(containerId);
       const scanner = html5QrCodeRef.current;
-      
-      // Check if already scanning
-      if (scanner.getState() === Html5QrcodeScannerState.SCANNING) {
-        return;
-      }
 
       await scanner.start(
-        { facingMode: 'environment' }, // Use back camera
+        { facingMode: 'environment' },
         {
           fps: 10,
           qrbox: { width: 250, height: 100 },
@@ -45,11 +73,9 @@ export function useBarcodeScanner(onScan: (barcode: string) => void): UseBarcode
         },
         (decodedText) => {
           onScan(decodedText);
-          // Optionally stop after successful scan
         },
-        (errorMessage) => {
-          // Ignore scan errors (happens when no barcode in view)
-          console.debug('Scan frame error:', errorMessage);
+        () => {
+          // Ignore scan frame errors
         }
       );
 
@@ -65,41 +91,12 @@ export function useBarcodeScanner(onScan: (barcode: string) => void): UseBarcode
       }
       setIsScanning(false);
     }
-  }, [onScan]);
-
-  const stopScanning = useCallback(async () => {
-    try {
-      const scanner = html5QrCodeRef.current;
-      if (scanner && scanner.getState() === Html5QrcodeScannerState.SCANNING) {
-        await scanner.stop();
-      }
-      setIsScanning(false);
-    } catch (err) {
-      console.error('Error stopping scanner:', err);
-    }
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      const scanner = html5QrCodeRef.current;
-      if (scanner) {
-        try {
-          if (scanner.getState() === Html5QrcodeScannerState.SCANNING) {
-            scanner.stop().catch(console.error);
-          }
-        } catch (e) {
-          console.error('Cleanup error:', e);
-        }
-      }
-    };
-  }, []);
+  }, [containerId, onScan, stopScanning]);
 
   return {
     isScanning,
     error,
     startScanning,
     stopScanning,
-    scannerRef,
   };
 }
