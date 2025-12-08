@@ -453,49 +453,49 @@ export default function StockOut() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">ژمارەی بۆکس <span className="text-destructive">*</span></Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Label className="text-[10px] font-medium truncate block">بۆکس <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
-                      placeholder="بۆ"
+                      placeholder="0"
                       className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">ژمارەی دانە <span className="text-destructive">*</span></Label>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Label className="text-[10px] font-medium truncate block">دانە <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
                       value={pieceCount}
                       onChange={(e) => setPieceCount(e.target.value)}
-                      placeholder="دا"
+                      placeholder="0"
                       className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">هەدیە</Label>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Label className="text-[10px] font-medium truncate block">هەدیە</Label>
                     <Input
                       type="number"
                       min="0"
                       value={giftQuantity}
                       onChange={(e) => setGiftQuantity(e.target.value)}
-                      placeholder="هە"
+                      placeholder="0"
                       className="h-9 text-sm px-2"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">نرخی تاک (دینار) <span className="text-destructive">*</span></Label>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <Label className="text-[10px] font-medium truncate block">نرخ <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
                       step="250"
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      placeholder="نرخ"
+                      placeholder="0"
                       dir="ltr"
                       className="h-9 text-sm px-2"
                     />
