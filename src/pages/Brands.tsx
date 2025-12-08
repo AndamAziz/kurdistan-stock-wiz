@@ -4,9 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBrands, useAddBrand, useDeleteBrand } from "@/hooks/useItems";
 import { Building2, Plus, Trash2, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Brands() {
   const [newBrand, setNewBrand] = useState('');
+  const [deletingBrand, setDeletingBrand] = useState<{ id: string; name: string } | null>(null);
   const { data: brands, isLoading } = useBrands();
   const addBrand = useAddBrand();
   const deleteBrand = useDeleteBrand();
@@ -18,8 +29,11 @@ export default function Brands() {
     });
   };
 
-  const handleDelete = (id: string) => {
-    deleteBrand.mutate(id);
+  const handleConfirmDelete = () => {
+    if (deletingBrand) {
+      deleteBrand.mutate(deletingBrand.id);
+    }
+    setDeletingBrand(null);
   };
 
   return (
@@ -84,7 +98,7 @@ export default function Brands() {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(brand.id)}
+                    onClick={() => setDeletingBrand({ id: brand.id, name: brand.name })}
                     disabled={deleteBrand.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -95,6 +109,26 @@ export default function Brands() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingBrand} onOpenChange={(open) => !open && setDeletingBrand(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>دڵنیای لە سڕینەوە؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              ئایا دڵنیای دەتەوێت براندی "{deletingBrand?.name}" بسڕیتەوە؟ ئەم کردارە ناگەڕێتەوە.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              سڕینەوە
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

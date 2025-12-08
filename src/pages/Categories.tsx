@@ -4,9 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useItems";
 import { Tags, Plus, Trash2, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Categories() {
   const [newCategory, setNewCategory] = useState('');
+  const [deletingCategory, setDeletingCategory] = useState<{ id: string; name: string } | null>(null);
   const { data: categories, isLoading } = useCategories();
   const addCategory = useAddCategory();
   const deleteCategory = useDeleteCategory();
@@ -18,8 +29,11 @@ export default function Categories() {
     });
   };
 
-  const handleDelete = (id: string) => {
-    deleteCategory.mutate(id);
+  const handleConfirmDelete = () => {
+    if (deletingCategory) {
+      deleteCategory.mutate(deletingCategory.id);
+    }
+    setDeletingCategory(null);
   };
 
   return (
@@ -84,7 +98,7 @@ export default function Categories() {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(category.id)}
+                    onClick={() => setDeletingCategory({ id: category.id, name: category.name })}
                     disabled={deleteCategory.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -95,6 +109,26 @@ export default function Categories() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingCategory} onOpenChange={(open) => !open && setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>دڵنیای لە سڕینەوە؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              ئایا دڵنیای دەتەوێت هاوپۆلی "{deletingCategory?.name}" بسڕیتەوە؟ ئەم کردارە ناگەڕێتەوە.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              سڕینەوە
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }
