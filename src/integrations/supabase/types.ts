@@ -50,6 +50,137 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          boxes: number | null
+          created_at: string
+          exp_date: string | null
+          gifts: number | null
+          id: string
+          invoice_id: string
+          item_barcode: string | null
+          item_brand: string | null
+          item_category: string | null
+          item_id: string | null
+          item_name: string
+          item_unit: string | null
+          mfg_date: string | null
+          note: string | null
+          pieces: number | null
+          price: number | null
+          quantity: number
+          total_price: number | null
+          weight_gram: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          boxes?: number | null
+          created_at?: string
+          exp_date?: string | null
+          gifts?: number | null
+          id?: string
+          invoice_id: string
+          item_barcode?: string | null
+          item_brand?: string | null
+          item_category?: string | null
+          item_id?: string | null
+          item_name: string
+          item_unit?: string | null
+          mfg_date?: string | null
+          note?: string | null
+          pieces?: number | null
+          price?: number | null
+          quantity?: number
+          total_price?: number | null
+          weight_gram?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          boxes?: number | null
+          created_at?: string
+          exp_date?: string | null
+          gifts?: number | null
+          id?: string
+          invoice_id?: string
+          item_barcode?: string | null
+          item_brand?: string | null
+          item_category?: string | null
+          item_id?: string | null
+          item_name?: string
+          item_unit?: string | null
+          mfg_date?: string | null
+          note?: string | null
+          pieces?: number | null
+          price?: number | null
+          quantity?: number
+          total_price?: number | null
+          weight_gram?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          invoice_type: string
+          notes: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          total_amount: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          invoice_type: string
+          notes?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          total_amount?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          invoice_type?: string
+          notes?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       items: {
         Row: {
           barcode: string
