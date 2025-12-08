@@ -163,12 +163,22 @@ export default function StockOut() {
                   <SelectTrigger>
                     <SelectValue placeholder="مادەیەک هەڵبژێرە" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[60vh]">
+                  <SelectContent className="max-h-[60vh] z-50">
                     {filteredItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-medium">{item.name}</span>
-                          <span className="text-sm text-muted-foreground">ستۆک: {item.current_quantity} {item.unit}</span>
+                      <SelectItem key={item.id} value={item.id} className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-base font-semibold tracking-tight text-foreground">
+                            {item.name}
+                          </span>
+                          <div className="flex items-center gap-2 text-xs">
+                            {item.brands && (
+                              <span className="text-primary font-medium">{item.brands.name}</span>
+                            )}
+                            {item.brands && <span className="text-muted-foreground/50">•</span>}
+                            <span className="text-muted-foreground">
+                              ستۆک: <span className="font-semibold text-foreground">{item.current_quantity}</span> {item.unit}
+                            </span>
+                          </div>
                         </div>
                       </SelectItem>
                     ))}
