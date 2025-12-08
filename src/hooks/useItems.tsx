@@ -101,6 +101,8 @@ export function useAddItem() {
       category_id?: string;
       unit?: string;
       min_stock?: number;
+      current_quantity?: number;
+      total_in?: number;
       mfg_date?: string;
       exp_date?: string;
       remind_date?: string;
