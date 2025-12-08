@@ -1,5 +1,6 @@
 import { ReactNode, useState, useRef, useCallback, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 
 interface LayoutProps {
   children: ReactNode;
@@ -54,12 +55,14 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div ref={containerRef} className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onOpenChange={setSidebarOpen} />
-      {/* Main content area - responsive margins */}
-      <main className="min-h-screen pt-14 lg:pt-0 lg:mr-60 xl:mr-64">
+      {/* Main content area - responsive margins with bottom padding for nav */}
+      <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0 lg:mr-60 xl:mr-64">
         <div className="p-3 sm:p-4 lg:p-6">
           {children}
         </div>
       </main>
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav onMenuClick={() => setSidebarOpen(true)} />
     </div>
   );
 }
