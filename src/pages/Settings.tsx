@@ -14,17 +14,21 @@ import {
   Download,
   Wifi,
   WifiOff,
-  Smartphone
+  Smartphone,
+  BellRing,
+  BellOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
 import { usePWA } from "@/hooks/usePWA";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
 
 export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { isInstallable, isInstalled, isOnline, installApp } = usePWA();
+  const { permission, isSupported, requestPermission, checkAndNotify } = usePushNotifications();
 
   const handleSave = () => {
     hapticFeedback.success();
@@ -216,6 +220,60 @@ export default function Settings() {
           </div>
           
           <div className="space-y-3 sm:space-y-4">
+            {/* Push Notification Permission */}
+            {isSupported && (
+              <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {permission === 'granted' ? (
+                    <BellRing className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+                  ) : (
+                    <BellOff className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium">
+                      {permission === 'granted' ? 'ئاگادارکردنەوە چالاکە' : 'ئاگادارکردنەوەی پوش'}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">
+                      {permission === 'granted' 
+                        ? 'ئاگادارکردنەوەکان وەردەگریت'
+                        : 'چالاککردن بۆ وەرگرتنی ئاگادارکردنەوە'}
+                    </p>
+                  </div>
+                </div>
+                {permission === 'granted' ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      hapticFeedback.medium();
+                      checkAndNotify();
+                      toast.success('ئاگادارکردنەوەکان پشکنران');
+                    }}
+                    className="h-7 sm:h-8 text-[10px] sm:text-xs"
+                  >
+                    پشکنین
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      hapticFeedback.medium();
+                      const granted = await requestPermission();
+                      if (granted) {
+                        toast.success('ئاگادارکردنەوەکان چالاک کران');
+                      } else {
+                        toast.error('ڕێگەپێدان نەدرا');
+                      }
+                    }}
+                    className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1"
+                  >
+                    <BellRing className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    چالاککردن
+                  </Button>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ئاگادار لە بەسەرچوون</p>
