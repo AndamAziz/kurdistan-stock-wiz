@@ -152,11 +152,12 @@ export function useAddStockMovement() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
-      toast.success(
-        variables.movement_type === 'IN' 
-          ? 'مادەکە داخڵکرا بۆ کۆگا' 
-          : 'مادەکە دەرکرا لە کۆگا'
-      );
+      const messages = {
+        'IN': 'مادەکە داخڵکرا بۆ کۆگا',
+        'OUT': 'مادەکە دەرکرا لە کۆگا',
+        'ADJUST': 'ستۆکی مادەکە ڕاستکرایەوە',
+      };
+      toast.success(messages[variables.movement_type] || 'گۆڕانکاری تۆمارکرا');
     },
     onError: () => {
       toast.error('هەڵە لە تۆمارکردنی گۆڕانکاری');

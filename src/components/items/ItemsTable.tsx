@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Item } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, History } from "lucide-react";
+import { StockHistoryDialog } from "./StockHistoryDialog";
 
 interface ItemsTableProps {
   items: Item[];
@@ -20,6 +22,8 @@ interface ItemsTableProps {
 }
 
 export function ItemsTable({ items, onView, onEdit, onDelete }: ItemsTableProps) {
+  const [historyItem, setHistoryItem] = useState<{ id: string; name: string } | null>(null);
+
   const getStockStatus = (item: Item) => {
     if (item.quantity === 0) {
       return { label: 'نەماوە', variant: 'destructive' as const };
@@ -117,6 +121,15 @@ export function ItemsTable({ items, onView, onEdit, onDelete }: ItemsTableProps)
                         size="icon"
                         variant="ghost"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => setHistoryItem({ id: item.id, name: item.name })}
+                        title="مێژووی جوڵە"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={() => onView?.(item)}
                       >
                         <Eye className="h-4 w-4" />
@@ -145,6 +158,13 @@ export function ItemsTable({ items, onView, onEdit, onDelete }: ItemsTableProps)
           )}
         </TableBody>
       </Table>
+
+      <StockHistoryDialog
+        open={!!historyItem}
+        onOpenChange={(open) => !open && setHistoryItem(null)}
+        itemId={historyItem?.id || ''}
+        itemName={historyItem?.name || ''}
+      />
     </div>
   );
 }
