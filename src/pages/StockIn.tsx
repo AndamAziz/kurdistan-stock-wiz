@@ -164,6 +164,9 @@ export default function StockIn() {
           remind_date: null,
           image_url: imageUrl || null,
           date_added: data.date_added,
+          box_price: data.boxPrice || null,
+          piece_price: data.piecePrice || null,
+          price_per_kg: data.pricePerKg || null,
           brands: brands?.find(b => b.id === data.brand_id) || null,
           categories: categories?.find(c => c.id === data.category_id) || null,
         };

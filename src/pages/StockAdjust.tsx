@@ -53,6 +53,9 @@ export default function StockAdjust() {
   const [editExpDate, setEditExpDate] = useState<string>('');
   const [editRemindDate, setEditRemindDate] = useState<string>('');
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+  const [editBoxPrice, setEditBoxPrice] = useState<string>('');
+  const [editPiecePrice, setEditPiecePrice] = useState<string>('');
+  const [editPricePerKg, setEditPricePerKg] = useState<string>('');
 
   const { user } = useAuth();
   const { data: items } = useItems();
@@ -82,6 +85,9 @@ export default function StockAdjust() {
       setEditExpDate(selectedItemData.exp_date || '');
       setEditRemindDate(selectedItemData.remind_date || '');
       setEditImageUrl(selectedItemData.image_url || null);
+      setEditBoxPrice(selectedItemData.box_price?.toString() || '');
+      setEditPiecePrice(selectedItemData.piece_price?.toString() || '');
+      setEditPricePerKg(selectedItemData.price_per_kg?.toString() || '');
       setQuantity(selectedItemData.current_quantity.toString());
     } else {
       setEditName('');
@@ -94,6 +100,9 @@ export default function StockAdjust() {
       setEditExpDate('');
       setEditRemindDate('');
       setEditImageUrl(null);
+      setEditBoxPrice('');
+      setEditPiecePrice('');
+      setEditPricePerKg('');
       setQuantity('');
     }
   }, [selectedItemData]);
@@ -151,6 +160,9 @@ export default function StockAdjust() {
       exp_date: editExpDate || null,
       remind_date: editRemindDate || null,
       image_url: editImageUrl || null,
+      box_price: editBoxPrice ? parseFloat(editBoxPrice) : null,
+      piece_price: editPiecePrice ? parseFloat(editPiecePrice) : null,
+      price_per_kg: editPricePerKg ? parseFloat(editPricePerKg) : null,
     });
   };
 
@@ -324,6 +336,43 @@ export default function StockAdjust() {
                           onChange={(e) => setEditMinStock(e.target.value)}
                           placeholder="10"
                         />
+                      </div>
+                    </div>
+
+                    {/* Pricing Fields */}
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+                      <Label className="text-sm font-semibold text-foreground">نرخەکان (دینار)</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">نرخی بۆکس</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editBoxPrice}
+                            onChange={(e) => setEditBoxPrice(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">نرخی دانە</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editPiecePrice}
+                            onChange={(e) => setEditPiecePrice(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">نرخی کیلۆ</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={editPricePerKg}
+                            onChange={(e) => setEditPricePerKg(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
                       </div>
                     </div>
 
