@@ -73,6 +73,9 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1rem",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
       },
       keyframes: {
         "accordion-down": {
@@ -95,6 +98,10 @@ export default {
           from: { opacity: "0", transform: "scale(0.95)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -102,11 +109,15 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.5s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
+        "shimmer": "shimmer 2s linear infinite",
       },
       boxShadow: {
-        "card": "0 2px 8px -2px rgba(0, 0, 0, 0.08), 0 4px 16px -4px rgba(0, 0, 0, 0.06)",
-        "card-hover": "0 8px 24px -4px rgba(0, 0, 0, 0.12), 0 12px 32px -8px rgba(0, 0, 0, 0.1)",
-        "sidebar": "4px 0 24px -4px rgba(0, 0, 0, 0.2)",
+        "card": "0 2px 12px -2px rgba(0, 0, 0, 0.06), 0 4px 20px -4px rgba(0, 0, 0, 0.08)",
+        "card-hover": "0 8px 30px -4px rgba(0, 0, 0, 0.12), 0 12px 40px -8px rgba(0, 0, 0, 0.1)",
+        "sidebar": "-4px 0 30px -4px rgba(0, 0, 0, 0.25)",
+        "glow": "0 0 20px rgba(var(--primary), 0.3)",
+        "glow-success": "0 0 20px rgba(var(--success), 0.3)",
+        "inner-glow": "inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
       },
     },
   },
