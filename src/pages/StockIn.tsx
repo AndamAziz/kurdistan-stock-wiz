@@ -50,6 +50,7 @@ interface ReceiptData {
   quantity: number;
   date: string;
   note?: string;
+  weight_kg?: number;
 }
 
 export default function StockIn() {
@@ -127,6 +128,7 @@ export default function StockIn() {
           quantity: data.quantity,
           date: data.date_added,
           note: data.note || undefined,
+          weight_kg: data.weight_kg || undefined,
         });
         setReceiptOpen(true);
         
@@ -404,12 +406,9 @@ export default function StockIn() {
                 {addItem.isPending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <>
-                    <ArrowDownToLine className="h-5 w-5" />
-                    <FileText className="h-4 w-4" />
-                  </>
+                  <ArrowDownToLine className="h-5 w-5" />
                 )}
-                داخڵکردن + پسوڵە
+                داخڵکردن
               </Button>
             </form>
           </Form>
