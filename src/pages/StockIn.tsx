@@ -272,7 +272,7 @@ export default function StockIn() {
                 name="barcode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>باڕکۆد</FormLabel>
+                    <FormLabel>باڕکۆد <span className="text-destructive">*</span></FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
                         <Input placeholder="باڕکۆدی مادە" {...field} />
@@ -297,7 +297,7 @@ export default function StockIn() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ناوی مادە</FormLabel>
+                    <FormLabel>ناوی مادە <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="ناوی مادە" {...field} />
                     </FormControl>
@@ -312,7 +312,7 @@ export default function StockIn() {
                 name="itemType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>جۆری مادە</FormLabel>
+                    <FormLabel>جۆری مادە <span className="text-destructive">*</span></FormLabel>
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -344,7 +344,7 @@ export default function StockIn() {
                       name="boxCount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs sm:text-sm">ژمارەی بۆکس</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">ژمارەی بۆکس <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input type="number" min={0} placeholder="بۆکس" {...field} value={field.value || ''} />
                           </FormControl>
@@ -358,7 +358,7 @@ export default function StockIn() {
                       name="pieceCount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs sm:text-sm">ژمارەی دانە</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">ژمارەی دانە <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input type="number" min={0} placeholder="دانە" {...field} value={field.value || ''} />
                           </FormControl>
@@ -440,7 +440,7 @@ export default function StockIn() {
                       name="weight_kg"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs sm:text-sm">کێش (کیلۆگرام)</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">کێش (کیلۆگرام) <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -461,7 +461,7 @@ export default function StockIn() {
                       name="weight_gram"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs sm:text-sm">کێش (گرام)</FormLabel>
+                          <FormLabel className="text-xs sm:text-sm">کێش (گرام) <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
