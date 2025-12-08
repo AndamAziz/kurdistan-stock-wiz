@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
@@ -28,12 +29,16 @@ const navigation = [
 const settingsNavigation = [
   { name: 'هاوپۆلەکان', href: '/categories', icon: Tags },
   { name: 'براندەکان', href: '/brands', icon: Building2 },
-  { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
+];
+
+const adminNavigation = [
+  { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
 ];
 
 export function Sidebar() {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRoles();
 
   const handleSignOut = async () => {
     await signOut();
@@ -91,6 +96,28 @@ export function Sidebar() {
               <span>{item.name}</span>
             </NavLink>
           ))}
+
+          {isAdmin && (
+            <>
+              <div className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                بەڕێوەبەر
+              </div>
+              {adminNavigation.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  )}
+                  activeClassName="bg-sidebar-primary text-sidebar-primary-foreground shadow-lg"
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  <span>{item.name}</span>
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         {/* Footer */}
