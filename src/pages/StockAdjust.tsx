@@ -11,9 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useItems, useCategories, useBrands, useStockMovements, useAddStockMovement, useUpdateItem } from "@/hooks/useItems";
 import { useAuth } from "@/hooks/useAuth";
-import { RefreshCw, Clock, Search, Loader2, ScanBarcode, Save, Edit } from "lucide-react";
+import { RefreshCw, Clock, Search, Loader2, ScanBarcode, Save, Edit, MoreVertical, ImageIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -26,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ItemImageUpload } from "@/components/items/ItemImageUpload";
 
 export default function StockAdjust() {
   const [selectedItem, setSelectedItem] = useState<string>('');
@@ -45,6 +52,7 @@ export default function StockAdjust() {
   const [editMfgDate, setEditMfgDate] = useState<string>('');
   const [editExpDate, setEditExpDate] = useState<string>('');
   const [editRemindDate, setEditRemindDate] = useState<string>('');
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
 
   const { user } = useAuth();
   const { data: items } = useItems();
@@ -73,6 +81,7 @@ export default function StockAdjust() {
       setEditMfgDate(selectedItemData.mfg_date || '');
       setEditExpDate(selectedItemData.exp_date || '');
       setEditRemindDate(selectedItemData.remind_date || '');
+      setEditImageUrl(selectedItemData.image_url || null);
       setQuantity(selectedItemData.current_quantity.toString());
     } else {
       setEditName('');
@@ -84,6 +93,7 @@ export default function StockAdjust() {
       setEditMfgDate('');
       setEditExpDate('');
       setEditRemindDate('');
+      setEditImageUrl(null);
       setQuantity('');
     }
   }, [selectedItemData]);
@@ -140,6 +150,7 @@ export default function StockAdjust() {
       mfg_date: editMfgDate || null,
       exp_date: editExpDate || null,
       remind_date: editRemindDate || null,
+      image_url: editImageUrl || null,
     });
   };
 
@@ -226,6 +237,19 @@ export default function StockAdjust() {
                 {/* Edit Item Info Tab */}
                 <TabsContent value="info" className="mt-4">
                   <form onSubmit={handleSubmitItemEdit} className="space-y-4">
+                    {/* Image Upload */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        وێنەی مادە
+                      </Label>
+                      <ItemImageUpload
+                        currentImageUrl={editImageUrl}
+                        onImageUploaded={setEditImageUrl}
+                        onImageRemoved={() => setEditImageUrl(null)}
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">ناو *</Label>
