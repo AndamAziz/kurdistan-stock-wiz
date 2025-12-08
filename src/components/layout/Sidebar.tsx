@@ -13,6 +13,7 @@ import {
   Tags,
   Building2,
   LogOut,
+  Users,
 } from "lucide-react";
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
 const settingsNavigation = [
   { name: 'هاوپۆلەکان', href: '/categories', icon: Tags },
   { name: 'براندەکان', href: '/brands', icon: Building2 },
+  { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
 ];
 
