@@ -15,6 +15,7 @@ interface StockInReceiptData {
   date: string;
   note?: string;
   weight_kg?: number;
+  weight_gram?: number;
 }
 
 interface StockInReceiptDialogProps {
@@ -32,7 +33,7 @@ export function StockInReceiptDialog({
 
   if (!receiptData) return null;
 
-  const { item, quantity, date, note, weight_kg } = receiptData;
+  const { item, quantity, date, note, weight_kg, weight_gram } = receiptData;
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -184,10 +185,10 @@ export function StockInReceiptDialog({
             <span class="info-value">${item.unit}</span>
           </div>
           
-          ${weight_kg ? `
+          ${(weight_kg || weight_gram) ? `
           <div class="info-row">
             <span class="info-label">کێش:</span>
-            <span class="info-value">${weight_kg} کیلۆگرام</span>
+            <span class="info-value">${weight_kg ? `${weight_kg} کیلۆگرام` : ''}${weight_kg && weight_gram ? ' و ' : ''}${weight_gram ? `${weight_gram} گرام` : ''}</span>
           </div>
           ` : ''}
           
@@ -272,10 +273,12 @@ export function StockInReceiptDialog({
               <span className="text-sm text-muted-foreground">یەکە:</span>
               <span className="font-medium text-foreground">{item.unit}</span>
             </div>
-            {weight_kg && (
+            {(weight_kg || weight_gram) && (
               <div className="flex justify-between items-center py-1 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">کێش:</span>
-                <span className="font-medium text-foreground">{weight_kg} کیلۆگرام</span>
+                <span className="font-medium text-foreground">
+                  {weight_kg ? `${weight_kg} کیلۆگرام` : ''}{weight_kg && weight_gram ? ' و ' : ''}{weight_gram ? `${weight_gram} گرام` : ''}
+                </span>
               </div>
             )}
             <div className="flex justify-between items-center py-1 border-b border-border/50">

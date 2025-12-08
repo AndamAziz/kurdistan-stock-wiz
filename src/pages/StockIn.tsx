@@ -33,6 +33,7 @@ const formSchema = z.object({
   name: z.string().min(1, "ناوی مادە پێویستە"),
   quantity: z.coerce.number().min(1, "ژمارە پێویستە"),
   weight_kg: z.coerce.number().min(0).optional(),
+  weight_gram: z.coerce.number().min(0).optional(),
   brand_id: z.string().optional(),
   category_id: z.string().optional(),
   unit: z.string().default("دانە"),
@@ -51,6 +52,7 @@ interface ReceiptData {
   date: string;
   note?: string;
   weight_kg?: number;
+  weight_gram?: number;
 }
 
 export default function StockIn() {
@@ -71,6 +73,7 @@ export default function StockIn() {
       name: "",
       quantity: 1,
       weight_kg: undefined,
+      weight_gram: undefined,
       brand_id: undefined,
       category_id: undefined,
       unit: "دانە",
@@ -129,6 +132,7 @@ export default function StockIn() {
           date: data.date_added,
           note: data.note || undefined,
           weight_kg: data.weight_kg || undefined,
+          weight_gram: data.weight_gram || undefined,
         });
         setReceiptOpen(true);
         
@@ -215,22 +219,23 @@ export default function StockIn() {
                 )}
               />
 
-              {/* Quantity & Weight */}
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>عەدەد / کوانتیتی</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Quantity */}
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>عەدەد / کوانتیتی</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} placeholder="ژمارەی مادە" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
+              {/* Weight - KG and Grams */}
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="weight_kg"
@@ -242,7 +247,28 @@ export default function StockIn() {
                           type="number" 
                           min={0} 
                           step="0.01"
-                          placeholder="کێشی مادە بە کیلۆ" 
+                          placeholder="کیلۆگرام" 
+                          {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="weight_gram"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>کێش (گرام)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          step="1"
+                          placeholder="گرام" 
                           {...field} 
                           value={field.value || ''}
                         />
