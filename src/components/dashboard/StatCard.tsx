@@ -50,9 +50,9 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border-2 p-4 sm:p-5 lg:p-6",
+        "relative overflow-hidden rounded-2xl border-2 p-3 sm:p-4 lg:p-5",
         "shadow-card hover:shadow-lg transition-all duration-300 ease-out",
-        "transform hover:-translate-y-1 animate-slide-up",
+        "transform hover:-translate-y-0.5 animate-slide-up",
         styles.bg
       )}
       style={{ animationDelay: `${delay}ms` }}
@@ -62,49 +62,49 @@ export function StatCard({ title, value, icon: Icon, trend, variant = 'default',
         <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full bg-current" />
       </div>
       
-      <div className="relative flex items-start justify-between gap-3">
-        {/* Icon - positioned on the right for RTL */}
-        <div className={cn(
-          "shrink-0 rounded-xl p-3 lg:p-4",
-          "transition-transform duration-300 hover:scale-110",
-          "shadow-sm",
-          styles.iconBg
-        )}>
-          <Icon className={cn(
-            "h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7",
-            styles.iconColor
-          )} strokeWidth={2.5} />
-        </div>
-        
-        {/* Content */}
-        <div className="flex-1 text-left space-y-1.5 sm:space-y-2">
+      <div className="relative flex flex-col gap-2 sm:gap-3">
+        {/* Header with icon and title */}
+        <div className="flex items-center justify-between gap-2">
           <p className={cn(
-            "text-xs sm:text-sm font-semibold truncate",
+            "text-[11px] sm:text-xs lg:text-sm font-bold tracking-wide",
             styles.titleColor
           )}>
             {title}
           </p>
-          <p className={cn(
-            "text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight",
-            "drop-shadow-sm",
-            styles.valueColor
-          )}
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-          >
-            {value}
-          </p>
-          {trend && (
-            <div className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold",
-              trend.isPositive 
-                ? "bg-success/15 text-success" 
-                : "bg-destructive/15 text-destructive"
-            )}>
-              <span className="text-sm">{trend.isPositive ? '↑' : '↓'}</span>
-              {Math.abs(trend.value)}%
-            </div>
-          )}
+          <div className={cn(
+            "shrink-0 rounded-lg p-1.5 sm:p-2",
+            "shadow-sm",
+            styles.iconBg
+          )}>
+            <Icon className={cn(
+              "h-4 w-4 sm:h-5 sm:w-5",
+              styles.iconColor
+            )} strokeWidth={2.5} />
+          </div>
         </div>
+        
+        {/* Value - Large and prominent */}
+        <p className={cn(
+          "text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-right",
+          "drop-shadow-sm leading-none",
+          styles.valueColor
+        )}
+        style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {value}
+        </p>
+        
+        {trend && (
+          <div className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold self-end",
+            trend.isPositive 
+              ? "bg-success/15 text-success" 
+              : "bg-destructive/15 text-destructive"
+          )}>
+            <span>{trend.isPositive ? '↑' : '↓'}</span>
+            {Math.abs(trend.value)}%
+          </div>
+        )}
       </div>
     </div>
   );
