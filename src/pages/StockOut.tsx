@@ -165,10 +165,10 @@ export default function StockOut() {
                   </SelectTrigger>
                   <SelectContent className="max-h-[60vh] z-50">
                     {filteredItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id} className="py-3 px-4">
-                        <div className="flex items-center gap-3">
+                      <SelectItem key={item.id} value={item.id} className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
                           {/* Item Image */}
-                          <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-muted border border-border">
+                          <div className="h-8 w-8 shrink-0 rounded-md overflow-hidden bg-muted border border-border">
                             {item.image_url ? (
                               <img 
                                 src={item.image_url} 
@@ -176,23 +176,23 @@ export default function StockOut() {
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
+                              <div className="h-full w-full flex items-center justify-center text-muted-foreground text-[10px]">
                                 📦
                               </div>
                             )}
                           </div>
                           {/* Item Details */}
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-base font-semibold tracking-tight text-foreground">
+                          <div className="flex flex-col gap-0 min-w-0">
+                            <span className="text-xs font-medium tracking-tight text-foreground truncate max-w-[180px]">
                               {item.name}
                             </span>
-                            <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 text-[10px]">
                               {item.brands && (
-                                <span className="text-primary font-medium">{item.brands.name}</span>
+                                <span className="text-primary font-medium truncate max-w-[60px]">{item.brands.name}</span>
                               )}
                               {item.brands && <span className="text-muted-foreground/50">•</span>}
                               <span className="text-muted-foreground">
-                                ستۆک: <span className="font-semibold text-foreground">{item.current_quantity}</span> {item.unit}
+                                <span className="font-medium text-foreground">{item.current_quantity}</span> {item.unit}
                               </span>
                             </div>
                           </div>
