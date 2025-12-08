@@ -180,40 +180,33 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Basic Stats - visible to all */}
-        <div className={`grid gap-3 sm:gap-4 lg:gap-5 ${isAdmin ? 'grid-cols-2' : 'grid-cols-2'}`}>
-          {!isAdmin && (
+        {/* Basic Stats - visible to all (without total stock) */}
+        {!isAdmin && (
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
             <StatCard
               title="کۆی مادەکان"
               value={stats.totalItems}
               icon={Package}
               delay={100}
             />
-          )}
-          <StatCard
-            title="کۆی ستۆک"
-            value={stats.totalQuantity.toLocaleString()}
-            icon={PackageCheck}
-            variant="success"
-            delay={150}
-          />
-        </div>
+          </div>
+        )}
 
-        {/* Alerts Stats */}
+        {/* Alerts Stats - 2x2 Grid */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
           <StatCard
             title="بەسەرچوو"
             value={stats.expiredItems.length}
             icon={AlertTriangle}
             variant="danger"
-            delay={200}
+            delay={150}
           />
           <StatCard
             title="نزیک بەسەرچوون"
             value={stats.soonToExpire.length}
             icon={Clock}
             variant="warning"
-            delay={250}
+            delay={200}
           />
           <StatCard
             title="کەم ستۆک"
