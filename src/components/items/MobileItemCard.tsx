@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Package } from "lucide-react";
+import { Eye, Package, History } from "lucide-react";
 import { ItemWithRelations } from "@/hooks/useItems";
+import { StockHistoryDialog } from "./StockHistoryDialog";
 
 interface MobileItemCardProps {
   item: ItemWithRelations;
@@ -18,6 +20,7 @@ const badgeVariants = {
 };
 
 export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const getStockStatus = () => {
     if (item.current_quantity === 0) {
       return { label: 'نەماوە', variant: 'destructive' as const };
@@ -60,20 +63,30 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
         
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-medium text-sm text-foreground truncate">{item.name}</h3>
-              <p className="text-[10px] text-muted-foreground font-mono">{item.barcode}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-medium text-sm text-foreground truncate">{item.name}</h3>
+                <p className="text-[10px] text-muted-foreground font-mono">{item.barcode}</p>
+              </div>
+              <div className="flex items-center shrink-0">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  onClick={() => setShowHistory(true)}
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  onClick={() => onView?.(item)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 shrink-0 text-muted-foreground hover:text-primary"
-              onClick={() => onView?.(item)}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
           
           {/* Details Row */}
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -110,6 +123,13 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
           </div>
         </div>
       </div>
+
+      <StockHistoryDialog
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        itemId={item.id}
+        itemName={item.name}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Items from "./pages/Items";
 import StockIn from "./pages/StockIn";
 import StockOut from "./pages/StockOut";
+import StockAdjust from "./pages/StockAdjust";
 import Expiry from "./pages/Expiry";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
               <Route path="/stock-in" element={<ProtectedRoute><StockIn /></ProtectedRoute>} />
               <Route path="/stock-out" element={<ProtectedRoute><StockOut /></ProtectedRoute>} />
+              <Route path="/stock-adjust" element={<ProtectedRoute><StockAdjust /></ProtectedRoute>} />
               <Route path="/expiry" element={<ProtectedRoute><Expiry /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
               <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />

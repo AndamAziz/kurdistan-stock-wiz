@@ -9,6 +9,7 @@ import {
   Package,
   ArrowDownToLine,
   ArrowUpFromLine,
+  RefreshCw,
   AlertTriangle,
   Settings,
   FileSpreadsheet,
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'مادەکان', href: '/items', icon: Package },
   { name: 'داخڵکردن', href: '/stock-in', icon: ArrowDownToLine },
   { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
+  { name: 'ڕاستکردنەوە', href: '/stock-adjust', icon: RefreshCw },
   { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
   { name: 'ئیمپۆرت/ئێکسپۆرت', href: '/import-export', icon: FileSpreadsheet },
 ];
