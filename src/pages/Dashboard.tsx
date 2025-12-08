@@ -62,11 +62,11 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Header */}
         <div className="animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">داشبۆرد</h1>
-          <p className="mt-2 text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">داشبۆرد</h1>
+          <p className="mt-1 sm:mt-2 text-xs sm:text-sm lg:text-base text-muted-foreground">
             بەخێربێیت بۆ سیستمی بەڕێوەبردنی کۆگای باکوری خۆشەویست
           </p>
         </div>
@@ -117,10 +117,10 @@ export default function Dashboard() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
           {/* Alerts */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="space-y-3 sm:space-y-4">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">
               ئاگادارکردنەوەکان
             </h2>
             <AlertsList
@@ -149,8 +149,8 @@ export default function Dashboard() {
           </div>
 
           {/* Top Moving Items */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">
+          <div className="space-y-3 sm:space-y-4">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">
               زۆرترین فرۆشراو
             </h2>
             <TopItemsTable 

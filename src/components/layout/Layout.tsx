@@ -9,8 +9,11 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="mr-64 min-h-screen p-6">
-        {children}
+      {/* Main content area - responsive margins */}
+      <main className="min-h-screen pt-14 lg:pt-0 lg:mr-60 xl:mr-64">
+        <div className="p-3 sm:p-4 lg:p-6">
+          {children}
+        </div>
       </main>
     </div>
   );
