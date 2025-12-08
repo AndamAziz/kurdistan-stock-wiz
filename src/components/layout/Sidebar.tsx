@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Package,
@@ -10,6 +12,7 @@ import {
   FileSpreadsheet,
   Tags,
   Building2,
+  LogOut,
 } from "lucide-react";
 
 const navigation = [
@@ -28,6 +31,12 @@ const settingsNavigation = [
 ];
 
 export function Sidebar() {
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <aside className="fixed right-0 top-0 z-40 h-screen w-64 bg-gradient-sidebar shadow-sidebar">
       <div className="flex h-full flex-col">
@@ -44,7 +53,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
           <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/40">
             سەرەکی
           </div>
@@ -84,14 +93,30 @@ export function Sidebar() {
 
         {/* Footer */}
         <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground">
-              <span className="text-sm font-bold">ب</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground">
+                <span className="text-sm font-bold">
+                  {user?.email?.charAt(0).toUpperCase() || 'ب'}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user?.user_metadata?.full_name || 'بەکارهێنەر'}
+                </p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">
+                  {user?.email}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-sidebar-foreground">باکوری</p>
-              <p className="text-xs text-sidebar-foreground/60">ئەدمین</p>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

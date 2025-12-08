@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Items from "./pages/Items";
 import StockIn from "./pages/StockIn";
 import StockOut from "./pages/StockOut";
@@ -18,24 +21,27 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/items" element={<Items />} />
-          <Route path="/stock-in" element={<StockIn />} />
-          <Route path="/stock-out" element={<StockOut />} />
-          <Route path="/expiry" element={<Expiry />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/brands" element={<Brands />} />
-          <Route path="/import-export" element={<ImportExport />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
+            <Route path="/stock-in" element={<ProtectedRoute><StockIn /></ProtectedRoute>} />
+            <Route path="/stock-out" element={<ProtectedRoute><StockOut /></ProtectedRoute>} />
+            <Route path="/expiry" element={<ProtectedRoute><Expiry /></ProtectedRoute>} />
+            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+            <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
+            <Route path="/import-export" element={<ProtectedRoute><ImportExport /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

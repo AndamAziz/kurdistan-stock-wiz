@@ -1,18 +1,41 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { ItemsTable } from "@/components/items/ItemsTable";
-import { getExpiredItems, getSoonToExpireItems, Item } from "@/lib/mockData";
-import { AlertTriangle, Clock, CalendarX } from "lucide-react";
+import { useItems, ItemWithRelations } from "@/hooks/useItems";
+import { AlertTriangle, Clock, CalendarX, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type FilterType = 'all' | 'expired' | 'soon';
 
 export default function Expiry() {
   const [filter, setFilter] = useState<FilterType>('all');
-  
-  const expiredItems = getExpiredItems();
-  const soonToExpireItems = getSoonToExpireItems(30);
+  const { data: items, isLoading } = useItems();
+
+  const { expiredItems, soonToExpireItems } = useMemo(() => {
+    if (!items) return { expiredItems: [], soonToExpireItems: [] };
+
+    const today = new Date();
+    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const expired = items.filter(item => 
+      item.exp_date && new Date(item.exp_date) < today
+    );
+    const soonExpire = items.filter(item => {
+      if (!item.exp_date) return false;
+      const expDate = new Date(item.exp_date);
+      return expDate > today && expDate <= thirtyDaysLater;
+    });
+
+    return { expiredItems: expired, soonToExpireItems: soonExpire };
+  }, [items]);
   
   const getFilteredItems = () => {
     switch (filter) {
@@ -33,9 +56,38 @@ export default function Expiry() {
     { id: 'soon' as const, label: 'نزیک بەسەرچوون', count: soonToExpireItems.length, icon: Clock },
   ];
 
-  const handleView = (item: Item) => {
-    toast.info(`بینینی ${item.name}`);
+  const getExpiryStatus = (item: ItemWithRelations) => {
+    if (!item.exp_date) return { label: '-', variant: 'default' as const };
+    
+    const today = new Date();
+    const expDate = new Date(item.exp_date);
+    const daysUntilExpiry = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilExpiry < 0) {
+      return { label: 'بەسەرچوو', variant: 'destructive' as const, days: daysUntilExpiry };
+    }
+    if (daysUntilExpiry <= 30) {
+      return { label: `${daysUntilExpiry} ڕۆژ`, variant: 'warning' as const, days: daysUntilExpiry };
+    }
+    return { label: 'سەلامەت', variant: 'success' as const, days: daysUntilExpiry };
   };
+
+  const badgeVariants = {
+    success: 'bg-success/10 text-success border-success/20',
+    warning: 'bg-warning/10 text-warning border-warning/20',
+    destructive: 'bg-destructive/10 text-destructive border-destructive/20',
+    default: 'bg-muted text-muted-foreground',
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -110,10 +162,63 @@ export default function Expiry() {
         </div>
 
         {/* Items Table */}
-        <ItemsTable
-          items={filteredItems}
-          onView={handleView}
-        />
+        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="text-right font-semibold">باڕکۆد</TableHead>
+                <TableHead className="text-right font-semibold">ناو</TableHead>
+                <TableHead className="text-right font-semibold">براند</TableHead>
+                <TableHead className="text-center font-semibold">ستۆک</TableHead>
+                <TableHead className="text-center font-semibold">بەرواری بەسەرچوون</TableHead>
+                <TableHead className="text-center font-semibold">دۆخ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    هیچ مادەیەک نەدۆزرایەوە
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredItems.map((item, index) => {
+                  const expiryStatus = getExpiryStatus(item);
+                  
+                  return (
+                    <TableRow 
+                      key={item.id} 
+                      className="animate-fade-in hover:bg-muted/30 transition-colors"
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <TableCell className="font-mono text-sm text-muted-foreground">
+                        {item.barcode}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {item.brands?.name || '-'}
+                      </TableCell>
+                      <TableCell className="text-center font-semibold">
+                        {item.current_quantity}
+                      </TableCell>
+                      <TableCell className="text-center text-muted-foreground">
+                        {item.exp_date || '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge 
+                          variant="outline" 
+                          className={cn("text-xs", badgeVariants[expiryStatus.variant])}
+                        >
+                          {expiryStatus.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </Layout>
   );
