@@ -104,6 +104,7 @@ export function useAddItem() {
       mfg_date?: string;
       exp_date?: string;
       remind_date?: string;
+      image_url?: string;
     }) => {
       const { data, error } = await supabase
         .from('items')
@@ -123,6 +124,47 @@ export function useAddItem() {
         toast.error('ئەم باڕکۆدە پێشتر بەکارهاتووە');
       } else {
         toast.error('هەڵە لە زیادکردنی مادە');
+      }
+    },
+  });
+}
+
+export function useUpdateItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...item }: {
+      id: string;
+      barcode?: string;
+      name?: string;
+      brand_id?: string | null;
+      category_id?: string | null;
+      unit?: string;
+      min_stock?: number;
+      mfg_date?: string | null;
+      exp_date?: string | null;
+      remind_date?: string | null;
+      image_url?: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from('items')
+        .update(item)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      toast.success('مادەکە نوێکرایەوە');
+    },
+    onError: (error: Error) => {
+      if (error.message.includes('duplicate key')) {
+        toast.error('ئەم باڕکۆدە پێشتر بەکارهاتووە');
+      } else {
+        toast.error('هەڵە لە نوێکردنەوەی مادە');
       }
     },
   });

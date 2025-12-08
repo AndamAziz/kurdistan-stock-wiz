@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Package, History } from "lucide-react";
 import { ItemWithRelations } from "@/hooks/useItems";
 import { StockHistoryDialog } from "./StockHistoryDialog";
+import { ImagePreviewDialog } from "./ImagePreviewDialog";
 
 interface MobileItemCardProps {
   item: ItemWithRelations;
@@ -21,6 +22,8 @@ const badgeVariants = {
 
 export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps) {
   const [showHistory, setShowHistory] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  
   const getStockStatus = () => {
     if (item.current_quantity === 0) {
       return { label: 'نەماوە', variant: 'destructive' as const };
@@ -56,10 +59,24 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <div className="flex items-start gap-3">
-        {/* Icon */}
-        <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-          <Package className="h-5 w-5 text-primary" />
-        </div>
+        {/* Item Image or Icon */}
+        {item.image_url ? (
+          <button
+            type="button"
+            onClick={() => setShowImagePreview(true)}
+            className="h-12 w-12 rounded-lg overflow-hidden border border-border bg-muted shrink-0 hover:ring-2 hover:ring-primary/50 transition-all"
+          >
+            <img 
+              src={item.image_url} 
+              alt={item.name}
+              className="h-full w-full object-cover"
+            />
+          </button>
+        ) : (
+          <div className="rounded-lg bg-primary/10 p-2 shrink-0">
+            <Package className="h-5 w-5 text-primary" />
+          </div>
+        )}
         
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-2">
@@ -130,6 +147,15 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
         itemId={item.id}
         itemName={item.name}
       />
+
+      {item.image_url && (
+        <ImagePreviewDialog
+          open={showImagePreview}
+          onOpenChange={setShowImagePreview}
+          imageUrl={item.image_url}
+          itemName={item.name}
+        />
+      )}
     </div>
   );
 }
