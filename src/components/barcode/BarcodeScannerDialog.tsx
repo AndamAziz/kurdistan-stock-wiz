@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { hapticFeedback } from "@/lib/haptics";
-import { Camera, X, Loader2, AlertCircle, QrCode } from "lucide-react";
+import { X, Loader2, AlertCircle, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BarcodeScannerDialogProps {
@@ -17,63 +18,93 @@ interface BarcodeScannerDialogProps {
   onScan: (barcode: string) => void;
 }
 
+const SCANNER_ID = 'barcode-scanner-container';
+
 export function BarcodeScannerDialog({ 
   open, 
   onOpenChange, 
   onScan 
 }: BarcodeScannerDialogProps) {
   const [lastScanned, setLastScanned] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const mountedRef = useRef(true);
 
-  const handleScan = (barcode: string) => {
-    if (barcode !== lastScanned) {
+  const handleScan = useCallback((barcode: string) => {
+    if (barcode !== lastScanned && mountedRef.current) {
       setLastScanned(barcode);
       hapticFeedback.success();
       onScan(barcode);
-      onOpenChange(false);
+      handleClose();
     }
-  };
+  }, [lastScanned, onScan]);
 
   const { 
     isScanning, 
     error, 
     startScanning, 
     stopScanning,
-    scannerRef 
-  } = useBarcodeScanner(handleScan);
+  } = useBarcodeScanner(handleScan, SCANNER_ID);
 
   useEffect(() => {
-    if (open) {
-      // Small delay to ensure dialog is fully rendered
-      const timer = setTimeout(() => {
-        startScanning();
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      stopScanning();
-      setLastScanned(null);
-    }
-  }, [open, startScanning, stopScanning]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
-  const handleClose = () => {
-    stopScanning();
-    onOpenChange(false);
-  };
+  useEffect(() => {
+    if (open && !isClosing) {
+      const timer = setTimeout(() => {
+        if (mountedRef.current) {
+          startScanning();
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [open, isClosing, startScanning]);
+
+  const handleClose = useCallback(async () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    
+    try {
+      await stopScanning();
+      // Wait for cleanup to complete
+      await new Promise(resolve => setTimeout(resolve, 150));
+    } catch (e) {
+      console.error('Close error:', e);
+    }
+    
+    if (mountedRef.current) {
+      setLastScanned(null);
+      setIsClosing(false);
+      onOpenChange(false);
+    }
+  }, [isClosing, stopScanning, onOpenChange]);
+
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {
+      handleClose();
+    }
+  }, [handleClose]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="flex items-center gap-2 text-base">
             <QrCode className="h-5 w-5 text-primary" />
             سکانی باڕکۆد
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            باڕکۆدەکە ببە بەرەو کامێراکە بۆ سکانکردن
+          </DialogDescription>
         </DialogHeader>
 
         <div className="relative">
           {/* Scanner Container */}
           <div 
-            id="barcode-scanner"
-            ref={scannerRef}
+            id={SCANNER_ID}
             className={cn(
               "w-full aspect-square bg-black relative overflow-hidden",
               !isScanning && "flex items-center justify-center"
@@ -105,14 +136,12 @@ export function BarcodeScannerDialog({
           {/* Scanning Overlay */}
           {isScanning && (
             <div className="absolute inset-0 pointer-events-none">
-              {/* Corner brackets */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-24">
                 <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary" />
                 <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary" />
                 <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary" />
                 <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary" />
                 
-                {/* Scanning line animation */}
                 <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary animate-pulse" 
                   style={{
                     animation: 'scanLine 2s ease-in-out infinite',
@@ -136,6 +165,7 @@ export function BarcodeScannerDialog({
           size="icon"
           className="absolute top-2 left-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm"
           onClick={handleClose}
+          disabled={isClosing}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -151,7 +181,7 @@ export function BarcodeScannerDialog({
           }
         }
         
-        #barcode-scanner video {
+        #${SCANNER_ID} video {
           object-fit: cover !important;
         }
       `}</style>
