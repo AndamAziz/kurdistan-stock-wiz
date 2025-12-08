@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { NotificationChecker } from "@/components/NotificationChecker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Items from "./pages/Items";
@@ -29,6 +30,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <NotificationChecker />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

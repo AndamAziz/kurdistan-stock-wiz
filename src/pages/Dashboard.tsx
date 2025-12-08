@@ -3,6 +3,9 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
 import { useItems } from "@/hooks/useItems";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Package,
   PackageCheck,
@@ -11,11 +14,25 @@ import {
   Clock,
   TrendingDown,
   Loader2,
+  Bell,
 } from "lucide-react";
 import { useMemo } from "react";
 
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
+  const { permission, requestPermission, checkAndNotify } = usePushNotifications();
+
+  const handleCheckNotifications = async () => {
+    if (permission !== 'granted') {
+      const granted = await requestPermission();
+      if (!granted) {
+        toast.error('ڕێگەپێدان بۆ ئاگادارکردنەوە پێویستە');
+        return;
+      }
+    }
+    await checkAndNotify();
+    toast.success('پشکنینی ئاگادارکردنەوەکان تەواو بوو');
+  };
 
   const stats = useMemo(() => {
     if (!items) return null;
@@ -64,11 +81,22 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-4 sm:space-y-6 lg:space-y-8">
         {/* Header */}
-        <div className="animate-fade-in">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">داشبۆرد</h1>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm lg:text-base text-muted-foreground">
-            بەخێربێیت بۆ سیستمی بەڕێوەبردنی کۆگای باکوری خۆشەویست
-          </p>
+        <div className="animate-fade-in flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">داشبۆرد</h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm lg:text-base text-muted-foreground">
+              بەخێربێیت بۆ سیستمی بەڕێوەبردنی کۆگای باکوری خۆشەویست
+            </p>
+          </div>
+          <Button
+            onClick={handleCheckNotifications}
+            variant="outline"
+            className="flex items-center gap-2 self-start sm:self-auto"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">پشکنینی ئاگادارکردنەوەکان</span>
+            <span className="sm:hidden">پشکنین</span>
+          </Button>
         </div>
 
         {/* Stats Grid */}
