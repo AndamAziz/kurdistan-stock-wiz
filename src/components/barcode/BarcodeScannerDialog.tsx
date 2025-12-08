@@ -27,23 +27,31 @@ export function BarcodeScannerDialog({
 }: BarcodeScannerDialogProps) {
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [scannerReady, setScannerReady] = useState(false);
   const mountedRef = useRef(true);
+  const onScanRef = useRef(onScan);
+  const onOpenChangeRef = useRef(onOpenChange);
 
-  const handleScan = useCallback((barcode: string) => {
-    if (barcode !== lastScanned && mountedRef.current) {
+  // Keep refs updated
+  useEffect(() => {
+    onScanRef.current = onScan;
+    onOpenChangeRef.current = onOpenChange;
+  }, [onScan, onOpenChange]);
+
+  const handleScanResult = useCallback((barcode: string) => {
+    if (barcode && mountedRef.current) {
       setLastScanned(barcode);
       hapticFeedback.success();
-      onScan(barcode);
-      handleClose();
+      onScanRef.current(barcode);
     }
-  }, [lastScanned, onScan]);
+  }, []);
 
   const { 
     isScanning, 
     error, 
     startScanning, 
     stopScanning,
-  } = useBarcodeScanner(handleScan, SCANNER_ID);
+  } = useBarcodeScanner(handleScanResult, SCANNER_ID);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -52,16 +60,44 @@ export function BarcodeScannerDialog({
     };
   }, []);
 
+  // Start scanner when dialog opens
   useEffect(() => {
-    if (open && !isClosing) {
-      const timer = setTimeout(() => {
+    if (open && !isClosing && !scannerReady) {
+      const timer = setTimeout(async () => {
         if (mountedRef.current) {
-          startScanning();
+          setScannerReady(true);
+          try {
+            await startScanning();
+          } catch (e) {
+            console.error('Failed to start scanner:', e);
+          }
         }
-      }, 400);
+      }, 500);
       return () => clearTimeout(timer);
     }
-  }, [open, isClosing, startScanning]);
+  }, [open, isClosing, scannerReady, startScanning]);
+
+  // Close dialog after successful scan
+  useEffect(() => {
+    if (lastScanned && mountedRef.current) {
+      const closeTimer = setTimeout(async () => {
+        setIsClosing(true);
+        try {
+          await stopScanning();
+        } catch (e) {
+          // Ignore
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (mountedRef.current) {
+          setLastScanned(null);
+          setIsClosing(false);
+          setScannerReady(false);
+          onOpenChangeRef.current(false);
+        }
+      }, 200);
+      return () => clearTimeout(closeTimer);
+    }
+  }, [lastScanned, stopScanning]);
 
   const handleClose = useCallback(async () => {
     if (isClosing) return;
@@ -69,8 +105,7 @@ export function BarcodeScannerDialog({
     
     try {
       await stopScanning();
-      // Wait for cleanup to complete
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (e) {
       console.error('Close error:', e);
     }
@@ -78,9 +113,10 @@ export function BarcodeScannerDialog({
     if (mountedRef.current) {
       setLastScanned(null);
       setIsClosing(false);
-      onOpenChange(false);
+      setScannerReady(false);
+      onOpenChangeRef.current(false);
     }
-  }, [isClosing, stopScanning, onOpenChange]);
+  }, [isClosing, stopScanning]);
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
