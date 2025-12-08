@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
-import { useItems } from "@/hooks/useItems";
+import { useItems, useStockMovements } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,14 @@ import {
   TrendingDown,
   Loader2,
   Bell,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import { useMemo } from "react";
 
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
+  const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings } = useNotificationSettings();
 
@@ -58,6 +61,16 @@ export default function Dashboard() {
       .sort((a, b) => b.total_out - a.total_out)
       .slice(0, 5);
 
+    // Calculate total sales from stock movements
+    const totalSales = movements
+      ?.filter(m => m.movement_type === 'OUT')
+      .reduce((sum, m) => sum + ((m.price as number || 0) * m.quantity), 0) || 0;
+
+    // Calculate total purchases from stock movements
+    const totalPurchases = movements
+      ?.filter(m => m.movement_type === 'IN')
+      .reduce((sum, m) => sum + ((m.price as number || 0) * m.quantity), 0) || 0;
+
     return {
       totalItems: items.length,
       totalQuantity: items.reduce((sum, item) => sum + item.current_quantity, 0),
@@ -66,10 +79,12 @@ export default function Dashboard() {
       lowStockItems,
       outOfStock,
       topMoving,
+      totalSales,
+      totalPurchases,
     };
-  }, [items, settings.reminderDays]);
+  }, [items, movements, settings.reminderDays]);
 
-  if (isLoading || !stats) {
+  if (isLoading || movementsLoading || !stats) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -78,6 +93,15 @@ export default function Dashboard() {
       </Layout>
     );
   }
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}K`;
+    }
+    return value.toLocaleString();
+  };
 
   return (
     <Layout>
@@ -102,20 +126,36 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          <StatCard
+            title="کۆی فرۆشراو"
+            value={`${formatCurrency(stats.totalSales)} د.ع`}
+            icon={DollarSign}
+            variant="success"
+            delay={0}
+          />
+          <StatCard
+            title="کۆی کڕاو"
+            value={`${formatCurrency(stats.totalPurchases)} د.ع`}
+            icon={TrendingUp}
+            delay={50}
+          />
           <StatCard
             title="کۆی مادەکان"
             value={stats.totalItems}
             icon={Package}
-            delay={0}
+            delay={100}
           />
           <StatCard
             title="کۆی ستۆک"
             value={stats.totalQuantity}
             icon={PackageCheck}
-            variant="success"
-            delay={100}
+            delay={150}
           />
+        </div>
+
+        {/* Alerts Stats */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-4">
           <StatCard
             title="بەسەرچوو"
             value={stats.expiredItems.length}
@@ -128,21 +168,21 @@ export default function Dashboard() {
             value={stats.soonToExpire.length}
             icon={Clock}
             variant="warning"
-            delay={300}
+            delay={250}
           />
           <StatCard
             title="کەم ستۆک"
             value={stats.lowStockItems.length}
             icon={TrendingDown}
             variant="warning"
-            delay={400}
+            delay={300}
           />
           <StatCard
             title="نەماوە"
             value={stats.outOfStock.length}
             icon={PackageX}
             variant="danger"
-            delay={500}
+            delay={350}
           />
         </div>
 

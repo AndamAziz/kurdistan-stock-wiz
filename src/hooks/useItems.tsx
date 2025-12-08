@@ -180,6 +180,7 @@ export function useAddStockMovement() {
       item_id: string;
       movement_type: 'IN' | 'OUT' | 'ADJUST';
       quantity: number;
+      price?: number;
       movement_date?: string;
       note?: string;
       created_by?: string;

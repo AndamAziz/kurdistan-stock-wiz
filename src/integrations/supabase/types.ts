@@ -155,6 +155,7 @@ export type Database = {
           movement_date: string
           movement_type: string
           note: string | null
+          price: number | null
           quantity: number
         }
         Insert: {
@@ -165,6 +166,7 @@ export type Database = {
           movement_date?: string
           movement_type: string
           note?: string | null
+          price?: number | null
           quantity: number
         }
         Update: {
@@ -175,6 +177,7 @@ export type Database = {
           movement_date?: string
           movement_type?: string
           note?: string | null
+          price?: number | null
           quantity?: number
         }
         Relationships: [
