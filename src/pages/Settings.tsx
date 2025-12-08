@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,11 @@ import {
   Smartphone,
   BellRing,
   BellOff,
-  Clock
+  Clock,
+  FileText,
+  Upload,
+  Palette,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
@@ -33,16 +38,100 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings, intervalOptions, reminderDaysOptions, NotificationInterval } from "@/hooks/useNotificationSettings";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
+import { supabase } from "@/integrations/supabase/client";
+
+// Invoice settings stored in localStorage
+export interface InvoiceSettings {
+  logoUrl: string;
+  companyName: string;
+  colorTheme: 'blue' | 'green' | 'red' | 'purple' | 'black';
+}
+
+const defaultInvoiceSettings: InvoiceSettings = {
+  logoUrl: '',
+  companyName: 'باکوری خۆشەویست',
+  colorTheme: 'blue'
+};
+
+export const colorThemes = {
+  blue: { primary: '#1e40af', secondary: '#3b82f6', light: '#dbeafe', name: 'شین' },
+  green: { primary: '#166534', secondary: '#22c55e', light: '#dcfce7', name: 'سەوز' },
+  red: { primary: '#991b1b', secondary: '#ef4444', light: '#fee2e2', name: 'سوور' },
+  purple: { primary: '#6b21a8', secondary: '#a855f7', light: '#f3e8ff', name: 'مۆر' },
+  black: { primary: '#1a1a1a', secondary: '#404040', light: '#f5f5f5', name: 'ڕەش' },
+};
+
+export function useInvoiceSettings() {
+  const [settings, setSettings] = useState<InvoiceSettings>(() => {
+    const saved = localStorage.getItem('invoice-settings');
+    return saved ? JSON.parse(saved) : defaultInvoiceSettings;
+  });
+
+  const updateSettings = (newSettings: Partial<InvoiceSettings>) => {
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+    localStorage.setItem('invoice-settings', JSON.stringify(updated));
+  };
+
+  return { settings, updateSettings };
+}
 
 export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { isInstallable, isInstalled, isOnline, installApp } = usePWA();
   const { permission, isSupported, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings, updateSettings } = useNotificationSettings();
+  const { settings: invoiceSettings, updateSettings: updateInvoiceSettings } = useInvoiceSettings();
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const handleSave = () => {
     hapticFeedback.success();
     toast.success('ڕێکخستنەکان پاشەکەوتکران');
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('تکایە وێنەیەک هەڵبژێرە');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('قەبارەی وێنە دەبێت کەمتر بێت لە 2MB');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('item-images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(filePath);
+
+      updateInvoiceSettings({ logoUrl: publicUrl });
+      toast.success('لۆگۆ بەسەرکەوتوویی ئەپڵۆد کرا');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('هەڵە لە ئەپڵۆدکردنی لۆگۆ');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    updateInvoiceSettings({ logoUrl: '' });
+    toast.success('لۆگۆ لابرا');
   };
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
@@ -188,6 +277,134 @@ export default function Settings() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Invoice Settings */}
+        <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '75ms' }}>
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <div className="rounded-md sm:rounded-lg bg-blue-500/10 p-1.5 sm:p-2">
+              <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+            </div>
+            <h2 className="text-base sm:text-lg font-semibold text-card-foreground">ڕێکخستنی پسولە</h2>
+          </div>
+          
+          <div className="space-y-4 sm:space-y-6">
+            {/* Logo Upload */}
+            <div className="space-y-3">
+              <Label className="text-xs sm:text-sm font-medium">لۆگۆی کۆمپانیا</Label>
+              <div className="flex items-center gap-4">
+                {invoiceSettings.logoUrl ? (
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-lg border border-border overflow-hidden bg-white">
+                      <img 
+                        src={invoiceSettings.logoUrl} 
+                        alt="Company Logo"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <button
+                      onClick={handleRemoveLogo}
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-20 w-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/50">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      disabled={uploadingLogo}
+                    />
+                    <div className={cn(
+                      "flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors",
+                      uploadingLogo && "opacity-50 cursor-not-allowed"
+                    )}>
+                      <Upload className="h-4 w-4" />
+                      <span className="text-sm">{uploadingLogo ? 'ئەپڵۆدکردن...' : 'هەڵبژاردنی لۆگۆ'}</span>
+                    </div>
+                  </label>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
+                    فۆرمات: PNG, JPG • قەبارە: کەمتر لە 2MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Company Name */}
+            <div className="space-y-2">
+              <Label className="text-xs sm:text-sm">ناوی کۆمپانیا</Label>
+              <Input 
+                value={invoiceSettings.companyName}
+                onChange={(e) => updateInvoiceSettings({ companyName: e.target.value })}
+                placeholder="ناوی کۆمپانیا بۆ پسولە"
+                className="h-9 sm:h-10 text-sm"
+              />
+            </div>
+
+            {/* Color Theme */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Palette className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-xs sm:text-sm font-medium">ڕەنگی پسولە</Label>
+              </div>
+              <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                {Object.entries(colorThemes).map(([key, theme]) => {
+                  const isActive = invoiceSettings.colorTheme === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        hapticFeedback.selection();
+                        updateInvoiceSettings({ colorTheme: key as InvoiceSettings['colorTheme'] });
+                      }}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 active:scale-95",
+                        isActive 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div 
+                        className="h-8 w-8 rounded-full shadow-sm"
+                        style={{ backgroundColor: theme.primary }}
+                      />
+                      <span className={cn(
+                        "text-[10px] sm:text-xs font-medium",
+                        isActive ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {theme.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="p-4 rounded-lg border border-border bg-white">
+              <p className="text-xs text-muted-foreground mb-3">پێشبینینی پسولە:</p>
+              <div 
+                className="p-4 rounded-lg text-white text-center"
+                style={{ backgroundColor: colorThemes[invoiceSettings.colorTheme].primary }}
+              >
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  {invoiceSettings.logoUrl && (
+                    <img src={invoiceSettings.logoUrl} alt="Logo" className="h-10 w-10 rounded object-contain bg-white p-1" />
+                  )}
+                  <span className="font-bold text-lg">{invoiceSettings.companyName}</span>
+                </div>
+                <p className="text-xs opacity-80">پسولەی دەرچوون لە کۆگا</p>
+              </div>
+            </div>
           </div>
         </div>
 
