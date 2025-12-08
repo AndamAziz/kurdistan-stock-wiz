@@ -114,12 +114,12 @@ export default function StockIn() {
                   <SelectTrigger>
                     <SelectValue placeholder="مادەیەک هەڵبژێرە" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[60vh]">
                     {filteredItems.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{item.name}</span>
-                          <span className="text-xs text-muted-foreground">({item.current_quantity} ماوە)</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-sm text-muted-foreground">ستۆک: {item.current_quantity} {item.unit}</span>
                         </div>
                       </SelectItem>
                     ))}
