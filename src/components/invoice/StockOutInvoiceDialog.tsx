@@ -28,6 +28,8 @@ interface StockOutInvoiceDialogProps {
   cartItems: CartItem[];
   recipientName: string;
   recipientPhone: string;
+  driverName?: string;
+  driverPhone?: string;
   movementDate: string;
 }
 
@@ -37,6 +39,8 @@ export function StockOutInvoiceDialog({
   cartItems,
   recipientName,
   recipientPhone,
+  driverName,
+  driverPhone,
   movementDate,
 }: StockOutInvoiceDialogProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -140,7 +144,7 @@ export function StockOutInvoiceDialog({
           }
           .meta-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
           }
@@ -149,6 +153,9 @@ export function StockOutInvoiceDialog({
             padding: 18px;
             border-radius: 10px;
             border-right: 4px solid ${theme.primary};
+          }
+          .meta-box.driver {
+            border-right-color: ${theme.secondary};
           }
           .meta-box .label {
             font-size: 11px;
@@ -300,6 +307,7 @@ export function StockOutInvoiceDialog({
 📅 *بەروار:* ${movementDate}
 👤 *وەرگر:* ${recipientName}
 ${recipientPhone ? `📱 *مۆبایل:* ${recipientPhone}` : ''}
+${driverName ? `\n🚗 *مەندوب:* ${driverName}` : ''}${driverPhone ? `\n📞 *مۆبایلی مەندوب:* ${driverPhone}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -370,7 +378,7 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                 style={{ borderColor: theme.light }}
               >
                 {/* Meta Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <div 
                     className="p-3 sm:p-4 rounded-lg border-r-4"
                     style={{ backgroundColor: theme.light, borderRightColor: theme.primary }}
@@ -381,6 +389,18 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                       <p className="text-xs sm:text-sm text-gray-600 mt-1" dir="ltr">{recipientPhone}</p>
                     )}
                   </div>
+                  {(driverName || driverPhone) && (
+                    <div 
+                      className="p-3 sm:p-4 rounded-lg border-r-4"
+                      style={{ backgroundColor: theme.light, borderRightColor: theme.secondary }}
+                    >
+                      <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-1">زانیاری مەندوب</p>
+                      <p className="text-sm sm:text-lg font-semibold text-black">{driverName || '-'}</p>
+                      {driverPhone && (
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1" dir="ltr">{driverPhone}</p>
+                      )}
+                    </div>
+                  )}
                   <div 
                     className="p-3 sm:p-4 rounded-lg border-r-4"
                     style={{ backgroundColor: theme.light, borderRightColor: theme.primary }}

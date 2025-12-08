@@ -60,6 +60,8 @@ export default function StockOut() {
   const [price, setPrice] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState<string>('');
+  const [driverName, setDriverName] = useState<string>('');
+  const [driverPhone, setDriverPhone] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -272,6 +274,8 @@ export default function StockOut() {
     setCartItems([]);
     setRecipientName('');
     setRecipientPhone('');
+    setDriverName('');
+    setDriverPhone('');
     refetchItems();
   };
 
@@ -307,12 +311,13 @@ export default function StockOut() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">ناوی کۆمپانیا / دوکان *</Label>
+                  <Label className="text-sm font-medium">ناوی کۆمپانیا / دوکان <span className="text-destructive">*</span></Label>
                   <Input
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
                     placeholder="نمونە: کۆمپانیای ئاشتی"
                     className="bg-background"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -327,13 +332,36 @@ export default function StockOut() {
                 </div>
               </div>
 
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">ناوی مەندوب</Label>
+                  <Input
+                    value={driverName}
+                    onChange={(e) => setDriverName(e.target.value)}
+                    placeholder="ناوی مەندوب"
+                    className="bg-background"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">ژمارەی مۆبایلی مەندوب</Label>
+                  <Input
+                    value={driverPhone}
+                    onChange={(e) => setDriverPhone(e.target.value)}
+                    placeholder="07xxxxxxxx"
+                    dir="ltr"
+                    className="bg-background"
+                  />
+                </div>
+              </div>
+
               <div className="mt-4 space-y-2">
-                <Label className="text-sm font-medium">بەرواری دەرچوون</Label>
+                <Label className="text-sm font-medium">بەرواری دەرچوون <span className="text-destructive">*</span></Label>
                 <Input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="bg-background"
+                  required
                 />
               </div>
             </div>
@@ -369,8 +397,8 @@ export default function StockOut() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">مادە</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">مادە <span className="text-destructive">*</span></Label>
                   <Select value={selectedItem} onValueChange={setSelectedItem}>
                     <SelectTrigger>
                       <SelectValue placeholder="مادەیەک هەڵبژێرە" />
@@ -421,7 +449,7 @@ export default function StockOut() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">ژمارەی بۆکس</Label>
+                    <Label className="text-sm font-medium">ژمارەی بۆکس <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
@@ -431,7 +459,7 @@ export default function StockOut() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">ژمارەی دانە</Label>
+                    <Label className="text-sm font-medium">ژمارەی دانە <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
@@ -451,7 +479,7 @@ export default function StockOut() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">نرخی تاک (دینار)</Label>
+                    <Label className="text-sm font-medium">نرخی تاک (دینار) <span className="text-destructive">*</span></Label>
                     <Input
                       type="number"
                       min="0"
@@ -465,11 +493,11 @@ export default function StockOut() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">تێبینی</Label>
+                  <Label className="text-sm font-medium">تێبینی مادە</Label>
                   <Input
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="تێبینی..."
+                    placeholder="تێبینی تایبەت بە ئەم مادەیە..."
                   />
                 </div>
 
@@ -699,6 +727,8 @@ export default function StockOut() {
           cartItems={cartItems}
           recipientName={recipientName}
           recipientPhone={recipientPhone}
+          driverName={driverName}
+          driverPhone={driverPhone}
           movementDate={date}
         />
 
@@ -765,6 +795,8 @@ export default function StockOut() {
             }))}
             recipientName={selectedInvoice.recipient_name || ''}
             recipientPhone={selectedInvoice.recipient_phone || ''}
+            driverName=""
+            driverPhone=""
             movementDate={selectedInvoice.invoice_date}
           />
         )}
