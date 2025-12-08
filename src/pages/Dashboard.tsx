@@ -150,7 +150,7 @@ export default function Dashboard() {
 
         {/* Stats Grid - Financial stats only for Admin */}
         {isAdmin && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="کۆی فرۆشراو"
               value={`${formatCurrency(stats.totalSales)} د.ع`}
@@ -181,7 +181,7 @@ export default function Dashboard() {
         )}
 
         {/* Basic Stats - visible to all */}
-        <div className={`grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 ${isAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-4'}`}>
+        <div className={`grid gap-4 sm:gap-5 lg:gap-6 ${isAdmin ? 'grid-cols-1 sm:grid-cols-1 max-w-md' : 'grid-cols-2 sm:grid-cols-4'}`}>
           {!isAdmin && (
             <StatCard
               title="کۆی مادەکان"
@@ -192,14 +192,15 @@ export default function Dashboard() {
           )}
           <StatCard
             title="کۆی ستۆک"
-            value={stats.totalQuantity}
+            value={stats.totalQuantity.toLocaleString()}
             icon={PackageCheck}
+            variant="success"
             delay={150}
           />
         </div>
 
         {/* Alerts Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:gap-6 sm:grid-cols-4">
           <StatCard
             title="بەسەرچوو"
             value={stats.expiredItems.length}
