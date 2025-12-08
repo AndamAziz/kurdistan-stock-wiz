@@ -43,43 +43,39 @@ export function useUserRoles() {
   const isStorekeeper = currentUserRoles.includes('storekeeper');
   const isViewer = currentUserRoles.includes('viewer');
 
-  // Fetch all users with their roles
+  // Fetch all users with their roles (admin only - RLS enforces this)
   const { data: usersWithRoles = [], isLoading: isLoadingUsers, refetch: refetchUsers } = useQuery({
     queryKey: ['all-users-with-roles'],
     queryFn: async () => {
-      // First get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name');
-      
-      if (profilesError) throw profilesError;
-
-      // Then get all user roles
+      // Get all user roles - RLS policy allows admins to see all roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('*');
+        .select('user_id, role');
       
       if (rolesError) throw rolesError;
 
-      // Get user emails from auth (we need to get this from profiles or user metadata)
-      // Since we can't access auth.users directly, we'll need the email from the current context
+      // Build users map from roles data
       const usersMap = new Map<string, UserWithRole>();
 
-      profiles.forEach(profile => {
-        usersMap.set(profile.id, {
-          id: profile.id,
-          email: '', // Will be filled if we have access
-          full_name: profile.full_name,
-          roles: [],
-        });
+      roles.forEach(role => {
+        if (!usersMap.has(role.user_id)) {
+          usersMap.set(role.user_id, {
+            id: role.user_id,
+            email: '',
+            full_name: null,
+            roles: [],
+          });
+        }
+        usersMap.get(role.user_id)!.roles.push(role.role as AppRole);
       });
 
-      roles.forEach(role => {
-        const userEntry = usersMap.get(role.user_id);
-        if (userEntry) {
-          userEntry.roles.push(role.role as AppRole);
-        }
-      });
+      // Fetch profiles for users we have roles for
+      const userIds = Array.from(usersMap.keys());
+      if (userIds.length > 0) {
+        // Admin can view their own profile, so we fetch profiles one by one or use a function
+        // For now, we'll just show user IDs - profiles are restricted to own profile only
+        // This is a security tradeoff - admin sees roles but not full profile data
+      }
 
       return Array.from(usersMap.values());
     },
