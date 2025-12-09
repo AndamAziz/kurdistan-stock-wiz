@@ -11,11 +11,13 @@ import {
   FileWarning,
   Store,
   Package,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useItems, useBrands, useCategories } from "@/hooks/useItems";
 import { useMarkets } from "@/hooks/useMarkets";
+import { useInvoices } from "@/hooks/useInvoices";
 import { format } from "date-fns";
 import {
   ImportResultDialog,
@@ -25,6 +27,10 @@ import {
   MarketImportResultDialog,
   ImportedMarket,
 } from "@/components/import/MarketImportResultDialog";
+import {
+  StockOutImportResultDialog,
+  ImportedStockOutItem,
+} from "@/components/import/StockOutImportResultDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ImportExport() {
@@ -33,13 +39,17 @@ export default function ImportExport() {
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [importedMarkets, setImportedMarkets] = useState<ImportedMarket[]>([]);
   const [showMarketResultDialog, setShowMarketResultDialog] = useState(false);
+  const [importedStockOut, setImportedStockOut] = useState<ImportedStockOutItem[]>([]);
+  const [showStockOutResultDialog, setShowStockOutResultDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const marketFileInputRef = useRef<HTMLInputElement>(null);
+  const stockOutFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: items = [], refetch } = useItems();
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
   const { data: markets = [], refetch: refetchMarkets } = useMarkets();
+  const { refetch: refetchInvoices } = useInvoices('stock_out');
 
   // Column name mappings for items (Kurdish -> English)
   const columnMappings: Record<string, keyof ImportedItem> = {
@@ -104,6 +114,39 @@ export default function ImportExport() {
     "zone": "zone",
     "Zone": "zone",
     "ناوچە": "zone",
+  };
+
+  // Column name mappings for stock out import
+  const stockOutColumnMappings: Record<string, keyof ImportedStockOutItem> = {
+    "market_code": "market_code",
+    "کۆدی ماڕکێت": "market_code",
+    "code": "market_code",
+    "market_name": "market_name",
+    "ناوی ماڕکێت": "market_name",
+    "name": "market_name",
+    "ناو": "market_name",
+    "market_phone": "market_phone",
+    "مۆبایلی ماڕکێت": "market_phone",
+    "phone": "market_phone",
+    "item_barcode": "item_barcode",
+    "باڕکۆد": "item_barcode",
+    "barcode": "item_barcode",
+    "item_name": "item_name",
+    "ناوی بەرهەم": "item_name",
+    "ناوی مادە": "item_name",
+    "boxes": "boxes",
+    "بۆکس": "boxes",
+    "کارتۆن": "boxes",
+    "pieces": "pieces",
+    "دانە": "pieces",
+    "gifts": "gifts",
+    "بەخشین": "gifts",
+    "price": "price",
+    "نرخ": "price",
+    "total_price": "total_price",
+    "کۆ": "total_price",
+    "note": "note",
+    "تێبینی": "note",
   };
 
   const parseExcelDate = (value: any): string | null => {
@@ -341,6 +384,142 @@ export default function ImportExport() {
         marketFileInputRef.current.value = "";
       }
     }
+  };
+
+  const handleStockOutFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error("تەنها فایلی Excel پەسەند دەکرێت (.xlsx یان .xls)");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        toast.error("فایلەکە بەتاڵە یان فۆرماتی نادروستە");
+        setIsImporting(false);
+        return;
+      }
+
+      const parsedItems: ImportedStockOutItem[] = jsonData.map((row: any, index) => {
+        const item: ImportedStockOutItem = {
+          id: `stockout-${index}-${Date.now()}`,
+          market_code: "",
+          market_name: "",
+          market_phone: "",
+          item_barcode: "",
+          item_name: "",
+          boxes: 0,
+          pieces: 0,
+          gifts: 0,
+          price: 0,
+          total_price: 0,
+          note: "",
+          hasError: false,
+          isComplete: false,
+        };
+
+        Object.keys(row).forEach((key) => {
+          const mappedKey = stockOutColumnMappings[key.trim()];
+          if (mappedKey) {
+            const value = row[key];
+            if (["boxes", "pieces", "gifts", "price", "total_price"].includes(mappedKey)) {
+              (item as any)[mappedKey] = parseFloat(value) || 0;
+            } else {
+              (item as any)[mappedKey] = value?.toString().trim() || "";
+            }
+          }
+        });
+
+        // Calculate total if not set
+        if (!item.total_price && item.price > 0) {
+          const quantity = (item.boxes || 0) + (item.pieces || 0);
+          item.total_price = quantity * item.price;
+        }
+
+        // Validate required fields
+        const isComplete =
+          item.item_name?.trim() !== "" &&
+          ((item.boxes > 0 || item.pieces > 0));
+        item.isComplete = isComplete;
+        item.hasError = !isComplete;
+        if (!isComplete) {
+          item.errorMessage = "ناوی بەرهەم و بڕ پێویستن";
+        }
+
+        return item;
+      }).filter((item): item is ImportedStockOutItem => item !== null);
+
+      if (parsedItems.length === 0) {
+        toast.error("هیچ بەرهەمێکی دروست نەدۆزرایەوە لە فایلەکەدا");
+        setIsImporting(false);
+        return;
+      }
+
+      setImportedStockOut(parsedItems);
+      setShowStockOutResultDialog(true);
+      toast.success(`${parsedItems.length} بەرهەم خوێندرایەوە لە فایلەکە`);
+    } catch (error) {
+      console.error("Excel parse error:", error);
+      toast.error("هەڵە لە خوێندنەوەی فایلەکە");
+    } finally {
+      setIsImporting(false);
+      if (stockOutFileInputRef.current) {
+        stockOutFileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDownloadStockOutTemplate = () => {
+    const templateData = [
+      {
+        "ناوی ماڕکێت": "ماركيت نموونە",
+        "کۆدی ماڕکێت": "1",
+        "مۆبایلی ماڕکێت": "7701234567",
+        "ناوی بەرهەم": "پێپسی ١ لیتر",
+        "باڕکۆد": "123456789",
+        "بۆکس": 10,
+        "دانە": 5,
+        "بەخشین": 1,
+        "نرخ": 1500,
+        "کۆ": 22500,
+        "تێبینی": "",
+      },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(templateData);
+
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 8 },
+      { wch: 8 },
+      { wch: 8 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 20 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "نموونە");
+    XLSX.writeFile(wb, "stockout-import-template.xlsx");
+    toast.success("فایلی نموونە دابەزێندرا");
   };
 
   const handleExportAll = () => {
@@ -616,6 +795,10 @@ export default function ImportExport() {
               <Package className="h-4 w-4" />
               مادەکان
             </TabsTrigger>
+            <TabsTrigger value="stockout" className="gap-2">
+              <ArrowUpFromLine className="h-4 w-4" />
+              فرۆشتن
+            </TabsTrigger>
             <TabsTrigger value="markets" className="gap-2">
               <Store className="h-4 w-4" />
               ماڕکێتەکان
@@ -758,6 +941,102 @@ export default function ImportExport() {
             </div>
           </TabsContent>
 
+          {/* Stock Out Tab */}
+          <TabsContent value="stockout">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Import Section */}
+              <div className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up">
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-success/10 p-4 mb-6">
+                    <ArrowUpFromLine className="h-12 w-12 text-success" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    هێنانی فرۆشتنەکان (Import)
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    فایلی Excel هەڵبژێرە بۆ هێنانی داتای فرۆشتن و دروستکردنی ئینڤۆیس
+                  </p>
+
+                  <input
+                    ref={stockOutFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleStockOutFileSelect}
+                    className="hidden"
+                    id="stockout-excel-input"
+                  />
+
+                  <label
+                    htmlFor="stockout-excel-input"
+                    className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer block"
+                  >
+                    <div className="flex flex-col items-center">
+                      {isImporting ? (
+                        <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+                      ) : (
+                        <Upload className="h-10 w-10 text-muted-foreground mb-3" />
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {isImporting ? "چاوەڕوان بە..." : "فایل بکێشە بۆ ئێرە یان کلیک بکە"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        تەنها .xlsx و .xls پەسەند دەکرێت
+                      </p>
+                    </div>
+                  </label>
+
+                  <Button
+                    onClick={handleDownloadStockOutTemplate}
+                    variant="outline"
+                    className="gap-2 w-full"
+                  >
+                    <FileWarning className="h-5 w-5" />
+                    دابەزاندنی فایلی نموونە
+                  </Button>
+                </div>
+              </div>
+
+              {/* Info Section */}
+              <div
+                className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up"
+                style={{ animationDelay: "100ms" }}
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-primary/10 p-4 mb-6">
+                    <FileSpreadsheet className="h-12 w-12 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    ڕێنمایی Import
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    فایلی Excel دەبێت ئەم ستوونانەی خوارەوەی تێدابێت
+                  </p>
+
+                  <div className="w-full space-y-3 text-right">
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <p className="text-sm font-medium mb-2">ستوونە سەرەکیەکان:</p>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li>• ناوی ماڕکێت / کۆدی ماڕکێت</li>
+                        <li>• ناوی بەرهەم / باڕکۆد</li>
+                        <li>• بۆکس / دانە / بەخشین</li>
+                        <li>• نرخ / کۆ</li>
+                        <li>• تێبینی (ئارەزوومەندانە)</li>
+                      </ul>
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <p className="text-sm font-medium mb-2">تێبینی:</p>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li>• هەر ماڕکێتێک دەبێتە ئینڤۆیسێکی جیا</li>
+                        <li>• بەرهەمەکان بەپێی باڕکۆد یان ناو پەیوەندی دەکرێن</li>
+                        <li>• ستۆک خۆکارانە کەم دەکرێتەوە</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* Markets Tab */}
           <TabsContent value="markets">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -869,6 +1148,14 @@ export default function ImportExport() {
         onOpenChange={setShowMarketResultDialog}
         importedMarkets={importedMarkets}
         onImportComplete={() => refetchMarkets()}
+      />
+
+      {/* Import Result Dialog for Stock Out */}
+      <StockOutImportResultDialog
+        open={showStockOutResultDialog}
+        onOpenChange={setShowStockOutResultDialog}
+        importedItems={importedStockOut}
+        onImportComplete={() => refetchInvoices()}
       />
     </Layout>
   );
