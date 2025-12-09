@@ -100,225 +100,294 @@ export function TopNavigation() {
   const CurrentIcon = getCurrentPageIcon();
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-card via-card to-card/95 backdrop-blur-xl border-b-2 border-border/50 shadow-lg">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 sm:h-20 items-center justify-between gap-4">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/25">
-              <Package className="h-5 w-5 sm:h-6 sm:w-6" />
+    <header className="sticky top-0 z-50 w-full">
+      {/* Gradient Background with Glass Effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background to-accent/5 backdrop-blur-2xl" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/80 to-background/60" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      
+      <div className="relative max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10">
+        <div className="flex h-18 sm:h-22 items-center justify-between gap-6 py-3">
+          {/* Logo Section */}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
+              <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/30 ring-2 ring-primary/20">
+                <Package className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+              </div>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg lg:text-xl font-bold text-foreground">
+              <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                 باکوری خۆشەویست
               </h1>
-              <p className="text-[10px] lg:text-xs text-muted-foreground">
+              <p className="text-xs lg:text-sm text-muted-foreground font-medium mt-0.5">
                 سیستمی بەڕێوەبردنی کۆگا
               </p>
             </div>
           </div>
 
-          {/* Navigation Dropdown */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Center Navigation */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <DropdownMenu open={open} onOpenChange={setOpen}>
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="h-11 sm:h-12 px-4 sm:px-6 gap-2 sm:gap-3 text-sm sm:text-base font-semibold border-2 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
+                  className={cn(
+                    "h-12 sm:h-14 px-4 sm:px-6 gap-3 text-sm sm:text-base font-semibold",
+                    "bg-gradient-to-br from-background/90 to-background/70 backdrop-blur-xl",
+                    "border-2 border-border/60 hover:border-primary/50",
+                    "shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-primary/10",
+                    "transition-all duration-300 rounded-2xl",
+                    open && "border-primary/50 shadow-primary/20"
+                  )}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <CurrentIcon className="h-4 w-4 text-primary" />
+                  <div className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300",
+                    "bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20"
+                  )}>
+                    <CurrentIcon className="h-5 w-5 text-primary" strokeWidth={2} />
                   </div>
-                  <span className="hidden xs:inline">{getCurrentPageName()}</span>
-                  <ChevronDown className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                    open && "rotate-180"
-                  )} />
+                  <span className="hidden sm:inline text-foreground">{getCurrentPageName()}</span>
+                  <div className="flex items-center gap-1">
+                    <Menu className="h-4 w-4 sm:hidden text-muted-foreground" />
+                    <ChevronDown className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform duration-300",
+                      open && "rotate-180"
+                    )} />
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="center" 
-                className="w-72 sm:w-80 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-2xl rounded-2xl"
-                sideOffset={8}
+                className="w-80 sm:w-96 p-3 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl shadow-black/20 rounded-3xl"
+                sideOffset={12}
               >
                 {/* Main Navigation */}
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-bold uppercase tracking-wider px-3 py-2">
-                  سەرەکی
-                </DropdownMenuLabel>
-                {mainNavigation.map((item) => (
-                  <DropdownMenuItem
-                    key={item.name}
-                    onClick={() => handleNavigate(item.href)}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 my-1",
-                      isActiveRoute(item.href) 
-                        ? "bg-primary/15 text-primary font-semibold" 
-                        : "hover:bg-accent/50"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
-                      isActiveRoute(item.href) 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "bg-muted/50"
-                    )}>
-                      <item.icon className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </DropdownMenuItem>
-                ))}
+                <div className="mb-3">
+                  <DropdownMenuLabel className="text-[10px] text-primary font-bold uppercase tracking-widest px-3 py-2 flex items-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-primary" />
+                    سەرەکی
+                  </DropdownMenuLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    {mainNavigation.map((item) => (
+                      <DropdownMenuItem
+                        key={item.name}
+                        onClick={() => handleNavigate(item.href)}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-2xl cursor-pointer transition-all duration-300",
+                          isActiveRoute(item.href) 
+                            ? "bg-gradient-to-br from-primary/20 to-primary/10 text-primary ring-2 ring-primary/30" 
+                            : "hover:bg-accent/60 hover:scale-[1.02]"
+                        )}
+                      >
+                        <div className={cn(
+                          "flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300",
+                          isActiveRoute(item.href) 
+                            ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30" 
+                            : "bg-muted/60"
+                        )}>
+                          <item.icon className="h-5 w-5" strokeWidth={2} />
+                        </div>
+                        <span className="text-sm font-semibold">{item.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </div>
 
-                <DropdownMenuSeparator className="my-2 bg-border/50" />
+                <DropdownMenuSeparator className="my-3 bg-gradient-to-r from-transparent via-border to-transparent" />
 
-                {/* Stock Operations */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer my-1",
-                    isActiveGroup(stockNavigation) && "bg-primary/10 text-primary"
-                  )}>
-                    <div className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg",
-                      isActiveGroup(stockNavigation) 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "bg-muted/50"
-                    )}>
-                      <Boxes className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">جوڵەی ستۆک</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-56 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-xl rounded-xl">
-                      {stockNavigation.map((item) => (
-                        <DropdownMenuItem
-                          key={item.name}
-                          onClick={() => handleNavigate(item.href)}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer my-0.5",
-                            isActiveRoute(item.href) 
-                              ? "bg-primary/15 text-primary font-semibold" 
-                              : "hover:bg-accent/50"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span className="text-sm">{item.name}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-
-                {/* Reports */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer my-1",
-                    isActiveGroup(reportNavigation) && "bg-primary/10 text-primary"
-                  )}>
-                    <div className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg",
-                      isActiveGroup(reportNavigation) 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "bg-muted/50"
-                    )}>
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">ڕاپۆرتەکان</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-56 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-xl rounded-xl">
-                      {reportNavigation.map((item) => (
-                        <DropdownMenuItem
-                          key={item.name}
-                          onClick={() => handleNavigate(item.href)}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer my-0.5",
-                            isActiveRoute(item.href) 
-                              ? "bg-primary/15 text-primary font-semibold" 
-                              : "hover:bg-accent/50"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span className="text-sm">{item.name}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-
-                {/* Settings */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className={cn(
-                    "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer my-1",
-                    isActiveGroup(settingsNavigation) && "bg-primary/10 text-primary"
-                  )}>
-                    <div className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg",
-                      isActiveGroup(settingsNavigation) 
-                        ? "bg-primary text-primary-foreground shadow-md" 
-                        : "bg-muted/50"
-                    )}>
-                      <Wrench className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-medium">ڕێکخستن</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-56 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-xl rounded-xl">
-                      {settingsNavigation.map((item) => (
-                        <DropdownMenuItem
-                          key={item.name}
-                          onClick={() => handleNavigate(item.href)}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer my-0.5",
-                            isActiveRoute(item.href) 
-                              ? "bg-primary/15 text-primary font-semibold" 
-                              : "hover:bg-accent/50"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span className="text-sm">{item.name}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-
-                {/* Admin */}
-                {isAdmin && (
+                {/* Navigation Groups */}
+                <div className="space-y-2">
+                  {/* Stock Operations */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className={cn(
-                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer my-1",
-                      isActiveGroup(adminNavigation) && "bg-primary/10 text-primary"
+                      "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                      isActiveGroup(stockNavigation) 
+                        ? "bg-gradient-to-r from-success/15 to-success/5 text-success ring-1 ring-success/30" 
+                        : "hover:bg-accent/50"
                     )}>
                       <div className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-lg",
-                        isActiveGroup(adminNavigation) 
-                          ? "bg-primary text-primary-foreground shadow-md" 
+                        "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                        isActiveGroup(stockNavigation) 
+                          ? "bg-gradient-to-br from-success to-success/80 text-success-foreground shadow-lg shadow-success/25" 
                           : "bg-muted/50"
                       )}>
-                        <Shield className="h-4 w-4" />
+                        <Boxes className="h-5 w-5" strokeWidth={2} />
                       </div>
-                      <span className="text-sm font-medium">بەڕێوەبەر</span>
+                      <div className="flex-1">
+                        <span className="text-sm font-semibold block">جوڵەی ستۆک</span>
+                        <span className="text-[10px] text-muted-foreground">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
+                      </div>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="w-56 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-xl rounded-xl">
-                        {adminNavigation.map((item) => (
+                      <DropdownMenuSubContent className="w-64 p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl">
+                        {stockNavigation.map((item) => (
                           <DropdownMenuItem
                             key={item.name}
                             onClick={() => handleNavigate(item.href)}
                             className={cn(
-                              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer my-0.5",
+                              "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-1",
                               isActiveRoute(item.href) 
-                                ? "bg-primary/15 text-primary font-semibold" 
+                                ? "bg-gradient-to-r from-success/15 to-success/5 text-success font-semibold" 
                                 : "hover:bg-accent/50"
                             )}
                           >
-                            <item.icon className="h-4 w-4" />
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg",
+                              isActiveRoute(item.href) ? "bg-success/20" : "bg-muted/30"
+                            )}>
+                              <item.icon className="h-4 w-4" />
+                            </div>
                             <span className="text-sm">{item.name}</span>
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
-                )}
+
+                  {/* Reports */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className={cn(
+                      "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                      isActiveGroup(reportNavigation) 
+                        ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning ring-1 ring-warning/30" 
+                        : "hover:bg-accent/50"
+                    )}>
+                      <div className={cn(
+                        "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                        isActiveGroup(reportNavigation) 
+                          ? "bg-gradient-to-br from-warning to-warning/80 text-warning-foreground shadow-lg shadow-warning/25" 
+                          : "bg-muted/50"
+                      )}>
+                        <FileText className="h-5 w-5" strokeWidth={2} />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-semibold block">ڕاپۆرتەکان</span>
+                        <span className="text-[10px] text-muted-foreground">بەسەرچوون، ئینڤۆیس، ئیمپۆرت</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="w-64 p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl">
+                        {reportNavigation.map((item) => (
+                          <DropdownMenuItem
+                            key={item.name}
+                            onClick={() => handleNavigate(item.href)}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-1",
+                              isActiveRoute(item.href) 
+                                ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning font-semibold" 
+                                : "hover:bg-accent/50"
+                            )}
+                          >
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg",
+                              isActiveRoute(item.href) ? "bg-warning/20" : "bg-muted/30"
+                            )}>
+                              <item.icon className="h-4 w-4" />
+                            </div>
+                            <span className="text-sm">{item.name}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+
+                  {/* Settings */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className={cn(
+                      "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                      isActiveGroup(settingsNavigation) 
+                        ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary ring-1 ring-primary/30" 
+                        : "hover:bg-accent/50"
+                    )}>
+                      <div className={cn(
+                        "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                        isActiveGroup(settingsNavigation) 
+                          ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25" 
+                          : "bg-muted/50"
+                      )}>
+                        <Wrench className="h-5 w-5" strokeWidth={2} />
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-sm font-semibold block">ڕێکخستن</span>
+                        <span className="text-[10px] text-muted-foreground">کەتەگۆری، براند، ڕێکخستنەکان</span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="w-64 p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl">
+                        {settingsNavigation.map((item) => (
+                          <DropdownMenuItem
+                            key={item.name}
+                            onClick={() => handleNavigate(item.href)}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-1",
+                              isActiveRoute(item.href) 
+                                ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold" 
+                                : "hover:bg-accent/50"
+                            )}
+                          >
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg",
+                              isActiveRoute(item.href) ? "bg-primary/20" : "bg-muted/30"
+                            )}>
+                              <item.icon className="h-4 w-4" />
+                            </div>
+                            <span className="text-sm">{item.name}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+
+                  {/* Admin */}
+                  {isAdmin && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className={cn(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                        isActiveGroup(adminNavigation) 
+                          ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive ring-1 ring-destructive/30" 
+                          : "hover:bg-accent/50"
+                      )}>
+                        <div className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                          isActiveGroup(adminNavigation) 
+                            ? "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-lg shadow-destructive/25" 
+                            : "bg-muted/50"
+                        )}>
+                          <Shield className="h-5 w-5" strokeWidth={2} />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold block">بەڕێوەبەر</span>
+                          <span className="text-[10px] text-muted-foreground">بەکارهێنەران و ڕۆڵەکان</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-64 p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl">
+                          {adminNavigation.map((item) => (
+                            <DropdownMenuItem
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-1",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-destructive/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <span className="text-sm">{item.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  )}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -327,39 +396,56 @@ export function TopNavigation() {
               <DropdownMenuTrigger asChild>
                 <Button 
                   variant="ghost" 
-                  className="h-11 sm:h-12 px-2 sm:px-3 gap-2 hover:bg-accent/50 rounded-xl"
+                  className={cn(
+                    "h-12 sm:h-14 px-2 sm:px-4 gap-3 rounded-2xl",
+                    "hover:bg-accent/40 transition-all duration-300",
+                    "border border-transparent hover:border-border/50"
+                  )}
                 >
-                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
-                    <span className="text-sm sm:text-base font-bold">
-                      {user?.email?.charAt(0).toUpperCase() || 'ب'}
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-xl blur opacity-30" />
+                    <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20">
+                      <span className="text-base sm:text-lg font-bold">
+                        {user?.email?.charAt(0).toUpperCase() || 'ب'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="hidden md:block text-right">
-                    <p className="text-sm font-semibold text-foreground">
+                  <div className="hidden lg:block text-right">
+                    <p className="text-sm font-bold text-foreground">
                       {user?.user_metadata?.full_name || 'بەکارهێنەر'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                    <p className="text-xs text-muted-foreground truncate max-w-[140px]">
                       {user?.email}
                     </p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 p-2 bg-popover/98 backdrop-blur-xl border-2 border-border/50 shadow-xl rounded-xl"
+                className="w-64 p-3 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl"
+                sideOffset={12}
               >
-                <div className="px-3 py-2 mb-2">
-                  <p className="text-sm font-semibold">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
+                    <span className="text-lg font-bold">
+                      {user?.email?.charAt(0).toUpperCase() || 'ب'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
                 </div>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-border/50" />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-all duration-200 mt-2"
                 >
-                  <LogOut className="h-4 w-4" />
-                  <span className="text-sm font-medium">چوونەدەرەوە</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10">
+                    <LogOut className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-semibold">چوونەدەرەوە</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
