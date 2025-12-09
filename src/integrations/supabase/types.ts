@@ -265,6 +265,45 @@ export type Database = {
           },
         ]
       }
+      markets: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          trader_category: string | null
+          updated_at: string
+          zone: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          trader_category?: string | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          trader_category?: string | null
+          updated_at?: string
+          zone?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

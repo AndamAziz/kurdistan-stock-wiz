@@ -9,27 +9,39 @@ import {
   FileDown,
   Loader2,
   FileWarning,
+  Store,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useItems, useBrands, useCategories } from "@/hooks/useItems";
+import { useMarkets } from "@/hooks/useMarkets";
 import { format } from "date-fns";
 import {
   ImportResultDialog,
   ImportedItem,
 } from "@/components/import/ImportResultDialog";
+import {
+  MarketImportResultDialog,
+  ImportedMarket,
+} from "@/components/import/MarketImportResultDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ImportExport() {
   const [isImporting, setIsImporting] = useState(false);
   const [importedItems, setImportedItems] = useState<ImportedItem[]>([]);
   const [showResultDialog, setShowResultDialog] = useState(false);
+  const [importedMarkets, setImportedMarkets] = useState<ImportedMarket[]>([]);
+  const [showMarketResultDialog, setShowMarketResultDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const marketFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: items = [], refetch } = useItems();
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
+  const { data: markets = [], refetch: refetchMarkets } = useMarkets();
 
-  // Column name mappings (Kurdish -> English)
+  // Column name mappings for items (Kurdish -> English)
   const columnMappings: Record<string, keyof ImportedItem> = {
     "ناوی مادە": "name",
     "ناو": "name",
@@ -62,6 +74,26 @@ export default function ImportExport() {
     "exp_date": "exp_date",
     "بەرواری بیرخستنەوە": "remind_date",
     "remind_date": "remind_date",
+  };
+
+  // Column name mappings for markets
+  const marketColumnMappings: Record<string, keyof ImportedMarket> = {
+    "key": "code",
+    "code": "code",
+    "کۆد": "code",
+    "name": "name",
+    "ناو": "name",
+    "traderCategory": "trader_category",
+    "جۆر": "trader_category",
+    "phone": "phone",
+    "مۆبایل": "phone",
+    "تەلەفۆن": "phone",
+    "address": "address",
+    "ناونیشان": "address",
+    "city": "city",
+    "شار": "city",
+    "zone": "zone",
+    "ناوچە": "zone",
   };
 
   const parseExcelDate = (value: any): string | null => {
@@ -209,6 +241,98 @@ export default function ImportExport() {
     }
   };
 
+  const handleMarketFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error("تەنها فایلی Excel پەسەند دەکرێت (.xlsx یان .xls)");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        toast.error("فایلەکە بەتاڵە یان فۆرماتی نادروستە");
+        setIsImporting(false);
+        return;
+      }
+
+      // Parse each row for markets
+      const parsedMarkets: ImportedMarket[] = jsonData.map((row: any, index) => {
+        const market: ImportedMarket = {
+          id: `import-market-${index}-${Date.now()}`,
+          code: "",
+          name: "",
+          trader_category: "",
+          phone: "",
+          address: "",
+          city: "",
+          zone: "",
+          hasError: false,
+          isComplete: false,
+        };
+
+        // Map columns
+        Object.keys(row).forEach((key) => {
+          const mappedKey = marketColumnMappings[key.trim()];
+          if (mappedKey) {
+            const value = row[key];
+            (market as any)[mappedKey] = value?.toString().trim() || "";
+          }
+        });
+
+        // Use key as code if code is not set
+        if (!market.code && row.key !== undefined) {
+          market.code = row.key.toString();
+        }
+
+        // Validate required fields
+        const isComplete =
+          market.name?.trim() !== "" && market.code?.trim() !== "";
+
+        market.isComplete = isComplete;
+        market.hasError = !isComplete;
+        if (!isComplete) {
+          market.errorMessage = "ناو و کۆد پێویستن";
+        }
+
+        return market;
+      }).filter((market): market is ImportedMarket => market !== null);
+
+      if (parsedMarkets.length === 0) {
+        toast.error("هیچ ماڕکێتێکی دروست نەدۆزرایەوە لە فایلەکەدا");
+        setIsImporting(false);
+        return;
+      }
+
+      setImportedMarkets(parsedMarkets);
+      setShowMarketResultDialog(true);
+      toast.success(`${parsedMarkets.length} ماڕکێت خوێندرایەوە لە فایلەکە`);
+    } catch (error) {
+      console.error("Excel parse error:", error);
+      toast.error("هەڵە لە خوێندنەوەی فایلەکە");
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      if (marketFileInputRef.current) {
+        marketFileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleExportAll = () => {
     try {
       const excelData = items.map((item, index) => {
@@ -341,6 +465,47 @@ export default function ImportExport() {
     }
   };
 
+  const handleExportMarkets = () => {
+    if (markets.length === 0) {
+      toast.info("هیچ ماڕکێتێک نییە");
+      return;
+    }
+
+    try {
+      const excelData = markets.map((market, index) => ({
+        "#": index + 1,
+        "کۆد": market.code,
+        "ناو": market.name,
+        "جۆر": market.trader_category || "",
+        "مۆبایل": market.phone || "",
+        "ناونیشان": market.address || "",
+        "شار": market.city || "",
+        "ناوچە": market.zone || "",
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      ws["!cols"] = [
+        { wch: 5 },
+        { wch: 10 },
+        { wch: 35 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 40 },
+        { wch: 15 },
+        { wch: 15 },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "ماڕکێتەکان");
+      const filename = `markets-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success(`${markets.length} ماڕکێت ئێکسپۆرت کرا`);
+    } catch (error) {
+      toast.error("هەڵە لە دروستکردنی فایل");
+    }
+  };
+
   const handleDownloadTemplate = () => {
     const templateData = [
       {
@@ -384,6 +549,37 @@ export default function ImportExport() {
     toast.success("فایلی نموونە دابەزێندرا");
   };
 
+  const handleDownloadMarketTemplate = () => {
+    const templateData = [
+      {
+        "کۆد": "1",
+        "ناو": "ماركیت نموونە",
+        "جۆر": "ماركیت",
+        "مۆبایل": "7701234567",
+        "ناونیشان": "سلێمانی / بازار",
+        "شار": "سلێمانی",
+        "ناوچە": "بازار",
+      },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(templateData);
+
+    ws["!cols"] = [
+      { wch: 10 },
+      { wch: 35 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 40 },
+      { wch: 15 },
+      { wch: 15 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "نموونە");
+    XLSX.writeFile(wb, "market-import-template.xlsx");
+    toast.success("فایلی نموونە دابەزێندرا");
+  };
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -404,146 +600,265 @@ export default function ImportExport() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Import Section */}
-          <div className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up">
-            <div className="flex flex-col items-center text-center">
-              <div className="rounded-2xl bg-success/10 p-4 mb-6">
-                <FileUp className="h-12 w-12 text-success" />
-              </div>
-              <h2 className="text-xl font-semibold text-card-foreground mb-2">
-                هێنانی داتا (Import)
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                فایلی Excel هەڵبژێرە بۆ هێنانی مادەکان بۆ ناو سیستەم
-              </p>
+        <Tabs defaultValue="items" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="items" className="gap-2">
+              <Package className="h-4 w-4" />
+              مادەکان
+            </TabsTrigger>
+            <TabsTrigger value="markets" className="gap-2">
+              <Store className="h-4 w-4" />
+              ماڕکێتەکان
+            </TabsTrigger>
+          </TabsList>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="excel-input"
-              />
-
-              <label
-                htmlFor="excel-input"
-                className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer block"
-              >
-                <div className="flex flex-col items-center">
-                  {isImporting ? (
-                    <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
-                  ) : (
-                    <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    {isImporting ? "چاوەڕوان بە..." : "فایل بکێشە بۆ ئێرە یان کلیک بکە"}
+          {/* Items Tab */}
+          <TabsContent value="items">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Import Section */}
+              <div className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up">
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-success/10 p-4 mb-6">
+                    <FileUp className="h-12 w-12 text-success" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    هێنانی داتا (Import)
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    فایلی Excel هەڵبژێرە بۆ هێنانی مادەکان بۆ ناو سیستەم
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    تەنها .xlsx و .xls پەسەند دەکرێت
-                  </p>
-                </div>
-              </label>
 
-              <Button
-                onClick={handleDownloadTemplate}
-                variant="outline"
-                className="gap-2 w-full"
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="excel-input"
+                  />
+
+                  <label
+                    htmlFor="excel-input"
+                    className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer block"
+                  >
+                    <div className="flex flex-col items-center">
+                      {isImporting ? (
+                        <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+                      ) : (
+                        <Upload className="h-10 w-10 text-muted-foreground mb-3" />
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {isImporting ? "چاوەڕوان بە..." : "فایل بکێشە بۆ ئێرە یان کلیک بکە"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        تەنها .xlsx و .xls پەسەند دەکرێت
+                      </p>
+                    </div>
+                  </label>
+
+                  <Button
+                    onClick={handleDownloadTemplate}
+                    variant="outline"
+                    className="gap-2 w-full"
+                  >
+                    <FileWarning className="h-5 w-5" />
+                    دابەزاندنی فایلی نموونە
+                  </Button>
+                </div>
+              </div>
+
+              {/* Export Section */}
+              <div
+                className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up"
+                style={{ animationDelay: "100ms" }}
               >
-                <FileWarning className="h-5 w-5" />
-                دابەزاندنی فایلی نموونە
-              </Button>
-            </div>
-          </div>
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-primary/10 p-4 mb-6">
+                    <FileDown className="h-12 w-12 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    ناردنی داتا (Export)
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    هەموو داتای کۆگا دابەزێنە وەک فایلی Excel بۆ بەکاپ یان کاری تر
+                  </p>
 
-          {/* Export Section */}
-          <div
-            className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up"
-            style={{ animationDelay: "100ms" }}
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="rounded-2xl bg-primary/10 p-4 mb-6">
-                <FileDown className="h-12 w-12 text-primary" />
-              </div>
-              <h2 className="text-xl font-semibold text-card-foreground mb-2">
-                ناردنی داتا (Export)
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-sm">
-                هەموو داتای کۆگا دابەزێنە وەک فایلی Excel بۆ بەکاپ یان کاری تر
-              </p>
+                  <div className="w-full space-y-3 mb-6">
+                    <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+                      <span className="text-sm">هەموو مادەکان ({items.length})</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={handleExportAll}
+                      >
+                        <Download className="h-4 w-4" />
+                        دابەزاندن
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+                      <span className="text-sm">
+                        مادەی کەم ستۆک (
+                        {
+                          items.filter((i) => i.current_quantity < i.min_stock)
+                            .length
+                        }
+                        )
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={handleExportLowStock}
+                      >
+                        <Download className="h-4 w-4" />
+                        دابەزاندن
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+                      <span className="text-sm">
+                        مادەی بەسەرچوو (
+                        {
+                          items.filter(
+                            (i) =>
+                              i.exp_date &&
+                              i.exp_date < new Date().toISOString().split("T")[0]
+                          ).length
+                        }
+                        )
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={handleExportExpired}
+                      >
+                        <Download className="h-4 w-4" />
+                        دابەزاندن
+                      </Button>
+                    </div>
+                  </div>
 
-              <div className="w-full space-y-3 mb-6">
-                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">هەموو مادەکان ({items.length})</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                    onClick={handleExportAll}
-                  >
-                    <Download className="h-4 w-4" />
-                    دابەزاندن
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">
-                    مادەی کەم ستۆک (
-                    {
-                      items.filter((i) => i.current_quantity < i.min_stock)
-                        .length
-                    }
-                    )
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                    onClick={handleExportLowStock}
-                  >
-                    <Download className="h-4 w-4" />
-                    دابەزاندن
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">
-                    مادەی بەسەرچوو (
-                    {
-                      items.filter(
-                        (i) =>
-                          i.exp_date &&
-                          i.exp_date < new Date().toISOString().split("T")[0]
-                      ).length
-                    }
-                    )
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2"
-                    onClick={handleExportExpired}
-                  >
-                    <Download className="h-4 w-4" />
-                    دابەزاندن
+                  <Button onClick={handleExportAll} className="gap-2 w-full">
+                    <Download className="h-5 w-5" />
+                    ناردنی هەموو داتا
                   </Button>
                 </div>
               </div>
-
-              <Button onClick={handleExportAll} className="gap-2 w-full">
-                <Download className="h-5 w-5" />
-                ناردنی هەموو داتا
-              </Button>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Markets Tab */}
+          <TabsContent value="markets">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              {/* Import Section */}
+              <div className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up">
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-success/10 p-4 mb-6">
+                    <Store className="h-12 w-12 text-success" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    هێنانی ماڕکێتەکان (Import)
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    فایلی Excel هەڵبژێرە بۆ هێنانی زانیاری ماڕکێتەکان
+                  </p>
+
+                  <input
+                    ref={marketFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleMarketFileSelect}
+                    className="hidden"
+                    id="market-excel-input"
+                  />
+
+                  <label
+                    htmlFor="market-excel-input"
+                    className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer block"
+                  >
+                    <div className="flex flex-col items-center">
+                      {isImporting ? (
+                        <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+                      ) : (
+                        <Upload className="h-10 w-10 text-muted-foreground mb-3" />
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {isImporting ? "چاوەڕوان بە..." : "فایل بکێشە بۆ ئێرە یان کلیک بکە"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        تەنها .xlsx و .xls پەسەند دەکرێت
+                      </p>
+                    </div>
+                  </label>
+
+                  <Button
+                    onClick={handleDownloadMarketTemplate}
+                    variant="outline"
+                    className="gap-2 w-full"
+                  >
+                    <FileWarning className="h-5 w-5" />
+                    دابەزاندنی فایلی نموونە
+                  </Button>
+                </div>
+              </div>
+
+              {/* Export Section */}
+              <div
+                className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up"
+                style={{ animationDelay: "100ms" }}
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="rounded-2xl bg-primary/10 p-4 mb-6">
+                    <FileDown className="h-12 w-12 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-card-foreground mb-2">
+                    ناردنی ماڕکێتەکان (Export)
+                  </h2>
+                  <p className="text-muted-foreground mb-6 max-w-sm">
+                    هەموو زانیاری ماڕکێتەکان دابەزێنە وەک فایلی Excel
+                  </p>
+
+                  <div className="w-full space-y-3 mb-6">
+                    <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+                      <span className="text-sm">هەموو ماڕکێتەکان ({markets.length})</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={handleExportMarkets}
+                      >
+                        <Download className="h-4 w-4" />
+                        دابەزاندن
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button onClick={handleExportMarkets} className="gap-2 w-full">
+                    <Download className="h-5 w-5" />
+                    ناردنی هەموو ماڕکێتەکان
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Import Result Dialog */}
+      {/* Import Result Dialog for Items */}
       <ImportResultDialog
         open={showResultDialog}
         onOpenChange={setShowResultDialog}
         importedItems={importedItems}
         onImportComplete={() => refetch()}
+      />
+
+      {/* Import Result Dialog for Markets */}
+      <MarketImportResultDialog
+        open={showMarketResultDialog}
+        onOpenChange={setShowMarketResultDialog}
+        importedMarkets={importedMarkets}
+        onImportComplete={() => refetchMarkets()}
       />
     </Layout>
   );
