@@ -63,11 +63,13 @@ export default function Auth() {
       <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-6 sm:mb-8 animate-fade-in">
-          <img 
-            src={bakuryLogo} 
-            alt="باکوری خۆشەویست" 
-            className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl object-cover mx-auto mb-3 sm:mb-4 shadow-lg"
-          />
+          <div className="inline-block p-2 bg-white rounded-2xl shadow-lg mb-3 sm:mb-4">
+            <img 
+              src={bakuryLogo} 
+              alt="باکوری خۆشەویست" 
+              className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 object-contain"
+            />
+          </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             باکوری خۆشەویست
           </h1>
