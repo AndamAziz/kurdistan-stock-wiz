@@ -111,8 +111,6 @@
 
   html {
     direction: rtl;
-    /* Enable smooth scrolling */
-    scroll-behavior: smooth;
     /* Support for iOS safe areas */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
@@ -124,7 +122,30 @@
     overscroll-behavior-y: contain;
     /* Improve touch interactions */
     -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    /* Enable smooth native scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Smooth scrolling only on desktop - disable on mobile for better performance */
+  @media (min-width: 1024px) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Mobile scroll performance optimizations */
+  @media (max-width: 1023px) {
+    * {
+      /* Improve scroll performance on mobile */
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    main, .scroll-container {
+      /* GPU acceleration for scrolling */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      will-change: scroll-position;
+    }
   }
 }
 
