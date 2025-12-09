@@ -62,18 +62,23 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo Section */}
-        <div className="text-center mb-6 sm:mb-8 animate-fade-in">
-          <div className="inline-block p-2 bg-white rounded-2xl shadow-lg mb-3 sm:mb-4">
-            <img 
-              src={bakuryLogo} 
-              alt="باکوری خۆشەویست" 
-              className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 object-contain"
-            />
+        <div className="text-center mb-8 sm:mb-10 animate-fade-in">
+          <div className="relative inline-block">
+            {/* Decorative ring */}
+            <div className="absolute -inset-2 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 rounded-3xl blur-lg"></div>
+            {/* Logo container */}
+            <div className="relative p-3 sm:p-4 bg-white rounded-2xl shadow-xl ring-1 ring-black/5">
+              <img 
+                src={bakuryLogo} 
+                alt="باکوری خۆشەویست" 
+                className="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 object-contain"
+              />
+            </div>
           </div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight mt-6">
             باکوری خۆشەویست
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             سیستمی بەڕێوەبردنی کۆگا
           </p>
         </div>
