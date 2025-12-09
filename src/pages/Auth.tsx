@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Package, Mail, Lock, Loader2, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Loader2, ShieldCheck } from 'lucide-react';
+import bakuryLogo from '@/assets/bakury-logo.jpg';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -62,9 +63,11 @@ export default function Auth() {
       <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo Section */}
         <div className="text-center mb-6 sm:mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 mb-3 sm:mb-4 shadow-lg shadow-primary/25">
-            <Package className="w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-primary-foreground" />
-          </div>
+          <img 
+            src={bakuryLogo} 
+            alt="باکوری خۆشەویست" 
+            className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-2xl object-cover mx-auto mb-3 sm:mb-4 shadow-lg"
+          />
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             باکوری خۆشەویست
           </h1>
