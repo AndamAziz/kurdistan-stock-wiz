@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getGravatarUrl } from "@/lib/gravatar";
-import bakuryLogo from "@/assets/bakury-logo.jpg";
+import bakuryLogo from "@/assets/bakury-logo-new.jpg";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
