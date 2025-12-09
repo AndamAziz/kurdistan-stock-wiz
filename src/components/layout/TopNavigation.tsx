@@ -3,7 +3,13 @@ import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +77,8 @@ export function TopNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await signOut();
@@ -197,195 +205,407 @@ export function TopNavigation() {
                 <DropdownMenuSeparator className="my-3 bg-gradient-to-r from-transparent via-border to-transparent" />
 
                 {/* Navigation Groups */}
-                <div className="space-y-2">
-                  {/* Stock Operations */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className={cn(
-                      "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300",
-                      isActiveGroup(stockNavigation) 
-                        ? "bg-gradient-to-r from-success/15 to-success/5 text-success ring-1 ring-success/30" 
-                        : "hover:bg-accent/50"
-                    )}>
-                      <div className={cn(
-                        "flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl transition-all duration-300",
-                        isActiveGroup(stockNavigation) 
-                          ? "bg-gradient-to-br from-success to-success/80 text-success-foreground shadow-lg shadow-success/25" 
-                          : "bg-muted/50"
-                      )}>
-                        <Boxes className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs sm:text-sm font-semibold block truncate">جوڵەی ستۆک</span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground truncate block">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
-                      </div>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="w-56 sm:w-64 p-1.5 sm:p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-xl sm:rounded-2xl">
-                        {stockNavigation.map((item) => (
-                          <DropdownMenuItem
-                            key={item.name}
-                            onClick={() => handleNavigate(item.href)}
-                            className={cn(
-                              "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-200 my-0.5",
-                              isActiveRoute(item.href) 
-                                ? "bg-gradient-to-r from-success/15 to-success/5 text-success font-semibold" 
-                                : "hover:bg-accent/50"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg",
-                              isActiveRoute(item.href) ? "bg-success/20" : "bg-muted/30"
-                            )}>
-                              <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </div>
-                            <span className="text-xs sm:text-sm">{item.name}</span>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-
-                  {/* Reports */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className={cn(
-                      "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300",
-                      isActiveGroup(reportNavigation) 
-                        ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning ring-1 ring-warning/30" 
-                        : "hover:bg-accent/50"
-                    )}>
-                      <div className={cn(
-                        "flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl transition-all duration-300",
-                        isActiveGroup(reportNavigation) 
-                          ? "bg-gradient-to-br from-warning to-warning/80 text-warning-foreground shadow-lg shadow-warning/25" 
-                          : "bg-muted/50"
-                      )}>
-                        <FileText className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs sm:text-sm font-semibold block truncate">ڕاپۆرتەکان</span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground truncate block">بەسەرچوون، ئینڤۆیس، ئیمپۆرت</span>
-                      </div>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="w-56 sm:w-64 p-1.5 sm:p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-xl sm:rounded-2xl">
-                        {reportNavigation.map((item) => (
-                          <DropdownMenuItem
-                            key={item.name}
-                            onClick={() => handleNavigate(item.href)}
-                            className={cn(
-                              "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-200 my-0.5",
-                              isActiveRoute(item.href) 
-                                ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning font-semibold" 
-                                : "hover:bg-accent/50"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg",
-                              isActiveRoute(item.href) ? "bg-warning/20" : "bg-muted/30"
-                            )}>
-                              <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </div>
-                            <span className="text-xs sm:text-sm">{item.name}</span>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-
-                  {/* Settings */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className={cn(
-                      "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300",
-                      isActiveGroup(settingsNavigation) 
-                        ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary ring-1 ring-primary/30" 
-                        : "hover:bg-accent/50"
-                    )}>
-                      <div className={cn(
-                        "flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl transition-all duration-300",
-                        isActiveGroup(settingsNavigation) 
-                          ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25" 
-                          : "bg-muted/50"
-                      )}>
-                        <Wrench className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs sm:text-sm font-semibold block truncate">ڕێکخستن</span>
-                        <span className="text-[9px] sm:text-[10px] text-muted-foreground truncate block">کەتەگۆری، براند، ڕێکخستنەکان</span>
-                      </div>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="w-56 sm:w-64 p-1.5 sm:p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-xl sm:rounded-2xl">
-                        {settingsNavigation.map((item) => (
-                          <DropdownMenuItem
-                            key={item.name}
-                            onClick={() => handleNavigate(item.href)}
-                            className={cn(
-                              "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-200 my-0.5",
-                              isActiveRoute(item.href) 
-                                ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold" 
-                                : "hover:bg-accent/50"
-                            )}
-                          >
-                            <div className={cn(
-                              "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg",
-                              isActiveRoute(item.href) ? "bg-primary/20" : "bg-muted/30"
-                            )}>
-                              <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </div>
-                            <span className="text-xs sm:text-sm">{item.name}</span>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-
-                  {/* Admin */}
-                  {isAdmin && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className={cn(
-                        "flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300",
-                        isActiveGroup(adminNavigation) 
-                          ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive ring-1 ring-destructive/30" 
-                          : "hover:bg-accent/50"
-                      )}>
+                <div className="space-y-1">
+                  {/* Stock Operations - Mobile uses Collapsible, Desktop uses SubMenu */}
+                  {isMobile ? (
+                    <Collapsible open={expandedGroup === 'stock'} onOpenChange={(open) => setExpandedGroup(open ? 'stock' : null)}>
+                      <CollapsibleTrigger className="w-full">
                         <div className={cn(
-                          "flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-lg sm:rounded-xl transition-all duration-300",
-                          isActiveGroup(adminNavigation) 
-                            ? "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-lg shadow-destructive/25" 
-                            : "bg-muted/50"
+                          "flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-300",
+                          isActiveGroup(stockNavigation) 
+                            ? "bg-gradient-to-r from-success/15 to-success/5 text-success ring-1 ring-success/30" 
+                            : "hover:bg-accent/50"
                         )}>
-                          <Shield className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                              isActiveGroup(stockNavigation) 
+                                ? "bg-gradient-to-br from-success to-success/80 text-success-foreground shadow-lg shadow-success/25" 
+                                : "bg-muted/50"
+                            )}>
+                              <Boxes className="h-4 w-4" strokeWidth={2} />
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold block">جوڵەی ستۆک</span>
+                              <span className="text-[9px] text-muted-foreground block">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
+                            </div>
+                          </div>
+                          <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'stock' && "rotate-180")} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs sm:text-sm font-semibold block truncate">بەڕێوەبەر</span>
-                          <span className="text-[9px] sm:text-[10px] text-muted-foreground truncate block">بەکارهێنەران و ڕۆڵەکان</span>
-                        </div>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent className="w-56 sm:w-64 p-1.5 sm:p-2 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-xl sm:rounded-2xl">
-                          {adminNavigation.map((item) => (
-                            <DropdownMenuItem
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                        <div className="pr-6 space-y-1 py-1">
+                          {stockNavigation.map((item) => (
+                            <button
                               key={item.name}
                               onClick={() => handleNavigate(item.href)}
                               className={cn(
-                                "flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-200 my-0.5",
+                                "w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
                                 isActiveRoute(item.href) 
-                                  ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive font-semibold" 
+                                  ? "bg-gradient-to-r from-success/15 to-success/5 text-success font-semibold" 
                                   : "hover:bg-accent/50"
                               )}
                             >
                               <div className={cn(
-                                "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg",
-                                isActiveRoute(item.href) ? "bg-destructive/20" : "bg-muted/30"
+                                "flex h-7 w-7 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-success/20" : "bg-muted/30"
                               )}>
-                                <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                <item.icon className="h-3.5 w-3.5" />
                               </div>
-                              <span className="text-xs sm:text-sm">{item.name}</span>
+                              <span className="text-xs">{item.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className={cn(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                        isActiveGroup(stockNavigation) 
+                          ? "bg-gradient-to-r from-success/15 to-success/5 text-success ring-1 ring-success/30" 
+                          : "hover:bg-accent/50"
+                      )}>
+                        <div className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                          isActiveGroup(stockNavigation) 
+                            ? "bg-gradient-to-br from-success to-success/80 text-success-foreground shadow-lg shadow-success/25" 
+                            : "bg-muted/50"
+                        )}>
+                          <Boxes className="h-5 w-5" strokeWidth={2} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold block truncate">جوڵەی ستۆک</span>
+                          <span className="text-[10px] text-muted-foreground truncate block">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-64 p-2 bg-popover border-2 border-border/40 shadow-2xl rounded-2xl">
+                          {stockNavigation.map((item) => (
+                            <DropdownMenuItem
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-0.5",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-success/15 to-success/5 text-success font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-success/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <span className="text-sm">{item.name}</span>
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuSubContent>
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
+                  )}
+
+                  {/* Reports */}
+                  {isMobile ? (
+                    <Collapsible open={expandedGroup === 'reports'} onOpenChange={(open) => setExpandedGroup(open ? 'reports' : null)}>
+                      <CollapsibleTrigger className="w-full">
+                        <div className={cn(
+                          "flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-300",
+                          isActiveGroup(reportNavigation) 
+                            ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning ring-1 ring-warning/30" 
+                            : "hover:bg-accent/50"
+                        )}>
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                              isActiveGroup(reportNavigation) 
+                                ? "bg-gradient-to-br from-warning to-warning/80 text-warning-foreground shadow-lg shadow-warning/25" 
+                                : "bg-muted/50"
+                            )}>
+                              <FileText className="h-4 w-4" strokeWidth={2} />
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold block">ڕاپۆرتەکان</span>
+                              <span className="text-[9px] text-muted-foreground block">بەسەرچوون، ئینڤۆیس، ئیمپۆرت</span>
+                            </div>
+                          </div>
+                          <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'reports' && "rotate-180")} />
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                        <div className="pr-6 space-y-1 py-1">
+                          {reportNavigation.map((item) => (
+                            <button
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-7 w-7 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-warning/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-xs">{item.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className={cn(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                        isActiveGroup(reportNavigation) 
+                          ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning ring-1 ring-warning/30" 
+                          : "hover:bg-accent/50"
+                      )}>
+                        <div className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                          isActiveGroup(reportNavigation) 
+                            ? "bg-gradient-to-br from-warning to-warning/80 text-warning-foreground shadow-lg shadow-warning/25" 
+                            : "bg-muted/50"
+                        )}>
+                          <FileText className="h-5 w-5" strokeWidth={2} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold block truncate">ڕاپۆرتەکان</span>
+                          <span className="text-[10px] text-muted-foreground truncate block">بەسەرچوون، ئینڤۆیس، ئیمپۆرت</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-64 p-2 bg-popover border-2 border-border/40 shadow-2xl rounded-2xl">
+                          {reportNavigation.map((item) => (
+                            <DropdownMenuItem
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-0.5",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-warning/15 to-warning/5 text-warning font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-warning/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <span className="text-sm">{item.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  )}
+
+                  {/* Settings */}
+                  {isMobile ? (
+                    <Collapsible open={expandedGroup === 'settings'} onOpenChange={(open) => setExpandedGroup(open ? 'settings' : null)}>
+                      <CollapsibleTrigger className="w-full">
+                        <div className={cn(
+                          "flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-300",
+                          isActiveGroup(settingsNavigation) 
+                            ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary ring-1 ring-primary/30" 
+                            : "hover:bg-accent/50"
+                        )}>
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                              isActiveGroup(settingsNavigation) 
+                                ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25" 
+                                : "bg-muted/50"
+                            )}>
+                              <Wrench className="h-4 w-4" strokeWidth={2} />
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold block">ڕێکخستن</span>
+                              <span className="text-[9px] text-muted-foreground block">کەتەگۆری، براند، ڕێکخستنەکان</span>
+                            </div>
+                          </div>
+                          <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'settings' && "rotate-180")} />
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                        <div className="pr-6 space-y-1 py-1">
+                          {settingsNavigation.map((item) => (
+                            <button
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-7 w-7 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-primary/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-xs">{item.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className={cn(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                        isActiveGroup(settingsNavigation) 
+                          ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary ring-1 ring-primary/30" 
+                          : "hover:bg-accent/50"
+                      )}>
+                        <div className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                          isActiveGroup(settingsNavigation) 
+                            ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25" 
+                            : "bg-muted/50"
+                        )}>
+                          <Wrench className="h-5 w-5" strokeWidth={2} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold block truncate">ڕێکخستن</span>
+                          <span className="text-[10px] text-muted-foreground truncate block">کەتەگۆری، براند، ڕێکخستنەکان</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="w-64 p-2 bg-popover border-2 border-border/40 shadow-2xl rounded-2xl">
+                          {settingsNavigation.map((item) => (
+                            <DropdownMenuItem
+                              key={item.name}
+                              onClick={() => handleNavigate(item.href)}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-0.5",
+                                isActiveRoute(item.href) 
+                                  ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary font-semibold" 
+                                  : "hover:bg-accent/50"
+                              )}
+                            >
+                              <div className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg",
+                                isActiveRoute(item.href) ? "bg-primary/20" : "bg-muted/30"
+                              )}>
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <span className="text-sm">{item.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                  )}
+
+                  {/* Admin */}
+                  {isAdmin && (
+                    isMobile ? (
+                      <Collapsible open={expandedGroup === 'admin'} onOpenChange={(open) => setExpandedGroup(open ? 'admin' : null)}>
+                        <CollapsibleTrigger className="w-full">
+                          <div className={cn(
+                            "flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-300",
+                            isActiveGroup(adminNavigation) 
+                              ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive ring-1 ring-destructive/30" 
+                              : "hover:bg-accent/50"
+                          )}>
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                                isActiveGroup(adminNavigation) 
+                                  ? "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-lg shadow-destructive/25" 
+                                  : "bg-muted/50"
+                              )}>
+                                <Shield className="h-4 w-4" strokeWidth={2} />
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs font-semibold block">بەڕێوەبەر</span>
+                                <span className="text-[9px] text-muted-foreground block">بەکارهێنەران و ڕۆڵەکان</span>
+                              </div>
+                            </div>
+                            <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'admin' && "rotate-180")} />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                          <div className="pr-6 space-y-1 py-1">
+                            {adminNavigation.map((item) => (
+                              <button
+                                key={item.name}
+                                onClick={() => handleNavigate(item.href)}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                                  isActiveRoute(item.href) 
+                                    ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive font-semibold" 
+                                    : "hover:bg-accent/50"
+                                )}
+                              >
+                                <div className={cn(
+                                  "flex h-7 w-7 items-center justify-center rounded-lg",
+                                  isActiveRoute(item.href) ? "bg-destructive/20" : "bg-muted/30"
+                                )}>
+                                  <item.icon className="h-3.5 w-3.5" />
+                                </div>
+                                <span className="text-xs">{item.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className={cn(
+                          "flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+                          isActiveGroup(adminNavigation) 
+                            ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive ring-1 ring-destructive/30" 
+                            : "hover:bg-accent/50"
+                        )}>
+                          <div className={cn(
+                            "flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-300",
+                            isActiveGroup(adminNavigation) 
+                              ? "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-lg shadow-destructive/25" 
+                              : "bg-muted/50"
+                          )}>
+                            <Shield className="h-5 w-5" strokeWidth={2} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-semibold block truncate">بەڕێوەبەر</span>
+                            <span className="text-[10px] text-muted-foreground truncate block">بەکارهێنەران و ڕۆڵەکان</span>
+                          </div>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent className="w-64 p-2 bg-popover border-2 border-border/40 shadow-2xl rounded-2xl">
+                            {adminNavigation.map((item) => (
+                              <DropdownMenuItem
+                                key={item.name}
+                                onClick={() => handleNavigate(item.href)}
+                                className={cn(
+                                  "flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 my-0.5",
+                                  isActiveRoute(item.href) 
+                                    ? "bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive font-semibold" 
+                                    : "hover:bg-accent/50"
+                                )}
+                              >
+                                <div className={cn(
+                                  "flex h-9 w-9 items-center justify-center rounded-lg",
+                                  isActiveRoute(item.href) ? "bg-destructive/20" : "bg-muted/30"
+                                )}>
+                                  <item.icon className="h-4 w-4" />
+                                </div>
+                                <span className="text-sm">{item.name}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    )
                   )}
                 </div>
               </DropdownMenuContent>
