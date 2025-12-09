@@ -183,7 +183,7 @@ export default function Invoices() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>ناوی مادە</th>
+                  <th>ناو</th>
                   ${isStockOut ? '<th class="text-center">بۆکس</th><th class="text-center">دانە</th><th class="text-center">🎁</th>' : '<th class="text-center">بڕ</th>'}
                   <th class="text-center">نرخ</th>
                   <th class="text-center">کۆ</th>
@@ -483,7 +483,7 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                     <TableHeader>
                       <TableRow>
                         <TableHead className="text-right">#</TableHead>
-                        <TableHead className="text-right">ناوی مادە</TableHead>
+                        <TableHead className="text-right">ناو</TableHead>
                         <TableHead className="text-center">بڕ</TableHead>
                         <TableHead className="text-center">نرخ</TableHead>
                         <TableHead className="text-center">کۆ</TableHead>

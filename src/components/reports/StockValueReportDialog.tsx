@@ -88,7 +88,7 @@ export function StockValueReportDialog({
         return {
           '#': index + 1,
           'ئایدی': item.id,
-          'ناوی مادە': item.name,
+          'ناو': item.name,
           'باڕکۆد': item.barcode,
           'براند': item.brands?.name || '-',
           'کەتەگۆری': item.categories?.name || '-',
@@ -104,7 +104,7 @@ export function StockValueReportDialog({
       excelData.push({
         '#': '',
         'ئایدی': '',
-        'ناوی مادە': 'کۆی گشتی',
+        'ناو': 'کۆی گشتی',
         'باڕکۆد': '',
         'براند': '',
         'کەتەگۆری': '',
@@ -325,7 +325,7 @@ export function StockValueReportDialog({
               <tr style={{ backgroundColor: themeColor }}>
                 <th className="text-white p-2 text-center border border-gray-300 w-10">#</th>
                 <th className="text-white p-2 text-center border border-gray-300">ئایدی</th>
-                <th className="text-white p-2 text-right border border-gray-300">ناوی مادە</th>
+                <th className="text-white p-2 text-right border border-gray-300">ناو</th>
                 <th className="text-white p-2 text-center border border-gray-300">براند</th>
                 <th className="text-white p-2 text-center border border-gray-300">کەتەگۆری</th>
                 <th className="text-white p-2 text-center border border-gray-300 w-20">ستۆک</th>

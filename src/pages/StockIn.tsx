@@ -31,7 +31,7 @@ import { ItemImageUpload } from "@/components/items/ItemImageUpload";
 
 const formSchema = z.object({
   barcode: z.string().min(1, "باڕکۆد پێویستە"),
-  name: z.string().min(1, "ناوی مادە پێویستە"),
+  name: z.string().min(1, "ناو پێویستە"),
   itemType: z.enum(["beverage", "grocery"]).default("beverage"),
   // Beverage quantities
   boxCount: z.coerce.number().min(0).default(0),
@@ -300,9 +300,9 @@ export default function StockIn() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ناوی مادە <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>ناو <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="ناوی مادە" {...field} />
+                      <Input placeholder="ناوی بەرهەم" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

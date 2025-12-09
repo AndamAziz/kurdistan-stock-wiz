@@ -224,7 +224,7 @@ export default function ImportExport() {
         return {
           "#": index + 1,
           "ئایدی": item.id,
-          "ناوی مادە": item.name,
+          "ناو": item.name,
           "باڕکۆد": item.barcode,
           "براند": item.brands?.name || "",
           "کەتەگۆری": item.categories?.name || "",
@@ -287,7 +287,7 @@ export default function ImportExport() {
       const excelData = lowStockItems.map((item, index) => ({
         "#": index + 1,
         "ئایدی": item.id,
-        "ناوی مادە": item.name,
+        "ناو": item.name,
         "باڕکۆد": item.barcode,
         "براند": item.brands?.name || "",
         "کەتەگۆری": item.categories?.name || "",
@@ -322,7 +322,7 @@ export default function ImportExport() {
       const excelData = expiredItems.map((item, index) => ({
         "#": index + 1,
         "ئایدی": item.id,
-        "ناوی مادە": item.name,
+        "ناو": item.name,
         "باڕکۆد": item.barcode,
         "براند": item.brands?.name || "",
         "کەتەگۆری": item.categories?.name || "",
@@ -344,7 +344,7 @@ export default function ImportExport() {
   const handleDownloadTemplate = () => {
     const templateData = [
       {
-        "ناوی مادە": "نموونە - پێپسی ١ لیتر",
+        "ناو": "نموونە - پێپسی ١ لیتر",
         "باڕکۆد": "123456789",
         "براند": "پێپسی",
         "کەتەگۆری": "خواردنەوە",
