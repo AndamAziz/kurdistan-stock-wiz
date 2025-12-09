@@ -1,15 +1,383 @@
+import { useState, useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Upload, Download, FileUp, FileDown } from "lucide-react";
+import {
+  FileSpreadsheet,
+  Upload,
+  Download,
+  FileUp,
+  FileDown,
+  Loader2,
+  FileWarning,
+} from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { useItems, useBrands, useCategories } from "@/hooks/useItems";
+import { format } from "date-fns";
+import {
+  ImportResultDialog,
+  ImportedItem,
+} from "@/components/import/ImportResultDialog";
 
 export default function ImportExport() {
-  const handleImport = () => {
-    toast.info('هێنانی فایل لە Excel - ئەم تایبەتمەندییە بەزوانە دێت');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importedItems, setImportedItems] = useState<ImportedItem[]>([]);
+  const [showResultDialog, setShowResultDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: items = [], refetch } = useItems();
+  const { data: brands = [] } = useBrands();
+  const { data: categories = [] } = useCategories();
+
+  // Column name mappings (Kurdish -> English)
+  const columnMappings: Record<string, keyof ImportedItem> = {
+    "ناوی مادە": "name",
+    "ناو": "name",
+    "name": "name",
+    "باڕکۆد": "barcode",
+    "barcode": "barcode",
+    "براند": "brand",
+    "brand": "brand",
+    "هاوپۆل": "category",
+    "category": "category",
+    "ستۆک": "quantity",
+    "بڕ": "quantity",
+    "quantity": "quantity",
+    "نرخی بۆکس (د.ع)": "box_price",
+    "نرخی بۆکس": "box_price",
+    "box_price": "box_price",
+    "نرخی دانە (د.ع)": "piece_price",
+    "نرخی دانە": "piece_price",
+    "piece_price": "piece_price",
+    "نرخی کیلۆ (د.ع)": "price_per_kg",
+    "نرخی کیلۆ": "price_per_kg",
+    "price_per_kg": "price_per_kg",
+    "یەکە": "unit",
+    "unit": "unit",
+    "کەمترین ستۆک": "min_stock",
+    "min_stock": "min_stock",
+    "بەرواری بەرهەمهێنان": "mfg_date",
+    "mfg_date": "mfg_date",
+    "بەرواری بەسەرچوون": "exp_date",
+    "exp_date": "exp_date",
+    "بەرواری بیرخستنەوە": "remind_date",
+    "remind_date": "remind_date",
   };
 
-  const handleExport = () => {
-    toast.success('ئێکسپۆرتکردن بۆ Excel - ئەم تایبەتمەندییە بەزوانە دێت');
+  const parseExcelDate = (value: any): string | null => {
+    if (!value) return null;
+
+    // If it's already a string in date format
+    if (typeof value === "string") {
+      // Try parsing common formats
+      const dateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/;
+      if (dateRegex.test(value)) {
+        return value.replace(/\//g, "-");
+      }
+      return null;
+    }
+
+    // If it's an Excel date number
+    if (typeof value === "number") {
+      const date = new Date((value - 25569) * 86400 * 1000);
+      if (!isNaN(date.getTime())) {
+        return format(date, "yyyy-MM-dd");
+      }
+    }
+
+    return null;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error("تەنها فایلی Excel پەسەند دەکرێت (.xlsx یان .xls)");
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      if (jsonData.length === 0) {
+        toast.error("فایلەکە بەتاڵە یان فۆرماتی نادروستە");
+        setIsImporting(false);
+        return;
+      }
+
+      // Parse each row
+      const parsedItems: ImportedItem[] = jsonData.map((row: any, index) => {
+        const item: ImportedItem = {
+          id: `import-${index}-${Date.now()}`,
+          name: "",
+          barcode: "",
+          brand: "",
+          category: "",
+          quantity: 0,
+          box_price: 0,
+          piece_price: 0,
+          price_per_kg: 0,
+          unit: "دانە",
+          min_stock: 10,
+          mfg_date: null,
+          exp_date: null,
+          remind_date: null,
+          hasError: false,
+          isComplete: false,
+        };
+
+        // Map columns
+        Object.keys(row).forEach((key) => {
+          const mappedKey = columnMappings[key.trim()];
+          if (mappedKey) {
+            const value = row[key];
+
+            switch (mappedKey) {
+              case "name":
+              case "barcode":
+              case "brand":
+              case "category":
+              case "unit":
+                item[mappedKey] = value?.toString().trim() || "";
+                break;
+              case "quantity":
+              case "box_price":
+              case "piece_price":
+              case "price_per_kg":
+              case "min_stock":
+                item[mappedKey] = parseFloat(value) || 0;
+                break;
+              case "mfg_date":
+              case "exp_date":
+              case "remind_date":
+                item[mappedKey] = parseExcelDate(value);
+                break;
+            }
+          }
+        });
+
+        // Skip # column and total row
+        if (item.name === "کۆی گشتی" || item.name === "#") {
+          return null;
+        }
+
+        // Validate required fields
+        const isComplete =
+          item.name?.trim() !== "" &&
+          item.barcode?.trim() !== "" &&
+          item.quantity >= 0;
+
+        item.isComplete = isComplete;
+        item.hasError = !isComplete;
+        if (!isComplete) {
+          item.errorMessage = "ناو و باڕکۆد پێویستن";
+        }
+
+        return item;
+      }).filter((item): item is ImportedItem => item !== null);
+
+      if (parsedItems.length === 0) {
+        toast.error("هیچ مادەیەکی دروست نەدۆزرایەوە لە فایلەکەدا");
+        setIsImporting(false);
+        return;
+      }
+
+      setImportedItems(parsedItems);
+      setShowResultDialog(true);
+      toast.success(`${parsedItems.length} مادە خوێندرایەوە لە فایلەکە`);
+    } catch (error) {
+      console.error("Excel parse error:", error);
+      toast.error("هەڵە لە خوێندنەوەی فایلەکە");
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleExportAll = () => {
+    try {
+      const excelData = items.map((item, index) => {
+        let itemTotalValue = 0;
+        if (item.box_price && item.box_price > 0) {
+          itemTotalValue = (item.box_price || 0) * item.current_quantity;
+        } else if (item.piece_price && item.piece_price > 0) {
+          itemTotalValue = (item.piece_price || 0) * item.current_quantity;
+        } else if (item.price_per_kg && item.price_per_kg > 0) {
+          itemTotalValue = (item.price_per_kg || 0) * item.current_quantity;
+        }
+
+        return {
+          "#": index + 1,
+          "ناوی مادە": item.name,
+          "باڕکۆد": item.barcode,
+          "براند": item.brands?.name || "",
+          "هاوپۆل": item.categories?.name || "",
+          "ستۆک": item.current_quantity,
+          "یەکە": item.unit,
+          "کەمترین ستۆک": item.min_stock,
+          "نرخی بۆکس (د.ع)": item.box_price || 0,
+          "نرخی دانە (د.ع)": item.piece_price || 0,
+          "نرخی کیلۆ (د.ع)": item.price_per_kg || 0,
+          "کۆی بەها (د.ع)": itemTotalValue,
+          "بەرواری بەرهەمهێنان": item.mfg_date || "",
+          "بەرواری بەسەرچوون": item.exp_date || "",
+          "بەرواری بیرخستنەوە": item.remind_date || "",
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+
+      ws["!cols"] = [
+        { wch: 5 },
+        { wch: 30 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "مادەکان");
+      const filename = `inventory-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success("فایلی Excel دروستکرا");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("هەڵە لە دروستکردنی فایل");
+    }
+  };
+
+  const handleExportLowStock = () => {
+    const lowStockItems = items.filter(
+      (item) => item.current_quantity < item.min_stock
+    );
+
+    if (lowStockItems.length === 0) {
+      toast.info("هیچ مادەیەکی کەم ستۆک نییە");
+      return;
+    }
+
+    try {
+      const excelData = lowStockItems.map((item, index) => ({
+        "#": index + 1,
+        "ناوی مادە": item.name,
+        "باڕکۆد": item.barcode,
+        "براند": item.brands?.name || "",
+        "هاوپۆل": item.categories?.name || "",
+        "ستۆکی ئێستا": item.current_quantity,
+        "کەمترین ستۆک": item.min_stock,
+        "کەمبوون": item.min_stock - item.current_quantity,
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      XLSX.utils.book_append_sheet(wb, ws, "کەم ستۆک");
+      const filename = `low-stock-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success(`${lowStockItems.length} مادەی کەم ستۆک ئێکسپۆرت کرا`);
+    } catch (error) {
+      toast.error("هەڵە لە دروستکردنی فایل");
+    }
+  };
+
+  const handleExportExpired = () => {
+    const today = new Date().toISOString().split("T")[0];
+    const expiredItems = items.filter(
+      (item) => item.exp_date && item.exp_date < today
+    );
+
+    if (expiredItems.length === 0) {
+      toast.info("هیچ مادەیەکی بەسەرچوو نییە");
+      return;
+    }
+
+    try {
+      const excelData = expiredItems.map((item, index) => ({
+        "#": index + 1,
+        "ناوی مادە": item.name,
+        "باڕکۆد": item.barcode,
+        "براند": item.brands?.name || "",
+        "هاوپۆل": item.categories?.name || "",
+        "ستۆک": item.current_quantity,
+        "بەرواری بەسەرچوون": item.exp_date || "",
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      XLSX.utils.book_append_sheet(wb, ws, "بەسەرچوو");
+      const filename = `expired-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success(`${expiredItems.length} مادەی بەسەرچوو ئێکسپۆرت کرا`);
+    } catch (error) {
+      toast.error("هەڵە لە دروستکردنی فایل");
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        "ناوی مادە": "نموونە - پێپسی ١ لیتر",
+        "باڕکۆد": "123456789",
+        "براند": "پێپسی",
+        "هاوپۆل": "خواردنەوە",
+        "ستۆک": 100,
+        "یەکە": "دانە",
+        "کەمترین ستۆک": 20,
+        "نرخی بۆکس (د.ع)": 15000,
+        "نرخی دانە (د.ع)": 1500,
+        "نرخی کیلۆ (د.ع)": 0,
+        "بەرواری بەرهەمهێنان": "2024-01-01",
+        "بەرواری بەسەرچوون": "2025-06-01",
+        "بەرواری بیرخستنەوە": "2025-05-01",
+      },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(templateData);
+
+    ws["!cols"] = [
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "نموونە");
+    XLSX.writeFile(wb, "import-template.xlsx");
+    toast.success("فایلی نموونە دابەزێندرا");
   };
 
   return (
@@ -22,7 +390,9 @@ export default function ImportExport() {
               <FileSpreadsheet className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">ئیمپۆرت / ئێکسپۆرت</h1>
+              <h1 className="text-3xl font-bold text-foreground">
+                ئیمپۆرت / ئێکسپۆرت
+              </h1>
               <p className="mt-1 text-muted-foreground">
                 هێنان و ناردنی داتا بە فۆرماتی Excel
               </p>
@@ -43,28 +413,51 @@ export default function ImportExport() {
               <p className="text-muted-foreground mb-6 max-w-sm">
                 فایلی Excel هەڵبژێرە بۆ هێنانی مادەکان بۆ ناو سیستەم
               </p>
-              
-              <div className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer">
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="excel-input"
+              />
+
+              <label
+                htmlFor="excel-input"
+                className="w-full rounded-xl border-2 border-dashed border-border p-8 mb-6 hover:border-primary/50 transition-colors cursor-pointer block"
+              >
                 <div className="flex flex-col items-center">
-                  <Upload className="h-10 w-10 text-muted-foreground mb-3" />
+                  {isImporting ? (
+                    <Loader2 className="h-10 w-10 text-primary mb-3 animate-spin" />
+                  ) : (
+                    <Upload className="h-10 w-10 text-muted-foreground mb-3" />
+                  )}
                   <p className="text-sm text-muted-foreground">
-                    فایل بکێشە بۆ ئێرە یان کلیک بکە
+                    {isImporting ? "چاوەڕوان بە..." : "فایل بکێشە بۆ ئێرە یان کلیک بکە"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     تەنها .xlsx و .xls پەسەند دەکرێت
                   </p>
                 </div>
-              </div>
+              </label>
 
-              <Button onClick={handleImport} className="gap-2 w-full">
-                <Upload className="h-5 w-5" />
-                هێنانی فایل
+              <Button
+                onClick={handleDownloadTemplate}
+                variant="outline"
+                className="gap-2 w-full"
+              >
+                <FileWarning className="h-5 w-5" />
+                دابەزاندنی فایلی نموونە
               </Button>
             </div>
           </div>
 
           {/* Export Section */}
-          <div className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up" style={{ animationDelay: '100ms' }}>
+          <div
+            className="rounded-xl border border-border bg-card p-8 shadow-card animate-slide-up"
+            style={{ animationDelay: "100ms" }}
+          >
             <div className="flex flex-col items-center text-center">
               <div className="rounded-2xl bg-primary/10 p-4 mb-6">
                 <FileDown className="h-12 w-12 text-primary" />
@@ -78,29 +471,61 @@ export default function ImportExport() {
 
               <div className="w-full space-y-3 mb-6">
                 <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">هەموو مادەکان</span>
-                  <Button size="sm" variant="outline" className="gap-2">
+                  <span className="text-sm">هەموو مادەکان ({items.length})</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleExportAll}
+                  >
                     <Download className="h-4 w-4" />
                     دابەزاندن
                   </Button>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">مادەی کەم ستۆک</span>
-                  <Button size="sm" variant="outline" className="gap-2">
+                  <span className="text-sm">
+                    مادەی کەم ستۆک (
+                    {
+                      items.filter((i) => i.current_quantity < i.min_stock)
+                        .length
+                    }
+                    )
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleExportLowStock}
+                  >
                     <Download className="h-4 w-4" />
                     دابەزاندن
                   </Button>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
-                  <span className="text-sm">مادەی بەسەرچوو</span>
-                  <Button size="sm" variant="outline" className="gap-2">
+                  <span className="text-sm">
+                    مادەی بەسەرچوو (
+                    {
+                      items.filter(
+                        (i) =>
+                          i.exp_date &&
+                          i.exp_date < new Date().toISOString().split("T")[0]
+                      ).length
+                    }
+                    )
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleExportExpired}
+                  >
                     <Download className="h-4 w-4" />
                     دابەزاندن
                   </Button>
                 </div>
               </div>
 
-              <Button onClick={handleExport} className="gap-2 w-full">
+              <Button onClick={handleExportAll} className="gap-2 w-full">
                 <Download className="h-5 w-5" />
                 ناردنی هەموو داتا
               </Button>
@@ -108,6 +533,14 @@ export default function ImportExport() {
           </div>
         </div>
       </div>
+
+      {/* Import Result Dialog */}
+      <ImportResultDialog
+        open={showResultDialog}
+        onOpenChange={setShowResultDialog}
+        importedItems={importedItems}
+        onImportComplete={() => refetch()}
+      />
     </Layout>
   );
 }
