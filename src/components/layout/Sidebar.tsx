@@ -225,9 +225,6 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               <p className="text-sm lg:text-base font-bold text-sidebar-foreground truncate">
                 {user?.user_metadata?.full_name || 'بەکارهێنەر'}
               </p>
-              <p className="text-xs lg:text-sm text-sidebar-foreground/50 truncate font-medium">
-                {user?.email}
-              </p>
             </div>
           </div>
           <Button
