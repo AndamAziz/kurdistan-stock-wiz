@@ -120,10 +120,10 @@ export function TopNavigation() {
       <div className="relative max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10">
         <div className="flex h-18 sm:h-22 items-center justify-between gap-6 py-3">
           {/* Logo Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
-              <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem] items-center justify-center rounded-2xl bg-white shadow-xl shadow-primary/30 ring-2 ring-primary/20 overflow-hidden p-1">
+              <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-xl blur-sm opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
+              <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-white shadow-lg ring-1 ring-primary/20 overflow-hidden p-1">
                 <img 
                   src={bakuryLogo} 
                   alt="باکوری خۆشەویست" 
@@ -132,10 +132,10 @@ export function TopNavigation() {
               </div>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
+              <h1 className="text-base lg:text-lg font-bold text-foreground">
                 باکوری خۆشەویست
               </h1>
-              <p className="text-xs lg:text-sm text-muted-foreground font-medium mt-0.5">
+              <p className="text-[10px] lg:text-xs text-muted-foreground font-medium">
                 سیستمی بەڕێوەبردنی کۆگا
               </p>
             </div>
