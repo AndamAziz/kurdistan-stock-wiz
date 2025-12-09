@@ -118,33 +118,31 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Noto Sans Arabic', sans-serif;
-    /* Prevent pull-to-refresh on mobile */
-    overscroll-behavior-y: contain;
-    /* Improve touch interactions */
     -webkit-tap-highlight-color: transparent;
-    /* Enable smooth native scrolling on iOS */
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
   }
 
-  /* Smooth scrolling only on desktop - disable on mobile for better performance */
+  /* Smooth scrolling only on desktop */
   @media (min-width: 1024px) {
     html {
       scroll-behavior: smooth;
     }
   }
 
-  /* Mobile scroll performance optimizations */
+  /* Mobile: Maximum scroll performance */
   @media (max-width: 1023px) {
-    * {
-      /* Improve scroll performance on mobile */
-      -webkit-overflow-scrolling: touch;
+    html, body {
+      overflow-x: hidden;
+      overscroll-behavior: none;
     }
     
-    main, .scroll-container {
-      /* GPU acceleration for scrolling */
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0);
-      will-change: scroll-position;
+    /* Force native momentum scrolling */
+    .overflow-y-auto,
+    .overflow-auto,
+    [class*="scroll"] {
+      -webkit-overflow-scrolling: touch !important;
+      scroll-behavior: auto !important;
     }
   }
 }
