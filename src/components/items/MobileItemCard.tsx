@@ -55,16 +55,16 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
 
   return (
     <div 
-      className="rounded-lg border border-border bg-card p-3 shadow-sm animate-fade-in active:scale-[0.98] transition-transform"
+      className="rounded-xl border border-border bg-card p-4 shadow-sm animate-fade-in active:scale-[0.98] transition-transform"
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         {/* Item Image or Icon */}
         {item.image_url ? (
           <button
             type="button"
             onClick={() => setShowImagePreview(true)}
-            className="h-12 w-12 rounded-lg overflow-hidden border border-border bg-muted shrink-0 hover:ring-2 hover:ring-primary/50 transition-all"
+            className="h-16 w-16 rounded-xl overflow-hidden border border-border bg-muted shrink-0 hover:ring-2 hover:ring-primary/50 transition-all shadow-sm"
           >
             <img 
               src={item.image_url} 
@@ -73,23 +73,23 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
             />
           </button>
         ) : (
-          <div className="rounded-lg bg-primary/10 p-2 shrink-0">
-            <Package className="h-5 w-5 text-primary" />
+          <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
+            <Package className="h-7 w-7 text-primary" />
           </div>
         )}
         
         {/* Content */}
-        <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex-1 min-w-0 space-y-2.5">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h3 className="font-medium text-sm text-foreground truncate">{item.name}</h3>
-                <p className="text-[10px] text-muted-foreground font-mono">{item.barcode}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-base text-foreground truncate leading-tight">{item.name}</h3>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.barcode}</p>
               </div>
-              <div className="flex items-center shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
                   onClick={() => setShowHistory(true)}
                 >
                   <History className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
                   onClick={() => onView?.(item)}
                 >
                   <Eye className="h-4 w-4" />
@@ -106,26 +106,23 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
             </div>
           
           {/* Details Row */}
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {item.brands?.name && (
-              <span className="truncate">{item.brands.name}</span>
+              <span className="truncate bg-muted/50 px-2 py-0.5 rounded-md">{item.brands.name}</span>
             )}
             {item.categories?.name && (
-              <>
-                <span className="text-border">•</span>
-                <span className="truncate">{item.categories.name}</span>
-              </>
+              <span className="truncate bg-muted/50 px-2 py-0.5 rounded-md">{item.categories.name}</span>
             )}
           </div>
           
           {/* Status Row */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-3 pt-1">
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold">{item.current_quantity}</span>
+              <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg">
+                <span className="text-sm font-bold text-foreground">{item.current_quantity}</span>
                 <Badge 
                   variant="outline" 
-                  className={cn("text-[9px] px-1.5 py-0", badgeVariants[stockStatus.variant])}
+                  className={cn("text-[10px] px-2 py-0.5 font-medium", badgeVariants[stockStatus.variant])}
                 >
                   {stockStatus.label}
                 </Badge>
@@ -133,7 +130,7 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
             </div>
             <Badge 
               variant="outline" 
-              className={cn("text-[9px] px-1.5 py-0", badgeVariants[expiryStatus.variant])}
+              className={cn("text-[10px] px-2 py-0.5 font-medium", badgeVariants[expiryStatus.variant])}
             >
               {expiryStatus.label}
             </Badge>
