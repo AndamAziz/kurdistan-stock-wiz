@@ -88,42 +88,37 @@ export default function UserRoles() {
       return;
     }
 
+    if (newUserPassword.length < 6) {
+      toast.error("وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت");
+      return;
+    }
+
     setIsCreating(true);
     try {
-      // Create user using Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          data: {
-            full_name: newUserName,
-          },
+      // Use edge function to create user (prevents logout of current admin)
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUserEmail,
+          password: newUserPassword,
+          fullName: newUserName,
+          role: newUserRole,
         },
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      if (data.user) {
-        // Assign role to new user
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: data.user.id, role: newUserRole });
-
-        if (roleError) {
-          console.error('Error assigning role:', roleError);
-        }
-
-        toast.success("بەکارهێنەر دروستکرا");
-        setIsCreateDialogOpen(false);
-        setNewUserEmail("");
-        setNewUserPassword("");
-        setNewUserName("");
-        setNewUserRole("viewer");
-        refetchUsers();
-      }
-    } catch (error: any) {
+      toast.success("بەکارهێنەر دروستکرا");
+      setIsCreateDialogOpen(false);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserName("");
+      setNewUserRole("viewer");
+      refetchUsers();
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
-      toast.error(error.message || "هەڵە لە دروستکردنی بەکارهێنەر");
+      const errorMessage = error instanceof Error ? error.message : "هەڵە لە دروستکردنی بەکارهێنەر";
+      toast.error(errorMessage);
     } finally {
       setIsCreating(false);
     }
