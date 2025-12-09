@@ -425,7 +425,7 @@ export function ImportResultDialog({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ناو</TableHead>
+                    <TableHead>ناوی بەرهەم</TableHead>
                     <TableHead>باڕکۆد</TableHead>
                     <TableHead>براند</TableHead>
                     <TableHead>کەتەگۆری</TableHead>

@@ -264,7 +264,7 @@ export default function StockAdjust() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">ناو *</Label>
+                        <Label className="text-sm font-medium">ناوی بەرهەم *</Label>
                         <Input
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
