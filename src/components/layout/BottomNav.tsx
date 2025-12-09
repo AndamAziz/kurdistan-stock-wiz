@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   Package,
   ArrowDownToLine,
-  ArrowUpFromLine,
+  AlertTriangle,
   Menu,
 } from "lucide-react";
 
@@ -13,7 +13,7 @@ const navItems = [
   { name: 'داشبۆرد', href: '/', icon: LayoutDashboard },
   { name: 'مادەکان', href: '/items', icon: Package },
   { name: 'داخڵکردن', href: '/stock-in', icon: ArrowDownToLine },
-  { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
+  { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
 ];
 
 interface BottomNavProps {

@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAddItem, useCategories, useBrands, ItemWithRelations } from "@/hooks/useItems";
-import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowDownToLine, Loader2, ScanBarcode, FileText } from "lucide-react";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
@@ -81,7 +80,6 @@ export default function StockIn() {
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
   const addItem = useAddItem();
-  const createInvoice = useCreateInvoice();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -179,36 +177,6 @@ export default function StockIn() {
           const totalKg = (data.weight_kg || 0) + ((data.weight_gram || 0) / 1000);
           totalPrice = totalKg * (data.pricePerKg || 0);
         }
-
-        // Save invoice
-        const invoiceNumber = `IN-${Date.now().toString(36).toUpperCase()}`;
-        await createInvoice.mutateAsync({
-          invoice_number: invoiceNumber,
-          invoice_type: 'stock_in',
-          recipient_name: data.name,
-          total_amount: totalPrice,
-          invoice_date: data.date_added,
-          created_by: user?.id,
-          items: [{
-            item_id: newItem?.id || null,
-            item_name: data.name,
-            item_brand: brands?.find(b => b.id === data.brand_id)?.name || null,
-            item_category: categories?.find(c => c.id === data.category_id)?.name || null,
-            item_barcode: data.barcode,
-            item_unit: data.itemType === "grocery" ? "گرام" : data.unit,
-            quantity: totalQuantity,
-            boxes: data.boxCount || 0,
-            pieces: data.pieceCount || 0,
-            gifts: data.giftQuantity || 0,
-            weight_kg: data.weight_kg || 0,
-            weight_gram: data.weight_gram || 0,
-            price: data.itemType === "beverage" ? (data.boxPrice || data.piecePrice || 0) : (data.pricePerKg || 0),
-            total_price: totalPrice,
-            exp_date: data.exp_date || null,
-            mfg_date: data.mfg_date || null,
-            note: data.note || null,
-          }],
-        });
 
         setReceiptData({
           item: receiptItem,
