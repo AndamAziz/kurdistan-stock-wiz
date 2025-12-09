@@ -408,34 +408,6 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Profile Settings */}
-        <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3 mb-4 sm:mb-6">
-            <div className="rounded-md sm:rounded-lg bg-primary/10 p-1.5 sm:p-2">
-              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            </div>
-            <h2 className="text-base sm:text-lg font-semibold text-card-foreground">زانیاری بەکارهێنەر</h2>
-          </div>
-          
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">ناو</Label>
-              <Input defaultValue="باکوری" className="h-9 sm:h-10 text-sm" />
-            </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">ناوی بەکارهێنەر</Label>
-              <Input defaultValue="admin" className="h-9 sm:h-10 text-sm" />
-            </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">ئیمەیڵ</Label>
-              <Input type="email" defaultValue="admin@bakuri.com" className="h-9 sm:h-10 text-sm" />
-            </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm">ژمارەی مۆبایل</Label>
-              <Input defaultValue="0750 123 4567" className="h-9 sm:h-10 text-sm" />
-            </div>
-          </div>
-        </div>
 
         {/* Notification Settings */}
         <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '150ms' }}>
