@@ -65,13 +65,13 @@ export default function Auth() {
         <div className="text-center mb-6 sm:mb-8 animate-fade-in">
           <div className="relative inline-block">
             {/* Outer decorative glow */}
-            <div className="absolute -inset-6 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 rounded-[3rem] blur-2xl"></div>
+            <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 rounded-2xl blur-xl"></div>
             {/* Logo container - clean white background */}
-            <div className="relative bg-white rounded-3xl shadow-2xl shadow-primary/20 p-2">
+            <div className="relative bg-white rounded-2xl shadow-xl shadow-primary/15 p-2">
               <img 
                 src={bakuryLogo} 
                 alt="باکوری خۆشەویست" 
-                className="w-56 h-56 sm:w-72 sm:h-72 lg:w-80 lg:h-80 object-contain"
+                className="w-28 h-28 sm:w-32 sm:h-32 object-contain"
               />
             </div>
           </div>
