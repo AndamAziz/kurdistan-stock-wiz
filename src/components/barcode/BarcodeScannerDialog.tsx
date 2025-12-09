@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { hapticFeedback } from "@/lib/haptics";
-import { X, Loader2, AlertCircle, QrCode } from "lucide-react";
+import { X, Loader2, AlertCircle, QrCode, Camera } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface BarcodeScannerDialogProps {
   open: boolean;
@@ -24,46 +24,170 @@ export function BarcodeScannerDialog({
   onOpenChange, 
   onScan 
 }: BarcodeScannerDialogProps) {
-  const [hasScanned, setHasScanned] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const hasScannedRef = useRef(false);
 
-  const handleScanResult = useCallback((barcode: string) => {
-    if (barcode && !hasScanned) {
-      setHasScanned(true);
-      hapticFeedback.success();
-      onScan(barcode);
-      onOpenChange(false);
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        const state = scannerRef.current.getState();
+        if (state === 2) { // SCANNING state
+          await scannerRef.current.stop();
+        }
+        scannerRef.current.clear();
+      } catch (e) {
+        console.log('Scanner cleanup:', e);
+      }
+      scannerRef.current = null;
     }
-  }, [hasScanned, onScan, onOpenChange]);
+    setIsScanning(false);
+    setIsLoading(false);
+  }, []);
 
-  const { 
-    isScanning, 
-    error, 
-    startScanning, 
-    stopScanning,
-  } = useBarcodeScanner(handleScanResult, SCANNER_ID);
+  const startScanner = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+    hasScannedRef.current = false;
+
+    // Wait for container to be ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const container = document.getElementById(SCANNER_ID);
+    if (!container) {
+      setError('کۆنتەینەری سکانەر نەدۆزرایەوە');
+      setIsLoading(false);
+      return;
+    }
+
+    // Clean up any existing scanner
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch (e) {}
+      scannerRef.current = null;
+    }
+
+    try {
+      const scanner = new Html5Qrcode(SCANNER_ID, { verbose: false });
+      scannerRef.current = scanner;
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.333,
+      };
+
+      const onSuccess = (decodedText: string) => {
+        if (!hasScannedRef.current && decodedText) {
+          hasScannedRef.current = true;
+          hapticFeedback.success();
+          stopScanner();
+          onScan(decodedText);
+          onOpenChange(false);
+        }
+      };
+
+      // Try back camera first
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          config,
+          onSuccess,
+          () => {} // Ignore failures
+        );
+        setIsScanning(true);
+        setIsLoading(false);
+        return;
+      } catch (backCamError) {
+        console.log('Back camera failed, trying front:', backCamError);
+      }
+
+      // Try front camera as fallback
+      try {
+        await scanner.start(
+          { facingMode: "user" },
+          config,
+          onSuccess,
+          () => {}
+        );
+        setIsScanning(true);
+        setIsLoading(false);
+        return;
+      } catch (frontCamError) {
+        console.log('Front camera failed:', frontCamError);
+      }
+
+      // Try any available camera
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          await scanner.start(
+            devices[0].id,
+            config,
+            onSuccess,
+            () => {}
+          );
+          setIsScanning(true);
+          setIsLoading(false);
+          return;
+        }
+      } catch (deviceError) {
+        console.log('Device enumeration failed:', deviceError);
+      }
+
+      setError('هیچ کامێرایەک نەدۆزرایەوە');
+      setIsLoading(false);
+    } catch (err: any) {
+      console.error('Scanner initialization error:', err);
+      const errorMessage = err?.message || String(err);
+      
+      if (errorMessage.includes('Permission')) {
+        setError('تکایە ڕێگە بە کامێرا بدە');
+      } else if (errorMessage.includes('NotFound') || errorMessage.includes('not found')) {
+        setError('کامێرا نەدۆزرایەوە');
+      } else if (errorMessage.includes('NotReadable') || errorMessage.includes('Could not start')) {
+        setError('کامێرا لەلایەن ئەپێکی تر بەکاردەهێنرێت');
+      } else {
+        setError('نەتوانرا کامێرا بکرێتەوە');
+      }
+      setIsLoading(false);
+    }
+  }, [onScan, onOpenChange, stopScanner]);
 
   // Start scanner when dialog opens
   useEffect(() => {
-    if (open && !hasScanned) {
+    if (open) {
       const timer = setTimeout(() => {
-        startScanning();
+        startScanner();
       }, 300);
       return () => clearTimeout(timer);
+    } else {
+      stopScanner();
+      hasScannedRef.current = false;
+      setError(null);
     }
-  }, [open, hasScanned, startScanning]);
+  }, [open, startScanner, stopScanner]);
 
-  // Reset when dialog closes
+  // Cleanup on unmount
   useEffect(() => {
-    if (!open) {
-      setHasScanned(false);
-      stopScanning();
-    }
-  }, [open, stopScanning]);
+    return () => {
+      stopScanner();
+    };
+  }, [stopScanner]);
 
   const handleClose = useCallback(() => {
-    stopScanning();
+    stopScanner();
     onOpenChange(false);
-  }, [stopScanning, onOpenChange]);
+  }, [stopScanner, onOpenChange]);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    startScanner();
+  }, [startScanner]);
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => !newOpen && handleClose()}>
@@ -78,45 +202,51 @@ export function BarcodeScannerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative">
+        <div className="relative bg-black">
+          {/* Scanner Container - must always be in DOM */}
           <div 
             id={SCANNER_ID}
-            className="w-full aspect-[4/3] bg-black relative overflow-hidden flex items-center justify-center"
-          >
-            {!isScanning && !error && (
-              <div className="flex flex-col items-center gap-3 text-white/70">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="text-sm">کردنەوەی کامێرا...</p>
-              </div>
-            )}
+            className="w-full min-h-[300px] bg-black"
+            style={{ minHeight: '300px' }}
+          />
 
-            {error && (
-              <div className="flex flex-col items-center gap-3 text-white/70 p-4 text-center">
-                <AlertCircle className="h-8 w-8 text-destructive" />
-                <p className="text-sm">{error}</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setHasScanned(false);
-                    startScanning();
-                  }}
-                  className="mt-2"
-                >
-                  هەوڵدانەوە
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* Loading overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10">
+              <Camera className="h-12 w-12 text-primary mb-3 animate-pulse" />
+              <Loader2 className="h-6 w-6 animate-spin text-white/70 mb-2" />
+              <p className="text-sm text-white/70">کردنەوەی کامێرا...</p>
+            </div>
+          )}
 
-          {isScanning && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-20">
-                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-primary" />
-                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-primary" />
-                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-primary" />
-                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-primary" />
-                <div className="absolute left-0 right-0 h-0.5 bg-primary animate-pulse" style={{ top: '50%' }} />
+          {/* Error overlay */}
+          {error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10 p-4 text-center">
+              <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+              <p className="text-sm text-white/80 mb-4">{error}</p>
+              <Button
+                size="sm"
+                onClick={handleRetry}
+                className="gap-2"
+              >
+                <Camera className="h-4 w-4" />
+                هەوڵدانەوە
+              </Button>
+            </div>
+          )}
+
+          {/* Scanning overlay with guide box */}
+          {isScanning && !isLoading && !error && (
+            <div className="absolute inset-0 pointer-events-none z-5">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-36">
+                <div className="absolute top-0 left-0 w-6 h-6 border-t-3 border-l-3 border-primary rounded-tl" />
+                <div className="absolute top-0 right-0 w-6 h-6 border-t-3 border-r-3 border-primary rounded-tr" />
+                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-3 border-l-3 border-primary rounded-bl" />
+                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-3 border-r-3 border-primary rounded-br" />
+                <div 
+                  className="absolute left-2 right-2 h-0.5 bg-primary/80 animate-pulse" 
+                  style={{ top: '50%' }} 
+                />
               </div>
             </div>
           )}
@@ -139,10 +269,18 @@ export function BarcodeScannerDialog({
       </DialogContent>
 
       <style>{`
+        #${SCANNER_ID} {
+          position: relative;
+          overflow: hidden;
+        }
         #${SCANNER_ID} video {
           object-fit: cover !important;
           width: 100% !important;
           height: 100% !important;
+          min-height: 300px !important;
+        }
+        #${SCANNER_ID} img {
+          display: none !important;
         }
       `}</style>
     </Dialog>
