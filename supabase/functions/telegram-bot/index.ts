@@ -227,6 +227,141 @@ async function addStockMovement(movementData: any) {
   return { data };
 }
 
+// Get invoices
+async function getInvoices(limit: number = 10, invoiceType?: string) {
+  let query = supabase
+    .from("invoices")
+    .select("*, invoice_items(*)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  
+  if (invoiceType) {
+    query = query.eq("invoice_type", invoiceType);
+  }
+  
+  const { data, error } = await query;
+  
+  if (error) {
+    console.error("Error fetching invoices:", error);
+    return [];
+  }
+  
+  return data || [];
+}
+
+// Get invoice by number
+async function getInvoiceByNumber(invoiceNumber: string) {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("*, invoice_items(*)")
+    .ilike("invoice_number", `%${invoiceNumber}%`)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  
+  if (error) {
+    console.error("Error fetching invoice by number:", error);
+    return [];
+  }
+  
+  return data || [];
+}
+
+// Format invoice for Telegram
+function formatInvoice(invoice: any): string {
+  const invoiceDate = new Date(invoice.invoice_date).toLocaleDateString("ku");
+  const type = invoice.invoice_type === "STOCK_IN" ? "📥 داخڵکردن" : "📤 دەرکردن";
+  const itemCount = invoice.invoice_items?.length || 0;
+  const totalAmount = invoice.total_amount || 0;
+  
+  let msg = `🧾 <b>پسووڵە #${invoice.invoice_number}</b>
+├ 📋 جۆر: ${type}
+├ 📅 بەروار: ${invoiceDate}
+├ 📦 ژمارەی کاڵا: ${itemCount}`;
+  
+  if (totalAmount > 0) {
+    msg += `\n├ 💰 کۆی گشتی: ${formatNumber(totalAmount)} د.ع`;
+  }
+  
+  if (invoice.recipient_name) {
+    msg += `\n├ 👤 وەرگر: ${invoice.recipient_name}`;
+  }
+  
+  if (invoice.recipient_phone) {
+    msg += `\n├ 📞 ژمارە: ${invoice.recipient_phone}`;
+  }
+  
+  msg += `\n└ 🕐 ${new Date(invoice.created_at).toLocaleTimeString("ku")}`;
+  
+  return msg;
+}
+
+// Format invoice details with items
+function formatInvoiceDetails(invoice: any): string {
+  const invoiceDate = new Date(invoice.invoice_date).toLocaleDateString("ku");
+  const type = invoice.invoice_type === "STOCK_IN" ? "📥 داخڵکردن" : "📤 دەرکردن";
+  const totalAmount = invoice.total_amount || 0;
+  
+  let msg = `🧾 <b>وردەکاری پسووڵە #${invoice.invoice_number}</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📋 <b>زانیاری گشتی:</b>
+├ 🏷️ جۆر: ${type}
+├ 📅 بەروار: ${invoiceDate}`;
+  
+  if (invoice.recipient_name) {
+    msg += `\n├ 👤 وەرگر: ${invoice.recipient_name}`;
+  }
+  
+  if (invoice.recipient_phone) {
+    msg += `\n├ 📞 ژمارە: ${invoice.recipient_phone}`;
+  }
+  
+  if (totalAmount > 0) {
+    msg += `\n└ 💰 کۆی گشتی: <b>${formatNumber(totalAmount)}</b> د.ع`;
+  }
+  
+  // List items
+  const items = invoice.invoice_items || [];
+  if (items.length > 0) {
+    msg += `\n\n📦 <b>کاڵاکان (${items.length}):</b>\n`;
+    
+    items.forEach((item: any, index: number) => {
+      msg += `\n<b>${index + 1}.</b> ${item.item_name}`;
+      
+      if (item.quantity > 0) {
+        msg += `\n   📊 بڕ: ${item.quantity}`;
+      }
+      if (item.boxes && item.boxes > 0) {
+        msg += ` | 📦 کارتۆن: ${item.boxes}`;
+      }
+      if (item.pieces && item.pieces > 0) {
+        msg += ` | 🔢 دانە: ${item.pieces}`;
+      }
+      if (item.price && item.price > 0) {
+        msg += `\n   💵 نرخ: ${formatNumber(item.price)} د.ع`;
+      }
+      if (item.total_price && item.total_price > 0) {
+        msg += ` | کۆ: ${formatNumber(item.total_price)} د.ع`;
+      }
+      if (item.exp_date) {
+        msg += `\n   📅 بەسەرچوون: ${new Date(item.exp_date).toLocaleDateString("ku")}`;
+      }
+      if (item.note) {
+        msg += `\n   📝 تێبینی: ${item.note}`;
+      }
+    });
+  }
+  
+  if (invoice.notes) {
+    msg += `\n\n📝 <b>تێبینی:</b> ${invoice.notes}`;
+  }
+  
+  msg += `\n\n━━━━━━━━━━━━━━━━━━━━`;
+  
+  return msg;
+}
+
 // Get dashboard stats
 async function getDashboardStats() {
   const today = new Date().toISOString().split("T")[0];
@@ -1403,6 +1538,163 @@ ${mvResult.error.message}
   }
 }
 
+// Handle /invoice command flow - conversational step by step
+async function handleInvoiceCommand(chatId: string, text: string, state: any) {
+  const step = state?.step || 0;
+  
+  console.log(`handleInvoiceCommand - chatId: ${chatId}, step: ${step}, text: ${text}`);
+  
+  switch (step) {
+    case 0:
+      // Start - ask what they want to see
+      conversationState.set(chatId, { command: "invoice", step: 1, data: {} });
+      await sendTelegramMessage(chatId, `🧾 <b>بینینی پسووڵەکان</b>
+
+چی دەتەوێت ببینیت؟
+
+<b>1.</b> دوایین پسووڵەکان (هەموو)
+<b>2.</b> پسووڵەکانی داخڵکردن
+<b>3.</b> پسووڵەکانی دەرکردن
+<b>4.</b> گەڕان بە ژمارەی پسووڵە
+
+<i>تکایە ژمارە بنووسە (1-4):</i>
+<i>🔙 بۆ هەڵوەشاندنەوە: /cancel</i>`);
+      break;
+      
+    case 1:
+      // Got choice
+      const choice = parseInt(text.trim());
+      
+      if (choice === 4) {
+        // Search by invoice number
+        state.step = 2;
+        state.data.searchMode = true;
+        conversationState.set(chatId, state);
+        await sendTelegramMessage(chatId, `🔍 <b>گەڕان بە ژمارەی پسووڵە</b>
+
+تکایە ژمارەی پسووڵەکە یان بەشێک لێی بنووسە:
+
+<i>نموونە: INV-2025</i>`);
+        return;
+      }
+      
+      if (isNaN(choice) || choice < 1 || choice > 4) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>4</b> بنووسە:`);
+        return;
+      }
+      
+      let invoiceType: string | undefined;
+      let typeLabel = "هەموو";
+      
+      if (choice === 2) {
+        invoiceType = "STOCK_IN";
+        typeLabel = "داخڵکردن";
+      } else if (choice === 3) {
+        invoiceType = "STOCK_OUT";
+        typeLabel = "دەرکردن";
+      }
+      
+      const invoices = await getInvoices(10, invoiceType);
+      
+      if (invoices.length === 0) {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `📭 <b>هیچ پسووڵەیەک نەدۆزرایەوە!</b>
+
+${invoiceType ? `جۆر: ${typeLabel}` : ""}
+
+📥 بۆ زیادکردنی ستۆک: /stockin
+📤 بۆ دەرکردن: /stockout`);
+        return;
+      }
+      
+      state.data.invoices = invoices;
+      state.step = 3;
+      conversationState.set(chatId, state);
+      
+      let response = `🧾 <b>پسووڵەکان - ${typeLabel} (${invoices.length}):</b>\n\n`;
+      invoices.forEach((invoice, index) => {
+        response += `<b>${index + 1}.</b> ${formatInvoice(invoice)}\n\n`;
+      });
+      response += `<b>بۆ بینینی وردەکاری، ژمارەی پسووڵەکە بنووسە (1-${invoices.length}):</b>
+      
+<i>یان بنووسە <b>تەواو</b> بۆ دەرچوون</i>`;
+      
+      await sendTelegramMessage(chatId, response);
+      break;
+      
+    case 2:
+      // Search by invoice number
+      const searchQuery = text.trim();
+      const searchResults = await getInvoiceByNumber(searchQuery);
+      
+      if (searchResults.length === 0) {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `🔍 <b>هیچ پسووڵەیەک نەدۆزرایەوە!</b>
+
+گەڕان بۆ: "${searchQuery}"
+
+🔄 بۆ دووبارە هەوڵدان: /invoice`);
+        return;
+      }
+      
+      if (searchResults.length === 1) {
+        conversationState.delete(chatId);
+        const details = formatInvoiceDetails(searchResults[0]);
+        await sendTelegramMessage(chatId, details);
+        return;
+      }
+      
+      state.data.invoices = searchResults;
+      state.step = 3;
+      conversationState.set(chatId, state);
+      
+      let searchResponse = `🔍 <b>ئەنجامی گەڕان (${searchResults.length}):</b>\n\n`;
+      searchResults.forEach((invoice, index) => {
+        searchResponse += `<b>${index + 1}.</b> ${formatInvoice(invoice)}\n\n`;
+      });
+      searchResponse += `<b>بۆ بینینی وردەکاری، ژمارە بنووسە (1-${searchResults.length}):</b>
+      
+<i>یان بنووسە <b>تەواو</b> بۆ دەرچوون</i>`;
+      
+      await sendTelegramMessage(chatId, searchResponse);
+      break;
+      
+    case 3:
+      // View invoice details
+      const input = text.trim().toLowerCase();
+      
+      if (input === "تەواو" || input === "done" || input === "-") {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `✅ <b>تەواو!</b>
+
+🧾 /invoice - بۆ بینینی پسووڵەکان
+📥 /stockin - داخڵکردن
+📤 /stockout - دەرکردن`);
+        return;
+      }
+      
+      const selection = parseInt(input);
+      if (isNaN(selection) || selection < 1 || selection > state.data.invoices.length) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>${state.data.invoices.length}</b> بنووسە:
+
+<i>یان بنووسە <b>تەواو</b> بۆ دەرچوون</i>`);
+        return;
+      }
+      
+      const selectedInvoice = state.data.invoices[selection - 1];
+      const details = formatInvoiceDetails(selectedInvoice);
+      
+      await sendTelegramMessage(chatId, details);
+      
+      // Stay in the same state to allow viewing more invoices
+      await sendTelegramMessage(chatId, `📋 دەتوانیت پسووڵەیەکی تر ببینیت.
+
+بۆ بینینی وردەکاری، ژمارە بنووسە (1-${state.data.invoices.length})
+یان بنووسە <b>تەواو</b> بۆ دەرچوون`);
+      break;
+  }
+}
+
 // Handle incoming Telegram updates
 async function handleUpdate(update: any) {
   const message = update.message;
@@ -1451,6 +1743,9 @@ async function handleUpdate(update: any) {
     } else if (state.command === "adjust") {
       await handleAdjustCommand(chatId, text, state);
       return;
+    } else if (state.command === "invoice") {
+      await handleInvoiceCommand(chatId, text, state);
+      return;
     }
   }
   
@@ -1476,6 +1771,7 @@ async function handleUpdate(update: any) {
 <b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی کۆگا
 /report - ڕاپۆرتی تەواو
+/invoice - بینینی پسووڵەکان
 
 <b>⚠️ ئاگاداریەکان:</b>
 /expiring - نزیک لە بەسەرچوون
@@ -1506,6 +1802,7 @@ async function handleUpdate(update: any) {
 <b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی گشتی کۆگا
 /report - ڕاپۆرتی تەواو
+/invoice - بینینی پسووڵەکان
 
 <b>⚠️ ئاگاداریەکان:</b>
 /expiring - نزیک لە بەسەرچوون (٣٠ ڕۆژ)
@@ -1559,6 +1856,10 @@ async function handleUpdate(update: any) {
         
       case "/adjust":
         await handleAdjustCommand(chatId, text, null);
+        break;
+        
+      case "/invoice":
+        await handleInvoiceCommand(chatId, text, null);
         break;
         
       case "/expiring":
