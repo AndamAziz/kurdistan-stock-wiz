@@ -140,26 +140,23 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-20 lg:h-24 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/50 rounded-lg blur-sm opacity-40"></div>
-            <div className="relative bg-white rounded-xl p-1 shadow-lg ring-1 ring-sidebar-primary/20">
+      <div className="flex h-24 lg:h-28 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/10">
+        <div className="text-center">
+          <div className="relative inline-block">
+            {/* Outer decorative glow */}
+            <div className="absolute -inset-3 bg-gradient-to-br from-sidebar-primary/20 via-sidebar-primary/10 to-sidebar-accent/20 rounded-xl blur-lg"></div>
+            {/* Logo container - clean white background */}
+            <div className="relative bg-white rounded-xl shadow-lg shadow-sidebar-primary/15 p-1.5">
               <img 
                 src={bakuryLogo} 
                 alt="باکوری خۆشەویست" 
-                className="h-10 w-10 lg:h-12 lg:w-12 object-contain"
+                className="w-14 h-14 lg:w-16 lg:h-16 object-contain"
               />
             </div>
           </div>
-          <div className="text-right">
-            <h1 className="text-sm lg:text-base font-bold text-sidebar-foreground tracking-tight">
-              باکوری خۆشەویست
-            </h1>
-            <p className="text-[9px] lg:text-[10px] text-sidebar-foreground/50 font-medium">
-              سیستمی بەڕێوەبردنی کۆگا
-            </p>
-          </div>
+          <p className="text-[9px] lg:text-[10px] text-sidebar-foreground/50 font-medium mt-2">
+            سیستمی بەڕێوەبردنی کۆگا
+          </p>
         </div>
       </div>
 
