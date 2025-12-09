@@ -87,6 +87,7 @@ export function StockValueReportDialog({
 
         return {
           '#': index + 1,
+          'ئایدی': item.id,
           'ناوی مادە': item.name,
           'باڕکۆد': item.barcode,
           'براند': item.brands?.name || '-',
@@ -102,6 +103,7 @@ export function StockValueReportDialog({
       // Add totals row
       excelData.push({
         '#': '',
+        'ئایدی': '',
         'ناوی مادە': 'کۆی گشتی',
         'باڕکۆد': '',
         'براند': '',
@@ -120,6 +122,7 @@ export function StockValueReportDialog({
       // Set column widths
       ws['!cols'] = [
         { wch: 5 },   // #
+        { wch: 38 },  // ID
         { wch: 30 },  // Name
         { wch: 15 },  // Barcode
         { wch: 15 },  // Brand
@@ -321,6 +324,7 @@ export function StockValueReportDialog({
             <thead>
               <tr style={{ backgroundColor: themeColor }}>
                 <th className="text-white p-2 text-center border border-gray-300 w-10">#</th>
+                <th className="text-white p-2 text-center border border-gray-300">ئایدی</th>
                 <th className="text-white p-2 text-right border border-gray-300">ناوی مادە</th>
                 <th className="text-white p-2 text-center border border-gray-300">براند</th>
                 <th className="text-white p-2 text-center border border-gray-300">هاوپۆل</th>
@@ -346,6 +350,7 @@ export function StockValueReportDialog({
                 return (
                   <tr key={item.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
                     <td className="p-2 text-center border border-gray-300 font-medium">{index + 1}</td>
+                    <td className="p-2 text-center border border-gray-300 text-[10px] font-mono text-gray-500">{item.id.slice(0, 8)}...</td>
                     <td className="p-2 text-right border border-gray-300">
                       <div className="flex items-center gap-2">
                         {item.image_url && (
@@ -384,7 +389,7 @@ export function StockValueReportDialog({
             </tbody>
             <tfoot>
               <tr style={{ backgroundColor: `${themeColor}20` }}>
-                <td colSpan={4} className="p-3 text-right border border-gray-300 font-bold" style={{ color: themeColor }}>
+                <td colSpan={5} className="p-3 text-right border border-gray-300 font-bold" style={{ color: themeColor }}>
                   کۆی گشتی
                 </td>
                 <td className="p-3 text-center border border-gray-300 font-bold" style={{ color: themeColor }}>

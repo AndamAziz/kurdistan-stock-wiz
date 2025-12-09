@@ -223,6 +223,7 @@ export default function ImportExport() {
 
         return {
           "#": index + 1,
+          "ئایدی": item.id,
           "ناوی مادە": item.name,
           "باڕکۆد": item.barcode,
           "براند": item.brands?.name || "",
@@ -245,6 +246,7 @@ export default function ImportExport() {
 
       ws["!cols"] = [
         { wch: 5 },
+        { wch: 38 },
         { wch: 30 },
         { wch: 15 },
         { wch: 15 },
@@ -284,6 +286,7 @@ export default function ImportExport() {
     try {
       const excelData = lowStockItems.map((item, index) => ({
         "#": index + 1,
+        "ئایدی": item.id,
         "ناوی مادە": item.name,
         "باڕکۆد": item.barcode,
         "براند": item.brands?.name || "",
@@ -318,6 +321,7 @@ export default function ImportExport() {
     try {
       const excelData = expiredItems.map((item, index) => ({
         "#": index + 1,
+        "ئایدی": item.id,
         "ناوی مادە": item.name,
         "باڕکۆد": item.barcode,
         "براند": item.brands?.name || "",
