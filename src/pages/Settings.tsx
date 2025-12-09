@@ -205,73 +205,34 @@ export default function Settings() {
               )} />
             </div>
 
-            {/* Share App Link */}
-            <div className="p-2 sm:p-3 rounded-lg bg-muted/50 space-y-3">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Share2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                <div>
-                  <p className="text-xs sm:text-sm font-medium">دابەزاندنی ئەپ</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">لینکی ئەپ بنێرە بۆ مۆبایل یان لاپتۆپ</p>
+            {/* Install Instructions */}
+            <div className="p-3 sm:p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2 mb-3">
+                <Download className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm sm:text-base font-semibold text-blue-800 dark:text-blue-200">چۆن ئەپەکە دابەزێنم؟</p>
+              </div>
+              <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                <div className="flex items-start gap-2 p-2 rounded-md bg-blue-100/50 dark:bg-blue-900/30">
+                  <span className="text-lg">📱</span>
+                  <div>
+                    <p className="font-medium">iPhone:</p>
+                    <p className="text-blue-600 dark:text-blue-400">Share → Add to Home Screen</p>
+                  </div>
                 </div>
-              </div>
-              
-              {/* App Link Display */}
-              <div className="flex items-center gap-2 p-2 rounded-md bg-background border border-border">
-                <a 
-                  href={window.location.origin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-xs sm:text-sm text-primary font-mono truncate hover:underline"
-                  dir="ltr"
-                >
-                  {window.location.origin}
-                </a>
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.origin);
-                    hapticFeedback.success();
-                    toast.success("لینک کۆپی کرا!");
-                  }}
-                  className="h-7 px-2"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-
-              {/* Share Buttons */}
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.origin);
-                    hapticFeedback.success();
-                    toast.success("لینک کۆپی کرا!");
-                  }}
-                  className="flex-1 h-8 text-xs gap-1.5"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  کۆپی کردنی لینک
-                </Button>
-                {navigator.share && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      hapticFeedback.light();
-                      navigator.share({
-                        title: 'ئەپی کۆگا',
-                        text: 'ئەپی بەڕێوەبردنی کۆگا دابەزێنە',
-                        url: window.location.origin
-                      });
-                    }}
-                    className="flex-1 h-8 text-xs gap-1.5"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    بەشکردن
-                  </Button>
-                )}
+                <div className="flex items-start gap-2 p-2 rounded-md bg-blue-100/50 dark:bg-blue-900/30">
+                  <span className="text-lg">🤖</span>
+                  <div>
+                    <p className="font-medium">Android:</p>
+                    <p className="text-blue-600 dark:text-blue-400">منیوی براوزەر → Install App / Add to Home Screen</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 p-2 rounded-md bg-blue-100/50 dark:bg-blue-900/30">
+                  <span className="text-lg">💻</span>
+                  <div>
+                    <p className="font-medium">Laptop / Desktop:</p>
+                    <p className="text-blue-600 dark:text-blue-400">لە براوزەر ئایکۆنی دامەزراندن لە کۆتایی ناونیشان</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -306,15 +267,6 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Install Instructions */}
-            <div className="p-2 sm:p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-              <p className="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200 mb-1.5">چۆن ئەپەکە دابەزێنم؟</p>
-              <div className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <p><strong>iPhone:</strong> Share → Add to Home Screen</p>
-                <p><strong>Android:</strong> منیوی براوزەر → Install App</p>
-                <p><strong>Laptop:</strong> لە براوزەر ئایکۆنی دامەزراندن</p>
-              </div>
-            </div>
           </div>
         </div>
 
