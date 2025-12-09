@@ -122,8 +122,8 @@ export function TopNavigation() {
           {/* Logo Section */}
           <div className="flex items-center gap-4">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
-              <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white shadow-xl shadow-primary/30 ring-2 ring-primary/20 overflow-hidden">
+              <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+              <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 lg:h-[4.5rem] lg:w-[4.5rem] items-center justify-center rounded-2xl bg-white shadow-xl shadow-primary/30 ring-2 ring-primary/20 overflow-hidden p-1">
                 <img 
                   src={bakuryLogo} 
                   alt="باکوری خۆشەویست" 

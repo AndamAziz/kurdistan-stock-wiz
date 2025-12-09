@@ -140,13 +140,16 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-20 lg:h-28 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
-        <div className="flex items-center gap-3">
-          <img 
-            src={bakuryLogo} 
-            alt="باکوری خۆشەویست" 
-            className="h-14 w-14 lg:h-18 lg:w-18 object-contain rounded-xl shadow-lg"
-          />
+      <div className="flex h-24 lg:h-32 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/50 rounded-xl blur-md opacity-50"></div>
+            <img 
+              src={bakuryLogo} 
+              alt="باکوری خۆشەویست" 
+              className="relative h-16 w-16 lg:h-20 lg:w-20 object-contain rounded-xl shadow-lg ring-2 ring-sidebar-primary/20 bg-white p-1"
+            />
+          </div>
           <div className="text-center">
             <h1 className="text-base lg:text-xl font-bold text-sidebar-foreground tracking-tight bg-gradient-to-r from-sidebar-primary to-sidebar-primary/60 bg-clip-text text-transparent">
               باکوری خۆشەویست
