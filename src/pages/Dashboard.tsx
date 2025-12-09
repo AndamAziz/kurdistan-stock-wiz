@@ -42,6 +42,8 @@ export default function Dashboard() {
   const [allItemsOpen, setAllItemsOpen] = useState(false);
   const [expiredOpen, setExpiredOpen] = useState(false);
   const [stockReportOpen, setStockReportOpen] = useState(false);
+  
+  const isNotificationsEnabled = settings.interval !== 'off';
 
   const handleCheckNotifications = async () => {
     if (permission !== 'granted') {
@@ -162,11 +164,12 @@ export default function Dashboard() {
                 <span className="sm:hidden">ڕاپۆرت</span>
               </Button>
             )}
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-full bg-muted/80 border border-border shadow-sm">
               <Switch
-                checked={settings.interval !== 'off' && permission === 'granted'}
+                checked={isNotificationsEnabled}
                 onCheckedChange={async (checked) => {
                   if (checked) {
+                    // First request permission if needed
                     if (permission !== 'granted') {
                       const granted = await requestPermission();
                       if (!granted) {
@@ -174,23 +177,25 @@ export default function Dashboard() {
                         return;
                       }
                     }
+                    // Enable notifications
                     updateSettings({ interval: '1hour' });
                     await checkAndNotify(settings.reminderDays);
-                    toast.success('ئاگادارکردنەوەکان چالاک کران');
+                    toast.success('ئاگادارکردنەوەکان چالاک کران ✓');
                   } else {
+                    // Disable notifications
                     updateSettings({ interval: 'off' });
                     toast.info('ئاگادارکردنەوەکان ناچالاک کران');
                   }
                 }}
-                className="data-[state=checked]:bg-primary"
+                className="data-[state=checked]:bg-green-500"
               />
-              {settings.interval !== 'off' && permission === 'granted' ? (
-                <Bell className="h-4 w-4 text-primary" />
+              {isNotificationsEnabled ? (
+                <Bell className="h-5 w-5 text-green-500" />
               ) : (
-                <BellOff className="h-4 w-4 text-muted-foreground" />
+                <BellOff className="h-5 w-5 text-muted-foreground" />
               )}
-              <span className="text-xs sm:text-sm text-foreground">
-                {settings.interval !== 'off' && permission === 'granted' ? 'چالاک' : 'ناچالاک'}
+              <span className={`text-sm font-medium ${isNotificationsEnabled ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                {isNotificationsEnabled ? 'چالاک' : 'ناچالاک'}
               </span>
             </div>
           </div>
