@@ -159,7 +159,7 @@ export function TopNavigation() {
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="center" 
-                className="w-[calc(100vw-2rem)] sm:w-96 max-w-96 p-2 sm:p-3 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl shadow-black/20 rounded-2xl sm:rounded-3xl max-h-[80vh] overflow-y-auto"
+                className="w-[calc(100vw-1.5rem)] sm:w-96 max-w-[400px] p-2 sm:p-3 bg-popover border-2 border-border/60 shadow-2xl shadow-black/30 rounded-2xl sm:rounded-3xl max-h-[75vh] overflow-y-auto z-[100]"
                 sideOffset={8}
               >
                 {/* Main Navigation */}
