@@ -19,18 +19,20 @@ import {
   TrendingDown,
   Loader2,
   Bell,
+  BellOff,
   DollarSign,
   TrendingUp,
   Wallet,
   FileText,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
-  const { settings } = useNotificationSettings();
+  const { settings, updateSettings } = useNotificationSettings();
   const { isAdmin } = useUserRoles();
   
   // Dialog states
@@ -160,15 +162,37 @@ export default function Dashboard() {
                 <span className="sm:hidden">ڕاپۆرت</span>
               </Button>
             )}
-            <Button
-              onClick={handleCheckNotifications}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">پشکنینی ئاگادارکردنەوەکان</span>
-              <span className="sm:hidden">پشکنین</span>
-            </Button>
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
+              <Switch
+                checked={settings.interval !== 'off' && permission === 'granted'}
+                onCheckedChange={async (checked) => {
+                  if (checked) {
+                    if (permission !== 'granted') {
+                      const granted = await requestPermission();
+                      if (!granted) {
+                        toast.error('ڕێگەپێدان بۆ ئاگادارکردنەوە پێویستە');
+                        return;
+                      }
+                    }
+                    updateSettings({ interval: '1hour' });
+                    await checkAndNotify(settings.reminderDays);
+                    toast.success('ئاگادارکردنەوەکان چالاک کران');
+                  } else {
+                    updateSettings({ interval: 'off' });
+                    toast.info('ئاگادارکردنەوەکان ناچالاک کران');
+                  }
+                }}
+                className="data-[state=checked]:bg-primary"
+              />
+              {settings.interval !== 'off' && permission === 'granted' ? (
+                <Bell className="h-4 w-4 text-primary" />
+              ) : (
+                <BellOff className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="text-xs sm:text-sm text-foreground">
+                {settings.interval !== 'off' && permission === 'granted' ? 'چالاک' : 'ناچالاک'}
+              </span>
+            </div>
           </div>
         </div>
 
