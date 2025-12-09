@@ -19,19 +19,20 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 const STORAGE_KEY = 'notification-settings';
 
 export function useNotificationSettings() {
-  const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
+  const [settings, setSettings] = useState<NotificationSettings>(() => {
+    // Initialize from localStorage immediately
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+        console.log('Loaded notification settings from localStorage:', parsed);
+        return { ...DEFAULT_SETTINGS, ...parsed };
       } catch {
-        setSettings(DEFAULT_SETTINGS);
+        return DEFAULT_SETTINGS;
       }
     }
-  }, []);
+    return DEFAULT_SETTINGS;
+  });
 
   const updateSettings = useCallback((newSettings: Partial<NotificationSettings>) => {
     setSettings(prev => {
