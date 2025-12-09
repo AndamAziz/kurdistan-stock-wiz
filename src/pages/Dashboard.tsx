@@ -152,53 +152,59 @@ export default function Dashboard() {
               بەخێربێیت بۆ سیستمی بەڕێوەبردنی کۆگای باکوری خۆشەویست
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            {isAdmin && (
-              <Button
-                onClick={() => setStockReportOpen(true)}
-                variant="default"
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">ڕاپۆرتی نرخ</span>
-                <span className="sm:hidden">ڕاپۆرت</span>
-              </Button>
-            )}
-            <div className="flex items-center gap-3 px-3 py-2 rounded-full bg-muted/80 border border-border shadow-sm">
-              <Switch
-                checked={isNotificationsEnabled}
-                onCheckedChange={async (checked) => {
-                  if (checked) {
-                    // First request permission if needed
-                    if (permission !== 'granted') {
-                      const granted = await requestPermission();
-                      if (!granted) {
-                        toast.error('ڕێگەپێدان بۆ ئاگادارکردنەوە پێویستە');
-                        return;
-                      }
-                    }
-                    // Enable notifications
-                    updateSettings({ interval: '1hour' });
-                    await checkAndNotify(settings.reminderDays);
-                    toast.success('ئاگادارکردنەوەکان چالاک کران ✓');
-                  } else {
-                    // Disable notifications
-                    updateSettings({ interval: 'off' });
-                    toast.info('ئاگادارکردنەوەکان ناچالاک کران');
+          
+          {/* Notification Toggle - Beautiful Design */}
+          <button
+            onClick={async () => {
+              if (!isNotificationsEnabled) {
+                if (permission !== 'granted') {
+                  const granted = await requestPermission();
+                  if (!granted) {
+                    toast.error('ڕێگەپێدان بۆ ئاگادارکردنەوە پێویستە');
+                    return;
                   }
-                }}
-                className="data-[state=checked]:bg-green-500"
-              />
+                }
+                updateSettings({ interval: '1hour' });
+                await checkAndNotify(settings.reminderDays);
+                toast.success('ئاگادارکردنەوەکان چالاک کران ✓');
+              } else {
+                updateSettings({ interval: 'off' });
+                toast.info('ئاگادارکردنەوەکان ناچالاک کران');
+              }
+            }}
+            className={`
+              group relative flex items-center gap-2 px-4 py-2.5 rounded-xl
+              transition-all duration-300 ease-out
+              ${isNotificationsEnabled 
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 hover:scale-105' 
+                : 'bg-muted/60 text-muted-foreground border border-border hover:bg-muted hover:scale-105'
+              }
+            `}
+          >
+            <div className={`
+              p-1.5 rounded-lg transition-all duration-300
+              ${isNotificationsEnabled 
+                ? 'bg-white/20' 
+                : 'bg-muted-foreground/10'
+              }
+            `}>
               {isNotificationsEnabled ? (
-                <Bell className="h-5 w-5 text-green-500" />
+                <Bell className="h-4 w-4 animate-[pulse_2s_ease-in-out_infinite]" />
               ) : (
-                <BellOff className="h-5 w-5 text-muted-foreground" />
+                <BellOff className="h-4 w-4" />
               )}
-              <span className={`text-sm font-medium ${isNotificationsEnabled ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                {isNotificationsEnabled ? 'چالاک' : 'ناچالاک'}
-              </span>
             </div>
-          </div>
+            <span className="text-sm font-semibold">
+              {isNotificationsEnabled ? 'ئاگادارکردنەوە چالاکە' : 'ئاگادارکردنەوە ناچالاکە'}
+            </span>
+            <div className={`
+              w-2 h-2 rounded-full transition-all duration-300
+              ${isNotificationsEnabled 
+                ? 'bg-white animate-pulse' 
+                : 'bg-muted-foreground/40'
+              }
+            `} />
+          </button>
         </div>
 
         {/* Stats Grid - Financial stats only for Admin */}
