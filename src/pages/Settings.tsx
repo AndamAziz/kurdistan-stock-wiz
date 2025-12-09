@@ -409,7 +409,7 @@ export default function Settings() {
         </div>
 
 
-        {/* Notification Settings */}
+        {/* Notification Settings - Section 1: Activation & Check */}
         <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '150ms' }}>
           <div className="flex items-center gap-3 mb-4 sm:mb-6">
             <div className="rounded-md sm:rounded-lg bg-warning/10 p-1.5 sm:p-2">
@@ -501,8 +501,20 @@ export default function Settings() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between">
+        {/* Notification Settings - Section 2: Expiry & Low Stock Alerts */}
+        <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '175ms' }}>
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <div className="rounded-md sm:rounded-lg bg-destructive/10 p-1.5 sm:p-2">
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" />
+            </div>
+            <h2 className="text-base sm:text-lg font-semibold text-card-foreground">ئاگادارکردنەوەی بەسەرچوون و ستۆک</h2>
+          </div>
+          
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ئاگادار لە بەسەرچوون</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground">ئاگادارکردنەوە پێش بەسەرچوونی مادە</p>
@@ -515,7 +527,8 @@ export default function Settings() {
                 }}
               />
             </div>
-            <div className="flex items-center justify-between">
+            
+            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
               <div>
                 <p className="text-xs sm:text-sm font-medium">ئاگادار لە کەم ستۆک</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground">کاتێک ستۆک کەمتر دەبێت لە حەدی کەم</p>
