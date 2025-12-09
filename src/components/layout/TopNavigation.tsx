@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getGravatarUrl } from "@/lib/gravatar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -625,9 +626,11 @@ export function TopNavigation() {
                     "transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-primary/10"
                   )}
                 >
-                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
+                  <img 
+                    src={getGravatarUrl(user?.email, 80)} 
+                    alt="پڕۆفایل"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg object-cover shadow-md ring-2 ring-primary/20"
+                  />
                   <div className="hidden sm:block text-right">
                     <p className="text-sm font-semibold text-foreground leading-tight">
                       {user?.user_metadata?.full_name || 'بەکارهێنەر'}
@@ -643,9 +646,11 @@ export function TopNavigation() {
                 sideOffset={8}
               >
                 <div className="flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-lg bg-gradient-to-r from-primary/10 to-accent/5 border border-primary/10">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
-                    <User className="h-5 w-5" />
-                  </div>
+                  <img 
+                    src={getGravatarUrl(user?.email, 80)} 
+                    alt="پڕۆفایل"
+                    className="h-10 w-10 rounded-lg object-cover shadow-sm ring-2 ring-primary/10"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
                     <p className="text-[10px] text-muted-foreground">باکوری خۆشەویست</p>
