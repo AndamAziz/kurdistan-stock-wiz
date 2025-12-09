@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, Lock, Loader2, ShieldCheck } from 'lucide-react';
-import bakuryLogo from '@/assets/bakury-logo.jpg';
+import bakuryLogo from '@/assets/bakury-logo-new.jpg';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -62,25 +62,20 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-sm sm:max-w-md">
         {/* Logo Section */}
-        <div className="text-center mb-8 sm:mb-10 animate-fade-in">
+        <div className="text-center mb-6 sm:mb-8 animate-fade-in">
           <div className="relative inline-block">
             {/* Outer decorative glow */}
-            <div className="absolute -inset-4 bg-gradient-to-br from-primary/30 via-primary/20 to-accent/30 rounded-[2rem] blur-xl animate-pulse"></div>
-            {/* Inner decorative ring */}
-            <div className="absolute -inset-2 bg-gradient-to-br from-primary/40 to-accent/40 rounded-3xl"></div>
-            {/* Logo container */}
-            <div className="relative p-4 sm:p-5 bg-white rounded-2xl shadow-2xl ring-2 ring-primary/20">
+            <div className="absolute -inset-6 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 rounded-[3rem] blur-2xl"></div>
+            {/* Logo container - clean white background */}
+            <div className="relative bg-white rounded-3xl shadow-2xl shadow-primary/20 p-2">
               <img 
                 src={bakuryLogo} 
                 alt="باکوری خۆشەویست" 
-                className="w-36 h-36 sm:w-44 sm:h-44 lg:w-52 lg:h-52 object-contain"
+                className="w-56 h-56 sm:w-72 sm:h-72 lg:w-80 lg:h-80 object-contain"
               />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight mt-6">
-            باکوری خۆشەویست
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-4">
             سیستمی بەڕێوەبردنی کۆگا
           </p>
         </div>
