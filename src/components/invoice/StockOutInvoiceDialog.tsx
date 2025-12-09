@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import bakuryLogo from "@/assets/bakury-logo.jpg";
 import {
   Dialog,
   DialogContent,
@@ -571,7 +572,7 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                     {invoiceSettings.logoUrl ? (
                       <img src={invoiceSettings.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
                     ) : (
-                      <span className="text-2xl">🏪</span>
+                      <img src={bakuryLogo} alt="باکوری خۆشەویست" className="w-full h-full object-contain" />
                     )}
                   </div>
                   <h1 className="text-lg sm:text-xl font-bold">{invoiceSettings.companyName}</h1>

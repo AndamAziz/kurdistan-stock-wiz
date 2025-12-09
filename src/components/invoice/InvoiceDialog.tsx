@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import bakuryLogo from "@/assets/bakury-logo.jpg";
 import {
   Dialog,
   DialogContent,
@@ -167,6 +168,11 @@ ${note ? `📝 تێبینی: ${note}` : ""}
           <div className="invoice">
             {/* Header */}
             <div className="header text-center mb-4">
+              <img 
+                src={bakuryLogo} 
+                alt="باکوری خۆشەویست" 
+                className="h-16 w-16 mx-auto mb-2 object-contain rounded-lg"
+              />
               <h1 className="text-xl font-bold">باکوری خۆشەویست</h1>
               <p className="text-xs text-muted-foreground">سیستەمی بەڕێوەبردنی کۆگا</p>
             </div>
