@@ -179,6 +179,38 @@ async function addItem(itemData: any) {
   return { data };
 }
 
+// Update item
+async function updateItem(itemId: string, itemData: any) {
+  const { data, error } = await supabase
+    .from("items")
+    .update(itemData)
+    .eq("id", itemId)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error("Error updating item:", error);
+    return { error };
+  }
+  
+  return { data };
+}
+
+// Delete item
+async function deleteItem(itemId: string) {
+  const { error } = await supabase
+    .from("items")
+    .delete()
+    .eq("id", itemId);
+  
+  if (error) {
+    console.error("Error deleting item:", error);
+    return { error };
+  }
+  
+  return { success: true };
+}
+
 // Add stock movement
 async function addStockMovement(movementData: any) {
   const { data, error } = await supabase
@@ -867,6 +899,356 @@ ${mvResult.error.message}
   }
 }
 
+// Handle /edit command flow - conversational step by step
+async function handleEditCommand(chatId: string, text: string, state: any) {
+  const step = state?.step || 0;
+  
+  console.log(`handleEditCommand - chatId: ${chatId}, step: ${step}, text: ${text}`);
+  
+  switch (step) {
+    case 0:
+      // Start - ask for barcode or name
+      conversationState.set(chatId, { command: "edit", step: 1, data: {} });
+      await sendTelegramMessage(chatId, `✏️ <b>دەستکاری کاڵا</b>
+
+<b>پرسیاری ١:</b> کام کاڵا دەتەوێت دەستکاری بکەیت؟
+
+<i>تکایە بارکۆد یان ناوی کاڵاکە بنووسە:</i>
+<i>🔙 بۆ هەڵوەشاندنەوە: /cancel</i>`);
+      break;
+      
+    case 1:
+      // Got search query - find item
+      const query = text.trim();
+      const items = await searchItems(query);
+      
+      if (items.length === 0) {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `❌ <b>هیچ کاڵایەک نەدۆزرایەوە!</b>
+
+گەڕان بۆ: "${query}"
+
+🔄 بۆ دووبارە هەوڵدان: /edit`);
+        return;
+      }
+      
+      if (items.length === 1) {
+        state.data.item = items[0];
+        state.step = 2;
+        conversationState.set(chatId, state);
+        
+        await sendTelegramMessage(chatId, `✅ <b>کاڵا دۆزرایەوە:</b>
+
+📦 <b>${items[0].name}</b>
+├ 🏷️ بارکۆد: <code>${items[0].barcode}</code>
+├ 📊 بڕ: ${items[0].current_quantity} ${items[0].unit}
+└ 📅 بەسەرچوون: ${items[0].exp_date || "نییە"}
+
+<b>پرسیاری ٢:</b> چی دەتەوێت بگۆڕیت؟
+
+<b>1.</b> ناو
+<b>2.</b> بارکۆد
+<b>3.</b> یەکە
+<b>4.</b> بەرواری بەسەرچوون
+<b>5.</b> کەمترین ستۆک
+
+<i>تکایە ژمارە بنووسە (1-5):</i>`);
+      } else {
+        state.data.searchResults = items;
+        state.step = 1.5;
+        conversationState.set(chatId, state);
+        
+        let response = `🔍 <b>چەندین کاڵا دۆزرایەوە:</b>\n\n`;
+        items.forEach((item, index) => {
+          response += `<b>${index + 1}.</b> ${item.name}\n   📊 ${item.current_quantity} ${item.unit}\n   🏷️ <code>${item.barcode}</code>\n\n`;
+        });
+        response += `<b>تکایە ژمارەی کاڵاکە بنووسە (1-${items.length}):</b>`;
+        
+        await sendTelegramMessage(chatId, response);
+      }
+      break;
+      
+    case 1.5:
+      // User selecting from multiple items
+      const selection = parseInt(text.trim());
+      if (isNaN(selection) || selection < 1 || selection > state.data.searchResults.length) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>${state.data.searchResults.length}</b> بنووسە:`);
+        return;
+      }
+      
+      state.data.item = state.data.searchResults[selection - 1];
+      delete state.data.searchResults;
+      state.step = 2;
+      conversationState.set(chatId, state);
+      
+      await sendTelegramMessage(chatId, `✅ <b>هەڵبژێردرا:</b>
+
+📦 <b>${state.data.item.name}</b>
+├ 🏷️ بارکۆد: <code>${state.data.item.barcode}</code>
+├ 📊 بڕ: ${state.data.item.current_quantity} ${state.data.item.unit}
+└ 📅 بەسەرچوون: ${state.data.item.exp_date || "نییە"}
+
+<b>پرسیاری ٢:</b> چی دەتەوێت بگۆڕیت؟
+
+<b>1.</b> ناو
+<b>2.</b> بارکۆد
+<b>3.</b> یەکە
+<b>4.</b> بەرواری بەسەرچوون
+<b>5.</b> کەمترین ستۆک
+
+<i>تکایە ژمارە بنووسە (1-5):</i>`);
+      break;
+      
+    case 2:
+      // User selecting what to edit
+      const editChoice = parseInt(text.trim());
+      if (isNaN(editChoice) || editChoice < 1 || editChoice > 5) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>5</b> بنووسە:`);
+        return;
+      }
+      
+      state.data.editField = editChoice;
+      state.step = 3;
+      conversationState.set(chatId, state);
+      
+      const fieldNames = ["ناو", "بارکۆد", "یەکە", "بەرواری بەسەرچوون", "کەمترین ستۆک"];
+      const currentValues = [
+        state.data.item.name,
+        state.data.item.barcode,
+        state.data.item.unit,
+        state.data.item.exp_date || "نییە",
+        state.data.item.min_stock
+      ];
+      
+      await sendTelegramMessage(chatId, `✅ دەستکاری: <b>${fieldNames[editChoice - 1]}</b>
+
+📋 نرخی ئێستا: <b>${currentValues[editChoice - 1]}</b>
+
+<b>پرسیاری ٣:</b> نرخی نوێ چییە؟
+
+<i>تکایە نرخی نوێ بنووسە:</i>`);
+      break;
+      
+    case 3:
+      // Got new value - update item
+      const newValue = text.trim();
+      const field = state.data.editField;
+      
+      let updateData: any = {};
+      
+      switch (field) {
+        case 1: // name
+          updateData.name = newValue;
+          break;
+        case 2: // barcode
+          const existingItem = await getItemByBarcode(newValue);
+          if (existingItem && existingItem.id !== state.data.item.id) {
+            await sendTelegramMessage(chatId, `❌ <b>ئەم بارکۆدە پێشتر هەیە!</b>
+
+📦 ${existingItem.name}
+
+تکایە بارکۆدێکی جیاواز بنووسە:`);
+            return;
+          }
+          updateData.barcode = newValue;
+          break;
+        case 3: // unit
+          updateData.unit = newValue;
+          break;
+        case 4: // exp_date
+          if (newValue.toLowerCase() === "نییە" || newValue === "-") {
+            updateData.exp_date = null;
+          } else {
+            const expDate = parseDate(newValue);
+            if (!expDate) {
+              await sendTelegramMessage(chatId, `❌ فۆرماتی بەروار <b>هەڵەیە</b>!
+
+تکایە بەم شێوازە بنووسە:
+• 25/12/2025
+• 2025-12-25
+• یان بنووسە: <b>نییە</b>`);
+              return;
+            }
+            updateData.exp_date = expDate;
+          }
+          break;
+        case 5: // min_stock
+          const minStock = parseInt(newValue);
+          if (isNaN(minStock) || minStock < 0) {
+            await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەکی ڕاست بنووسە:`);
+            return;
+          }
+          updateData.min_stock = minStock;
+          break;
+      }
+      
+      const result = await updateItem(state.data.item.id, updateData);
+      conversationState.delete(chatId);
+      
+      if (result.error) {
+        await sendTelegramMessage(chatId, `❌ <b>هەڵە لە نوێکردنەوە!</b>
+
+${result.error.message}
+
+تکایە دووبارە هەوڵ بدەرەوە: /edit`);
+        return;
+      }
+      
+      const fieldNames2 = ["ناو", "بارکۆد", "یەکە", "بەرواری بەسەرچوون", "کەمترین ستۆک"];
+      
+      await sendTelegramMessage(chatId, `🎉 <b>کاڵا بە سەرکەوتوویی نوێکرایەوە!</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📦 <b>${result.data.name}</b>
+├ ✏️ گۆڕاو: ${fieldNames2[field - 1]}
+└ 📋 نرخی نوێ: <b>${newValue}</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+✏️ بۆ دەستکاری زیاتر: /edit`);
+      break;
+  }
+}
+
+// Handle /delete command flow - conversational step by step
+async function handleDeleteCommand(chatId: string, text: string, state: any) {
+  const step = state?.step || 0;
+  
+  console.log(`handleDeleteCommand - chatId: ${chatId}, step: ${step}, text: ${text}`);
+  
+  switch (step) {
+    case 0:
+      // Start - ask for barcode or name
+      conversationState.set(chatId, { command: "delete", step: 1, data: {} });
+      await sendTelegramMessage(chatId, `🗑️ <b>سڕینەوەی کاڵا</b>
+
+⚠️ <b>ئاگاداری:</b> سڕینەوە ناگەڕێتەوە!
+
+<b>پرسیاری ١:</b> کام کاڵا دەتەوێت بسڕیتەوە؟
+
+<i>تکایە بارکۆد یان ناوی کاڵاکە بنووسە:</i>
+<i>🔙 بۆ هەڵوەشاندنەوە: /cancel</i>`);
+      break;
+      
+    case 1:
+      // Got search query - find item
+      const query = text.trim();
+      const items = await searchItems(query);
+      
+      if (items.length === 0) {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `❌ <b>هیچ کاڵایەک نەدۆزرایەوە!</b>
+
+گەڕان بۆ: "${query}"
+
+🔄 بۆ دووبارە هەوڵدان: /delete`);
+        return;
+      }
+      
+      if (items.length === 1) {
+        state.data.item = items[0];
+        state.step = 2;
+        conversationState.set(chatId, state);
+        
+        await sendTelegramMessage(chatId, `✅ <b>کاڵا دۆزرایەوە:</b>
+
+📦 <b>${items[0].name}</b>
+├ 🏷️ بارکۆد: <code>${items[0].barcode}</code>
+├ 📊 بڕ: ${items[0].current_quantity} ${items[0].unit}
+└ 📅 بەسەرچوون: ${items[0].exp_date || "نییە"}
+
+⚠️ <b>ئایا دڵنیایت لە سڕینەوەی ئەم کاڵایە؟</b>
+
+بنووسە <b>بەڵێ</b> بۆ سڕینەوە
+بنووسە <b>نەخێر</b> بۆ هەڵوەشاندنەوە`);
+      } else {
+        state.data.searchResults = items;
+        state.step = 1.5;
+        conversationState.set(chatId, state);
+        
+        let response = `🔍 <b>چەندین کاڵا دۆزرایەوە:</b>\n\n`;
+        items.forEach((item, index) => {
+          response += `<b>${index + 1}.</b> ${item.name}\n   📊 ${item.current_quantity} ${item.unit}\n   🏷️ <code>${item.barcode}</code>\n\n`;
+        });
+        response += `<b>تکایە ژمارەی کاڵاکە بنووسە (1-${items.length}):</b>`;
+        
+        await sendTelegramMessage(chatId, response);
+      }
+      break;
+      
+    case 1.5:
+      // User selecting from multiple items
+      const selection = parseInt(text.trim());
+      if (isNaN(selection) || selection < 1 || selection > state.data.searchResults.length) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>${state.data.searchResults.length}</b> بنووسە:`);
+        return;
+      }
+      
+      state.data.item = state.data.searchResults[selection - 1];
+      delete state.data.searchResults;
+      state.step = 2;
+      conversationState.set(chatId, state);
+      
+      await sendTelegramMessage(chatId, `✅ <b>هەڵبژێردرا:</b>
+
+📦 <b>${state.data.item.name}</b>
+├ 🏷️ بارکۆد: <code>${state.data.item.barcode}</code>
+├ 📊 بڕ: ${state.data.item.current_quantity} ${state.data.item.unit}
+└ 📅 بەسەرچوون: ${state.data.item.exp_date || "نییە"}
+
+⚠️ <b>ئایا دڵنیایت لە سڕینەوەی ئەم کاڵایە؟</b>
+
+بنووسە <b>بەڵێ</b> بۆ سڕینەوە
+بنووسە <b>نەخێر</b> بۆ هەڵوەشاندنەوە`);
+      break;
+      
+    case 2:
+      // Confirm delete
+      const confirm = text.trim().toLowerCase();
+      
+      if (confirm === "نەخێر" || confirm === "no" || confirm === "نا") {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `✅ <b>سڕینەوە هەڵوەشایەوە.</b>
+
+کاڵاکە نەسڕایەوە.`);
+        return;
+      }
+      
+      if (confirm !== "بەڵێ" && confirm !== "yes" && confirm !== "بەلێ") {
+        await sendTelegramMessage(chatId, `❓ تکایە بنووسە:
+        
+<b>بەڵێ</b> - بۆ سڕینەوە
+<b>نەخێر</b> - بۆ هەڵوەشاندنەوە`);
+        return;
+      }
+      
+      const result = await deleteItem(state.data.item.id);
+      conversationState.delete(chatId);
+      
+      if (result.error) {
+        await sendTelegramMessage(chatId, `❌ <b>هەڵە لە سڕینەوە!</b>
+
+${result.error.message}
+
+تکایە دووبارە هەوڵ بدەرەوە: /delete`);
+        return;
+      }
+      
+      await sendTelegramMessage(chatId, `🗑️ <b>کاڵا بە سەرکەوتوویی سڕایەوە!</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📦 <b>${state.data.item.name}</b>
+🏷️ بارکۆد: <code>${state.data.item.barcode}</code>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📦 بۆ زیادکردنی کاڵای نوێ: /add`);
+      break;
+  }
+}
+
 // Handle incoming Telegram updates
 async function handleUpdate(update: any) {
   const message = update.message;
@@ -906,6 +1288,12 @@ async function handleUpdate(update: any) {
     } else if (state.command === "stockout") {
       await handleStockOutCommand(chatId, text, state);
       return;
+    } else if (state.command === "edit") {
+      await handleEditCommand(chatId, text, state);
+      return;
+    } else if (state.command === "delete") {
+      await handleDeleteCommand(chatId, text, state);
+      return;
     }
   }
   
@@ -919,11 +1307,15 @@ async function handleUpdate(update: any) {
 
 <b>📦 بەڕێوەبردنی کاڵا:</b>
 /add - زیادکردنی کاڵای نوێ
-/stockin - داخڵکردنی ستۆک
-/stockout - دەرکردنی ستۆک
+/edit - دەستکاری کاڵا
+/delete - سڕینەوەی کاڵا
 /search - گەڕان بۆ کاڵا
 
-<b>📊 ئامار و ڕاپۆرت:</b>
+<b>📊 ستۆک:</b>
+/stockin - داخڵکردنی ستۆک
+/stockout - دەرکردنی ستۆک
+
+<b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی کۆگا
 /report - ڕاپۆرتی تەواو
 
@@ -943,12 +1335,16 @@ async function handleUpdate(update: any) {
         await sendTelegramMessage(chatId, `📚 <b>لیستی فەرمانەکان:</b>
 
 <b>📦 بەڕێوەبردنی کاڵا:</b>
-/add - زیادکردنی کاڵای نوێ (گفتوگۆیی)
-/stockin - داخڵکردنی ستۆک (گفتوگۆیی)
-/stockout - دەرکردنی ستۆک (گفتوگۆیی)
+/add - زیادکردنی کاڵای نوێ
+/edit - دەستکاری کاڵا
+/delete - سڕینەوەی کاڵا
 /search [ناو/بارکۆد] - گەڕان بۆ کاڵا
 
-<b>📊 ئامار و ڕاپۆرت:</b>
+<b>📊 ستۆک:</b>
+/stockin - داخڵکردنی ستۆک
+/stockout - دەرکردنی ستۆک
+
+<b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی گشتی کۆگا
 /report - ڕاپۆرتی تەواو
 
@@ -992,6 +1388,14 @@ async function handleUpdate(update: any) {
         
       case "/stockout":
         await handleStockOutCommand(chatId, text, null);
+        break;
+        
+      case "/edit":
+        await handleEditCommand(chatId, text, null);
+        break;
+        
+      case "/delete":
+        await handleDeleteCommand(chatId, text, null);
         break;
         
       case "/expiring":
