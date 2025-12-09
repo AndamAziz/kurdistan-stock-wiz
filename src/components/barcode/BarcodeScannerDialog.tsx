@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { hapticFeedback } from "@/lib/haptics";
 import { X, Loader2, AlertCircle, QrCode } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface BarcodeScannerDialogProps {
   open: boolean;
@@ -25,26 +24,23 @@ export function BarcodeScannerDialog({
   onOpenChange, 
   onScan 
 }: BarcodeScannerDialogProps) {
-  const [lastScanned, setLastScanned] = useState<string | null>(null);
-  const [isClosing, setIsClosing] = useState(false);
-  const [scannerReady, setScannerReady] = useState(false);
+  const [hasScanned, setHasScanned] = useState(false);
   const mountedRef = useRef(true);
-  const onScanRef = useRef(onScan);
-  const onOpenChangeRef = useRef(onOpenChange);
-
-  // Keep refs updated
-  useEffect(() => {
-    onScanRef.current = onScan;
-    onOpenChangeRef.current = onOpenChange;
-  }, [onScan, onOpenChange]);
 
   const handleScanResult = useCallback((barcode: string) => {
-    if (barcode && mountedRef.current) {
-      setLastScanned(barcode);
+    if (barcode && mountedRef.current && !hasScanned) {
+      setHasScanned(true);
       hapticFeedback.success();
-      onScanRef.current(barcode);
+      onScan(barcode);
+      
+      // Close after short delay
+      setTimeout(() => {
+        if (mountedRef.current) {
+          onOpenChange(false);
+        }
+      }, 300);
     }
-  }, []);
+  }, [hasScanned, onScan, onOpenChange]);
 
   const { 
     isScanning, 
@@ -53,6 +49,7 @@ export function BarcodeScannerDialog({
     stopScanning,
   } = useBarcodeScanner(handleScanResult, SCANNER_ID);
 
+  // Track mount state
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -62,70 +59,35 @@ export function BarcodeScannerDialog({
 
   // Start scanner when dialog opens
   useEffect(() => {
-    if (open && !isClosing && !scannerReady) {
-      const timer = setTimeout(async () => {
+    if (open && !hasScanned) {
+      // Delay to let dialog render
+      const timer = setTimeout(() => {
         if (mountedRef.current) {
-          setScannerReady(true);
-          try {
-            await startScanning();
-          } catch (e) {
-            console.error('Failed to start scanner:', e);
-          }
+          startScanning();
         }
-      }, 500);
+      }, 400);
       return () => clearTimeout(timer);
     }
-  }, [open, isClosing, scannerReady, startScanning]);
+  }, [open, hasScanned, startScanning]);
 
-  // Close dialog after successful scan
+  // Reset state when dialog closes
   useEffect(() => {
-    if (lastScanned && mountedRef.current) {
-      const closeTimer = setTimeout(async () => {
-        setIsClosing(true);
-        try {
-          await stopScanning();
-        } catch (e) {
-          // Ignore
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
-        if (mountedRef.current) {
-          setLastScanned(null);
-          setIsClosing(false);
-          setScannerReady(false);
-          onOpenChangeRef.current(false);
-        }
-      }, 200);
-      return () => clearTimeout(closeTimer);
+    if (!open) {
+      setHasScanned(false);
     }
-  }, [lastScanned, stopScanning]);
+  }, [open]);
 
   const handleClose = useCallback(async () => {
-    if (isClosing) return;
-    setIsClosing(true);
-    
-    try {
-      await stopScanning();
-      await new Promise(resolve => setTimeout(resolve, 100));
-    } catch (e) {
-      console.error('Close error:', e);
-    }
-    
-    if (mountedRef.current) {
-      setLastScanned(null);
-      setIsClosing(false);
-      setScannerReady(false);
-      onOpenChangeRef.current(false);
-    }
-  }, [isClosing, stopScanning]);
-
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (!newOpen) {
-      handleClose();
-    }
-  }, [handleClose]);
+    await stopScanning();
+    onOpenChange(false);
+  }, [stopScanning, onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen) {
+        handleClose();
+      }
+    }}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -141,10 +103,7 @@ export function BarcodeScannerDialog({
           {/* Scanner Container */}
           <div 
             id={SCANNER_ID}
-            className={cn(
-              "w-full aspect-square bg-black relative overflow-hidden",
-              !isScanning && "flex items-center justify-center"
-            )}
+            className="w-full aspect-square bg-black relative overflow-hidden flex items-center justify-center"
           >
             {!isScanning && !error && (
               <div className="flex flex-col items-center gap-3 text-white/70">
@@ -160,7 +119,10 @@ export function BarcodeScannerDialog({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={startScanning}
+                  onClick={() => {
+                    setHasScanned(false);
+                    startScanning();
+                  }}
                   className="mt-2"
                 >
                   هەوڵدانەوە
@@ -178,7 +140,8 @@ export function BarcodeScannerDialog({
                 <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary" />
                 <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary" />
                 
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary animate-pulse" 
+                <div 
+                  className="absolute left-0 right-0 h-0.5 bg-primary"
                   style={{
                     animation: 'scanLine 2s ease-in-out infinite',
                   }}
@@ -201,7 +164,6 @@ export function BarcodeScannerDialog({
           size="icon"
           className="absolute top-2 left-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm"
           onClick={handleClose}
-          disabled={isClosing}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -209,16 +171,13 @@ export function BarcodeScannerDialog({
 
       <style>{`
         @keyframes scanLine {
-          0%, 100% {
-            top: 0;
-          }
-          50% {
-            top: calc(100% - 2px);
-          }
+          0%, 100% { top: 0; }
+          50% { top: calc(100% - 2px); }
         }
-        
         #${SCANNER_ID} video {
           object-fit: cover !important;
+          width: 100% !important;
+          height: 100% !important;
         }
       `}</style>
     </Dialog>
