@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,20 +25,13 @@ export function BarcodeScannerDialog({
   onScan 
 }: BarcodeScannerDialogProps) {
   const [hasScanned, setHasScanned] = useState(false);
-  const mountedRef = useRef(true);
 
   const handleScanResult = useCallback((barcode: string) => {
-    if (barcode && mountedRef.current && !hasScanned) {
+    if (barcode && !hasScanned) {
       setHasScanned(true);
       hapticFeedback.success();
       onScan(barcode);
-      
-      // Close after short delay
-      setTimeout(() => {
-        if (mountedRef.current) {
-          onOpenChange(false);
-        }
-      }, 300);
+      onOpenChange(false);
     }
   }, [hasScanned, onScan, onOpenChange]);
 
@@ -49,45 +42,31 @@ export function BarcodeScannerDialog({
     stopScanning,
   } = useBarcodeScanner(handleScanResult, SCANNER_ID);
 
-  // Track mount state
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
   // Start scanner when dialog opens
   useEffect(() => {
     if (open && !hasScanned) {
-      // Delay to let dialog render
       const timer = setTimeout(() => {
-        if (mountedRef.current) {
-          startScanning();
-        }
-      }, 400);
+        startScanning();
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [open, hasScanned, startScanning]);
 
-  // Reset state when dialog closes
+  // Reset when dialog closes
   useEffect(() => {
     if (!open) {
       setHasScanned(false);
+      stopScanning();
     }
-  }, [open]);
+  }, [open, stopScanning]);
 
-  const handleClose = useCallback(async () => {
-    await stopScanning();
+  const handleClose = useCallback(() => {
+    stopScanning();
     onOpenChange(false);
   }, [stopScanning, onOpenChange]);
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      if (!newOpen) {
-        handleClose();
-      }
-    }}>
+    <Dialog open={open} onOpenChange={(newOpen) => !newOpen && handleClose()}>
       <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -100,10 +79,9 @@ export function BarcodeScannerDialog({
         </DialogHeader>
 
         <div className="relative">
-          {/* Scanner Container */}
           <div 
             id={SCANNER_ID}
-            className="w-full aspect-square bg-black relative overflow-hidden flex items-center justify-center"
+            className="w-full aspect-[4/3] bg-black relative overflow-hidden flex items-center justify-center"
           >
             {!isScanning && !error && (
               <div className="flex flex-col items-center gap-3 text-white/70">
@@ -131,34 +109,25 @@ export function BarcodeScannerDialog({
             )}
           </div>
 
-          {/* Scanning Overlay */}
           {isScanning && (
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-24">
-                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary" />
-                <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary" />
-                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary" />
-                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary" />
-                
-                <div 
-                  className="absolute left-0 right-0 h-0.5 bg-primary"
-                  style={{
-                    animation: 'scanLine 2s ease-in-out infinite',
-                  }}
-                />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-20">
+                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-primary" />
+                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-primary" />
+                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-primary" />
+                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-primary" />
+                <div className="absolute left-0 right-0 h-0.5 bg-primary animate-pulse" style={{ top: '50%' }} />
               </div>
             </div>
           )}
         </div>
 
-        {/* Instructions */}
         <div className="p-4 pt-3 bg-muted/50">
           <p className="text-xs text-center text-muted-foreground">
             باڕکۆدەکە ببە بەرەو کامێراکە بۆ سکانکردن
           </p>
         </div>
 
-        {/* Close Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -170,10 +139,6 @@ export function BarcodeScannerDialog({
       </DialogContent>
 
       <style>{`
-        @keyframes scanLine {
-          0%, 100% { top: 0; }
-          50% { top: calc(100% - 2px); }
-        }
         #${SCANNER_ID} video {
           object-fit: cover !important;
           width: 100% !important;
