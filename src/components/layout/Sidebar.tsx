@@ -16,7 +16,6 @@ import {
   LayoutDashboard,
   Package,
   ArrowDownToLine,
-  ArrowUpFromLine,
   RefreshCw,
   AlertTriangle,
   Settings,
@@ -42,13 +41,11 @@ const mainNavigation = [
 
 const stockNavigation = [
   { name: 'داخڵکردن', href: '/stock-in', icon: ArrowDownToLine },
-  { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
   { name: 'ڕاستکردنەوە', href: '/stock-adjust', icon: RefreshCw },
 ];
 
 const reportNavigation = [
   { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
-  { name: 'ئینڤۆیسەکان', href: '/invoices', icon: FileText },
   { name: 'ئیمپۆرت/ئێکسپۆرت', href: '/import-export', icon: FileSpreadsheet },
 ];
 
