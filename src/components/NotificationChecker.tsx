@@ -24,25 +24,40 @@ export function NotificationChecker() {
 
     console.log('Notification check results:', results);
 
-    // Also show toast notifications for visibility
+    // Show urgent toast notifications - more visible and longer duration
     if (results.expired > 0 && settings.expiryAlerts) {
-      toast.error(`🚨 ${results.expired} مادە بەسەرچووە!`, {
-        duration: 8000,
+      toast.error(`🚨 ئاگاداری! ${results.expired} مادە بەسەرچووە!`, {
+        duration: 15000,
         id: 'expired-toast',
+        position: 'top-center',
+        style: {
+          fontSize: '16px',
+          padding: '16px 24px',
+        },
       });
     }
 
     if (results.expiring > 0 && settings.expiryAlerts) {
-      toast.warning(`⏰ ${results.expiring} مادە نزیکە بەسەربچێت`, {
-        duration: 6000,
+      toast.warning(`⏰ ئاگاداری! ${results.expiring} مادە نزیکە بەسەربچێت`, {
+        duration: 12000,
         id: 'expiring-toast',
+        position: 'top-center',
+        style: {
+          fontSize: '16px',
+          padding: '16px 24px',
+        },
       });
     }
 
     if (results.lowStock > 0 && settings.lowStockAlerts) {
-      toast.info(`📦 ${results.lowStock} مادە ستۆکی کەمە`, {
-        duration: 6000,
+      toast.info(`📦 ئاگاداری! ${results.lowStock} مادە ستۆکی کەمە`, {
+        duration: 10000,
         id: 'lowstock-toast',
+        position: 'top-center',
+        style: {
+          fontSize: '16px',
+          padding: '16px 24px',
+        },
       });
     }
   }, [user, settings, checkAndNotify]);
@@ -58,11 +73,11 @@ export function NotificationChecker() {
     if (!hasRunInitialCheck.current && (settings.expiryAlerts || settings.lowStockAlerts)) {
       hasRunInitialCheck.current = true;
       
-      // Delay initial check to let the app load
+      // Quick check after login - only 2 seconds delay
       const initialTimer = setTimeout(() => {
-        console.log('Running initial notification check...');
+        console.log('Running urgent notification check after login...');
         runCheck();
-      }, 5000);
+      }, 2000);
 
       return () => clearTimeout(initialTimer);
     }
