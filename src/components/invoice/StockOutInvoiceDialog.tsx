@@ -611,7 +611,7 @@ ${totalGifts > 0 ? `🎁 *کۆی هەدیە:* ${totalGifts}\n` : ''}💰 *کۆی
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '40px' }}>#</th>
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '60px' }}>وێنە</th>
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '80px' }}>ئایدی</th>
-                        <th className="py-3 px-3 text-right text-[10px] sm:text-xs font-bold text-white">ناو</th>
+                        <th className="py-3 px-3 text-right text-[10px] sm:text-xs font-bold text-white">ناوی بەرهەم</th>
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '70px' }}>عەدەد</th>
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '60px' }}>🎁</th>
                         <th className="py-3 px-2 text-center text-[10px] sm:text-xs font-bold text-white" style={{ width: '90px' }}>نرخی تاک</th>

@@ -402,7 +402,7 @@ export default function Items() {
                     <TableRow className="bg-muted/50">
                       <TableHead className="text-center font-semibold w-20 text-base py-4">وێنە</TableHead>
                       <TableHead className="text-right font-semibold text-base py-4">باڕکۆد</TableHead>
-                      <TableHead className="text-right font-semibold text-base py-4">ناو</TableHead>
+                      <TableHead className="text-right font-semibold text-base py-4">ناوی بەرهەم</TableHead>
                       <TableHead className="text-right font-semibold text-base py-4">براند</TableHead>
                       <TableHead className="text-right font-semibold text-base py-4">کەتەگۆری</TableHead>
                       <TableHead className="text-center font-semibold text-base py-4">ستۆک</TableHead>

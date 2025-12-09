@@ -300,7 +300,7 @@ export default function StockIn() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ناو <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>ناوی بەرهەم <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="ناوی بەرهەم" {...field} />
                     </FormControl>

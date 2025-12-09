@@ -169,7 +169,7 @@ export default function Expiry() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="text-right font-semibold">باڕکۆد</TableHead>
-                <TableHead className="text-right font-semibold">ناو</TableHead>
+                <TableHead className="text-right font-semibold">ناوی بەرهەم</TableHead>
                 <TableHead className="text-right font-semibold">براند</TableHead>
                 <TableHead className="text-center font-semibold">ستۆک</TableHead>
                 <TableHead className="text-center font-semibold">بەرواری بەسەرچوون</TableHead>
