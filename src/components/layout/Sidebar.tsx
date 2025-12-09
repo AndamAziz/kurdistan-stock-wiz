@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getGravatarUrl } from "@/lib/gravatar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -216,11 +217,11 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       <div className="border-t border-sidebar-border/30 p-4 lg:p-5 bg-sidebar-accent/10">
         <div className="flex items-center justify-between gap-3 p-3 lg:p-4 rounded-2xl bg-gradient-to-br from-sidebar-accent/40 to-sidebar-accent/20 border border-sidebar-border/30 backdrop-blur-sm">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="flex h-12 w-12 lg:h-14 lg:w-14 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/60 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30 shrink-0 ring-2 ring-sidebar-primary/20">
-              <span className="text-lg lg:text-xl font-bold">
-                {user?.email?.charAt(0).toUpperCase() || 'ب'}
-              </span>
-            </div>
+            <img 
+              src={getGravatarUrl(user?.email, 80)} 
+              alt="پڕۆفایل"
+              className="h-12 w-12 lg:h-14 lg:w-14 rounded-xl object-cover shadow-lg ring-2 ring-sidebar-primary/20 shrink-0"
+            />
             <div className="min-w-0 flex-1">
               <p className="text-sm lg:text-base font-bold text-sidebar-foreground truncate">
                 {user?.user_metadata?.full_name || 'بەکارهێنەر'}
