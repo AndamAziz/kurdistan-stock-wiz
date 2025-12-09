@@ -206,7 +206,7 @@ export default function Settings() {
             </div>
 
             {/* Share App Link */}
-            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+            <div className="p-2 sm:p-3 rounded-lg bg-muted/50 space-y-3">
               <div className="flex items-center gap-2 sm:gap-3">
                 <Share2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 <div>
@@ -214,20 +214,46 @@ export default function Settings() {
                   <p className="text-[10px] sm:text-xs text-muted-foreground">لینکی ئەپ بنێرە بۆ مۆبایل یان لاپتۆپ</p>
                 </div>
               </div>
-              <div className="flex gap-1.5">
+              
+              {/* App Link Display */}
+              <div className="flex items-center gap-2 p-2 rounded-md bg-background border border-border">
+                <a 
+                  href={window.location.origin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 text-xs sm:text-sm text-primary font-mono truncate hover:underline"
+                  dir="ltr"
+                >
+                  {window.location.origin}
+                </a>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.origin);
+                    hapticFeedback.success();
+                    toast.success("لینک کۆپی کرا!");
+                  }}
+                  className="h-7 px-2"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Share Buttons */}
+              <div className="flex gap-2">
                 <Button 
                   size="sm" 
                   variant="outline"
                   onClick={() => {
-                    const appUrl = window.location.origin;
-                    navigator.clipboard.writeText(appUrl);
+                    navigator.clipboard.writeText(window.location.origin);
                     hapticFeedback.success();
                     toast.success("لینک کۆپی کرا!");
                   }}
-                  className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1"
+                  className="flex-1 h-8 text-xs gap-1.5"
                 >
-                  <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  کۆپی
+                  <Copy className="h-3.5 w-3.5" />
+                  کۆپی کردنی لینک
                 </Button>
                 {navigator.share && (
                   <Button 
@@ -240,9 +266,9 @@ export default function Settings() {
                         url: window.location.origin
                       });
                     }}
-                    className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1"
+                    className="flex-1 h-8 text-xs gap-1.5"
                   >
-                    <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                     بەشکردن
                   </Button>
                 )}
