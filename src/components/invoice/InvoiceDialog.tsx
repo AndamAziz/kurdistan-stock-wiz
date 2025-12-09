@@ -107,7 +107,7 @@ export function InvoiceDialog({
 *زانیاری مادە:*
 📦 ناو: ${item.name}
 🏷️ براند: ${item.brands?.name || "-"}
-📂 هاوپۆل: ${item.categories?.name || "-"}
+📂 کەتەگۆری: ${item.categories?.name || "-"}
 📊 یەکە: ${item.unit}
 🔢 بڕ: ${quantity}
 ${item.exp_date ? `📅 بەسەرچوون: ${item.exp_date}` : ""}
@@ -201,7 +201,7 @@ ${note ? `📝 تێبینی: ${note}` : ""}
                   <span>{item.brands?.name || "-"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">هاوپۆل:</span>
+                  <span className="text-muted-foreground">کەتەگۆری:</span>
                   <span>{item.categories?.name || "-"}</span>
                 </div>
                 <div className="flex justify-between">

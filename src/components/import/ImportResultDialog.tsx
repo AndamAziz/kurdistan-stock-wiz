@@ -276,7 +276,7 @@ export function ImportResultDialog({
           onValueChange={(v) => handleUpdateItem(item.id, "category", v)}
         >
           <SelectTrigger className="h-8 w-full">
-            <SelectValue placeholder="هاوپۆل" />
+            <SelectValue placeholder="کەتەگۆری" />
           </SelectTrigger>
           <SelectContent>
             {categories.map((c) => (
@@ -428,7 +428,7 @@ export function ImportResultDialog({
                     <TableHead>ناو</TableHead>
                     <TableHead>باڕکۆد</TableHead>
                     <TableHead>براند</TableHead>
-                    <TableHead>هاوپۆل</TableHead>
+                    <TableHead>کەتەگۆری</TableHead>
                     <TableHead>بڕ</TableHead>
                     <TableHead>نرخی بۆکس</TableHead>
                     <TableHead>نرخی دانە</TableHead>

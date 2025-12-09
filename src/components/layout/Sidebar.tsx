@@ -33,7 +33,7 @@ const navigation = [
 ];
 
 const settingsNavigation = [
-  { name: 'هاوپۆلەکان', href: '/categories', icon: Tags },
+  { name: 'کەتەگۆریەکان', href: '/categories', icon: Tags },
   { name: 'براندەکان', href: '/brands', icon: Building2 },
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
 ];

@@ -555,7 +555,7 @@ export default function StockIn() {
                   name="category_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>هاوپۆل (کاتەگۆری)</FormLabel>
+                      <FormLabel>کەتەگۆری</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>

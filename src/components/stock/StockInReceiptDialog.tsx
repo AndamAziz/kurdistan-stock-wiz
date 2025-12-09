@@ -197,7 +197,7 @@ export function StockInReceiptDialog({
           </div>
           
           <div class="info-row">
-            <span class="info-label">هاوپۆل:</span>
+            <span class="info-label">کەتەگۆری:</span>
             <span class="info-value">${item.categories?.name || '-'}</span>
           </div>
           
@@ -312,7 +312,7 @@ export function StockInReceiptDialog({
               <span className="font-medium text-foreground text-sm">{item.brands?.name || '-'}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-border/50">
-              <span className="text-xs text-muted-foreground">هاوپۆل:</span>
+              <span className="text-xs text-muted-foreground">کەتەگۆری:</span>
               <span className="font-medium text-foreground text-sm">{item.categories?.name || '-'}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-border/50">

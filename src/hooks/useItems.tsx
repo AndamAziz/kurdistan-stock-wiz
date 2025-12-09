@@ -232,11 +232,11 @@ export function useAddCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('هاوپۆلەکە زیادکرا');
+      toast.success('کەتەگۆریەکە زیادکرا');
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate key')) {
-        toast.error('ئەم هاوپۆڵە پێشتر هەیە');
+        toast.error('ئەم کەتەگۆریە پێشتر هەیە');
       } else {
         toast.error('هەڵە لە زیادکردن');
       }
@@ -286,7 +286,7 @@ export function useDeleteCategory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
-      toast.success('هاوپۆلەکە سڕایەوە');
+      toast.success('کەتەگۆریەکە سڕایەوە');
     },
     onError: () => {
       toast.error('هەڵە لە سڕینەوە');

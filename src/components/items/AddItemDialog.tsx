@@ -190,7 +190,7 @@ export function AddItemDialog({ open, onOpenChange }: AddItemDialogProps) {
                   name="category_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>هاوپۆل</FormLabel>
+                      <FormLabel>کەتەگۆری</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>

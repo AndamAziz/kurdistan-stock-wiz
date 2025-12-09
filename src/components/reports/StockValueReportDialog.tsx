@@ -91,7 +91,7 @@ export function StockValueReportDialog({
           'ناوی مادە': item.name,
           'باڕکۆد': item.barcode,
           'براند': item.brands?.name || '-',
-          'هاوپۆل': item.categories?.name || '-',
+          'کەتەگۆری': item.categories?.name || '-',
           'ستۆک': item.current_quantity,
           'نرخی بۆکس (د.ع)': item.box_price || 0,
           'نرخی دانە (د.ع)': item.piece_price || 0,
@@ -107,7 +107,7 @@ export function StockValueReportDialog({
         'ناوی مادە': 'کۆی گشتی',
         'باڕکۆد': '',
         'براند': '',
-        'هاوپۆل': '',
+        'کەتەگۆری': '',
         'ستۆک': totals.totalQuantity,
         'نرخی بۆکس (د.ع)': '',
         'نرخی دانە (د.ع)': '',
@@ -256,10 +256,10 @@ export function StockValueReportDialog({
             </Select>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="هەموو هاوپۆلەکان" />
+                <SelectValue placeholder="هەموو کەتەگۆریەکان" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">هەموو هاوپۆلەکان</SelectItem>
+                <SelectItem value="all">هەموو کەتەگۆریەکان</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                 ))}
@@ -327,7 +327,7 @@ export function StockValueReportDialog({
                 <th className="text-white p-2 text-center border border-gray-300">ئایدی</th>
                 <th className="text-white p-2 text-right border border-gray-300">ناوی مادە</th>
                 <th className="text-white p-2 text-center border border-gray-300">براند</th>
-                <th className="text-white p-2 text-center border border-gray-300">هاوپۆل</th>
+                <th className="text-white p-2 text-center border border-gray-300">کەتەگۆری</th>
                 <th className="text-white p-2 text-center border border-gray-300 w-20">ستۆک</th>
                 <th className="text-white p-2 text-center border border-gray-300">نرخی بۆکس</th>
                 <th className="text-white p-2 text-center border border-gray-300">نرخی دانە</th>

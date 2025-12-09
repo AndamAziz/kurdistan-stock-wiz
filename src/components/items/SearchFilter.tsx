@@ -52,10 +52,10 @@ export function SearchFilter({
         {/* Category Filter */}
         <Select value={selectedCategory} onValueChange={onCategoryChange}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="هاوپۆل" />
+            <SelectValue placeholder="کەتەگۆری" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">هەموو هاوپۆلەکان</SelectItem>
+            <SelectItem value="all">هەموو کەتەگۆریەکان</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
                 {cat.name}
