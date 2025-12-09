@@ -140,21 +140,23 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-24 lg:h-32 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
-        <div className="flex items-center gap-4">
+      <div className="flex h-20 lg:h-24 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
+        <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/50 rounded-xl blur-md opacity-50"></div>
-            <img 
-              src={bakuryLogo} 
-              alt="باکوری خۆشەویست" 
-              className="relative h-16 w-16 lg:h-20 lg:w-20 object-contain rounded-xl shadow-lg ring-2 ring-sidebar-primary/20 bg-white p-1"
-            />
+            <div className="absolute -inset-1 bg-gradient-to-br from-sidebar-primary to-sidebar-primary/50 rounded-lg blur-sm opacity-40"></div>
+            <div className="relative bg-white rounded-xl p-1 shadow-lg ring-1 ring-sidebar-primary/20">
+              <img 
+                src={bakuryLogo} 
+                alt="باکوری خۆشەویست" 
+                className="h-10 w-10 lg:h-12 lg:w-12 object-contain"
+              />
+            </div>
           </div>
-          <div className="text-center">
-            <h1 className="text-base lg:text-xl font-bold text-sidebar-foreground tracking-tight bg-gradient-to-r from-sidebar-primary to-sidebar-primary/60 bg-clip-text text-transparent">
+          <div className="text-right">
+            <h1 className="text-sm lg:text-base font-bold text-sidebar-foreground tracking-tight">
               باکوری خۆشەویست
             </h1>
-            <p className="text-[9px] lg:text-xs text-sidebar-foreground/50 mt-0.5 font-medium">
+            <p className="text-[9px] lg:text-[10px] text-sidebar-foreground/50 font-medium">
               سیستمی بەڕێوەبردنی کۆگا
             </p>
           </div>
