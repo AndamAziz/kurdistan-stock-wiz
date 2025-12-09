@@ -1249,6 +1249,160 @@ ${result.error.message}
   }
 }
 
+// Handle /adjust command flow - conversational step by step
+async function handleAdjustCommand(chatId: string, text: string, state: any) {
+  const step = state?.step || 0;
+  
+  console.log(`handleAdjustCommand - chatId: ${chatId}, step: ${step}, text: ${text}`);
+  
+  switch (step) {
+    case 0:
+      // Start - ask for barcode or name
+      conversationState.set(chatId, { command: "adjust", step: 1, data: {} });
+      await sendTelegramMessage(chatId, `🔧 <b>ڕێکخستنی بڕی کاڵا</b>
+
+ئەم فەرمانە بۆ ڕاستکردنەوەی هەڵەی بڕی کاڵایە.
+
+<b>پرسیاری ١:</b> کام کاڵا دەتەوێت بڕەکەی ڕێک بخەیت؟
+
+<i>تکایە بارکۆد یان ناوی کاڵاکە بنووسە:</i>
+<i>🔙 بۆ هەڵوەشاندنەوە: /cancel</i>`);
+      break;
+      
+    case 1:
+      // Got search query - find item
+      const query = text.trim();
+      const items = await searchItems(query);
+      
+      if (items.length === 0) {
+        conversationState.delete(chatId);
+        await sendTelegramMessage(chatId, `❌ <b>هیچ کاڵایەک نەدۆزرایەوە!</b>
+
+گەڕان بۆ: "${query}"
+
+🔄 بۆ دووبارە هەوڵدان: /adjust`);
+        return;
+      }
+      
+      if (items.length === 1) {
+        state.data.item = items[0];
+        state.step = 2;
+        conversationState.set(chatId, state);
+        
+        await sendTelegramMessage(chatId, `✅ <b>کاڵا دۆزرایەوە:</b>
+
+📦 <b>${items[0].name}</b>
+├ 🏷️ بارکۆد: <code>${items[0].barcode}</code>
+└ 📊 بڕی ئێستا: <b>${items[0].current_quantity}</b> ${items[0].unit}
+
+<b>پرسیاری ٢:</b> بڕی ڕاست چەندە؟
+
+<i>تکایە ژمارەی ڕاستی بڕی کاڵاکە بنووسە:</i>`);
+      } else {
+        state.data.searchResults = items;
+        state.step = 1.5;
+        conversationState.set(chatId, state);
+        
+        let response = `🔍 <b>چەندین کاڵا دۆزرایەوە:</b>\n\n`;
+        items.forEach((item, index) => {
+          response += `<b>${index + 1}.</b> ${item.name}\n   📊 ${item.current_quantity} ${item.unit}\n   🏷️ <code>${item.barcode}</code>\n\n`;
+        });
+        response += `<b>تکایە ژمارەی کاڵاکە بنووسە (1-${items.length}):</b>`;
+        
+        await sendTelegramMessage(chatId, response);
+      }
+      break;
+      
+    case 1.5:
+      // User selecting from multiple items
+      const selection = parseInt(text.trim());
+      if (isNaN(selection) || selection < 1 || selection > state.data.searchResults.length) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەک لە <b>1</b> تا <b>${state.data.searchResults.length}</b> بنووسە:`);
+        return;
+      }
+      
+      state.data.item = state.data.searchResults[selection - 1];
+      delete state.data.searchResults;
+      state.step = 2;
+      conversationState.set(chatId, state);
+      
+      await sendTelegramMessage(chatId, `✅ <b>هەڵبژێردرا:</b>
+
+📦 <b>${state.data.item.name}</b>
+└ 📊 بڕی ئێستا: <b>${state.data.item.current_quantity}</b> ${state.data.item.unit}
+
+<b>پرسیاری ٢:</b> بڕی ڕاست چەندە؟
+
+<i>تکایە ژمارەی ڕاستی بڕی کاڵاکە بنووسە:</i>`);
+      break;
+      
+    case 2:
+      // Got new quantity - ask for note
+      const newQty = parseInt(text.trim());
+      if (isNaN(newQty) || newQty < 0) {
+        await sendTelegramMessage(chatId, `❌ تکایە ژمارەیەکی <b>ڕاست</b> بنووسە (سفر یان زیاتر):`);
+        return;
+      }
+      
+      state.data.newQuantity = newQty;
+      state.step = 3;
+      conversationState.set(chatId, state);
+      
+      const diff = newQty - state.data.item.current_quantity;
+      const diffText = diff > 0 ? `+${diff}` : `${diff}`;
+      
+      await sendTelegramMessage(chatId, `✅ بڕی نوێ: <b>${newQty}</b> (${diffText})
+
+<b>پرسیاری ٣:</b> هۆکاری ڕێکخستن چییە؟
+
+<i>نموونە: هەڵەی ژمارە، کاڵای زیانمەند</i>
+<i>ئەگەر تێبینی نییە بنووسە: <b>-</b></i>`);
+      break;
+      
+    case 3:
+      // Got note - create adjust movement
+      const note = text.trim() === "-" ? "ڕێکخستنی بڕ" : text.trim();
+      
+      const movementData = {
+        item_id: state.data.item.id,
+        movement_type: "ADJUST",
+        quantity: state.data.newQuantity,
+        note: note,
+        movement_date: new Date().toISOString().split("T")[0],
+      };
+      
+      const mvResult = await addStockMovement(movementData);
+      conversationState.delete(chatId);
+      
+      if (mvResult.error) {
+        await sendTelegramMessage(chatId, `❌ <b>هەڵە لە ڕێکخستن!</b>
+
+${mvResult.error.message}
+
+تکایە دووبارە هەوڵ بدەرەوە: /adjust`);
+        return;
+      }
+      
+      const difference = state.data.newQuantity - state.data.item.current_quantity;
+      const differenceText = difference > 0 ? `+${difference}` : `${difference}`;
+      
+      await sendTelegramMessage(chatId, `🎉 <b>بڕی کاڵا بە سەرکەوتوویی ڕێکخرا!</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📦 <b>${state.data.item.name}</b>
+├ 📊 بڕی پێشوو: ${state.data.item.current_quantity}
+├ 📊 بڕی نوێ: <b>${state.data.newQuantity}</b>
+├ 📈 جیاوازی: ${differenceText}
+└ 📝 هۆکار: ${note}
+
+━━━━━━━━━━━━━━━━━━━━
+
+🔧 بۆ ڕێکخستنی زیاتر: /adjust`);
+      break;
+  }
+}
+
 // Handle incoming Telegram updates
 async function handleUpdate(update: any) {
   const message = update.message;
@@ -1294,6 +1448,9 @@ async function handleUpdate(update: any) {
     } else if (state.command === "delete") {
       await handleDeleteCommand(chatId, text, state);
       return;
+    } else if (state.command === "adjust") {
+      await handleAdjustCommand(chatId, text, state);
+      return;
     }
   }
   
@@ -1314,6 +1471,7 @@ async function handleUpdate(update: any) {
 <b>📊 ستۆک:</b>
 /stockin - داخڵکردنی ستۆک
 /stockout - دەرکردنی ستۆک
+/adjust - ڕێکخستنی بڕ
 
 <b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی کۆگا
@@ -1343,6 +1501,7 @@ async function handleUpdate(update: any) {
 <b>📊 ستۆک:</b>
 /stockin - داخڵکردنی ستۆک
 /stockout - دەرکردنی ستۆک
+/adjust - ڕێکخستنی بڕ
 
 <b>📈 ئامار و ڕاپۆرت:</b>
 /stats - ئامارەکانی گشتی کۆگا
@@ -1396,6 +1555,10 @@ async function handleUpdate(update: any) {
         
       case "/delete":
         await handleDeleteCommand(chatId, text, null);
+        break;
+        
+      case "/adjust":
+        await handleAdjustCommand(chatId, text, null);
         break;
         
       case "/expiring":
