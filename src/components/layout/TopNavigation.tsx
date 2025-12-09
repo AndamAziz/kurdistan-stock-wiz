@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getGravatarUrl } from "@/lib/gravatar";
+import bakuryLogo from "@/assets/bakury-logo.jpg";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -122,8 +123,12 @@ export function TopNavigation() {
           <div className="flex items-center gap-4">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
-              <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/30 ring-2 ring-primary/20">
-                <Package className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+              <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-white shadow-xl shadow-primary/30 ring-2 ring-primary/20 overflow-hidden">
+                <img 
+                  src={bakuryLogo} 
+                  alt="باکوری خۆشەویست" 
+                  className="h-full w-full object-contain"
+                />
               </div>
             </div>
             <div className="hidden sm:block">

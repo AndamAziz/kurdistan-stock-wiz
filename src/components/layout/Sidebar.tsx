@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import bakuryLogo from "@/assets/bakury-logo.jpg";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -139,14 +140,21 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-16 lg:h-24 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
-        <div className="text-center">
-          <h1 className="text-lg lg:text-2xl font-bold text-sidebar-foreground tracking-tight bg-gradient-to-r from-sidebar-primary to-sidebar-primary/60 bg-clip-text text-transparent">
-            باکوری خۆشەویست
-          </h1>
-          <p className="text-[10px] lg:text-xs text-sidebar-foreground/50 mt-1 font-medium">
-            سیستمی بەڕێوەبردنی کۆگا
-          </p>
+      <div className="flex h-20 lg:h-28 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
+        <div className="flex items-center gap-3">
+          <img 
+            src={bakuryLogo} 
+            alt="باکوری خۆشەویست" 
+            className="h-14 w-14 lg:h-18 lg:w-18 object-contain rounded-xl shadow-lg"
+          />
+          <div className="text-center">
+            <h1 className="text-base lg:text-xl font-bold text-sidebar-foreground tracking-tight bg-gradient-to-r from-sidebar-primary to-sidebar-primary/60 bg-clip-text text-transparent">
+              باکوری خۆشەویست
+            </h1>
+            <p className="text-[9px] lg:text-xs text-sidebar-foreground/50 mt-0.5 font-medium">
+              سیستمی بەڕێوەبردنی کۆگا
+            </p>
+          </div>
         </div>
       </div>
 
@@ -247,9 +255,16 @@ export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
     <>
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 right-0 left-0 z-50 h-16 bg-gradient-sidebar border-b border-sidebar-border/30 flex items-center justify-between px-4 shadow-xl backdrop-blur-sm">
-        <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">
-          باکوری خۆشەویست
-        </h1>
+        <div className="flex items-center gap-2">
+          <img 
+            src={bakuryLogo} 
+            alt="باکوری خۆشەویست" 
+            className="h-10 w-10 object-contain rounded-lg"
+          />
+          <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">
+            باکوری خۆشەویست
+          </h1>
+        </div>
         <Button 
           variant="ghost" 
           size="icon" 

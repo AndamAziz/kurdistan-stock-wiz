@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import bakuryLogo from "@/assets/bakury-logo.jpg";
 import {
   Dialog,
   DialogContent,
@@ -177,6 +178,7 @@ export function StockInReceiptDialog({
       <body>
         <div class="receipt">
           <div class="header">
+            <img src="${bakuryLogo}" alt="باکوری خۆشەویست" style="height: 50px; width: 50px; object-fit: contain; margin: 0 auto 8px; border-radius: 8px;" />
             <h1>${itemType === "beverage" ? "🥤" : "🛒"} پسوڵەی داخڵکردن</h1>
             <p>باکوری خۆشەویست - سیستەمی بەڕێوەبردنی کۆگا</p>
           </div>
