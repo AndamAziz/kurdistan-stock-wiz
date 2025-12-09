@@ -27,6 +27,14 @@ import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { BarcodeScannerDialog } from "@/components/barcode/BarcodeScannerDialog";
 import { AddItemDialog } from "@/components/items/AddItemDialog";
 import { ImagePreviewDialog } from "@/components/items/ImagePreviewDialog";
+import { ItemDetailCard } from "@/components/items/ItemDetailCard";
+import { StockHistoryDialog } from "@/components/items/StockHistoryDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine } from "lucide-react";
 import {
   Collapsible,
@@ -46,6 +54,8 @@ export default function Items() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ItemWithRelations | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: items, isLoading, refetch } = useItems();
   const { data: categories } = useCategories();
@@ -487,6 +497,10 @@ export default function Items() {
                                   size="icon"
                                   variant="ghost"
                                   className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl"
+                                  onClick={() => {
+                                    hapticFeedback.light();
+                                    setSelectedItem(item);
+                                  }}
                                 >
                                   <Eye className="h-5 w-5" />
                                 </Button>
@@ -523,6 +537,52 @@ export default function Items() {
             onOpenChange={(open) => !open && setPreviewImage(null)}
             imageUrl={previewImage.url}
             itemName={previewImage.name}
+          />
+        )}
+
+        {/* Item Detail Dialog */}
+        <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-right">وردەکاری بەرهەم</DialogTitle>
+            </DialogHeader>
+            {selectedItem && (
+              <div className="space-y-4">
+                {/* Item Image */}
+                {selectedItem.image_url && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={selectedItem.image_url} 
+                      alt={selectedItem.name}
+                      className="h-32 w-32 rounded-xl object-cover border border-border shadow-md"
+                    />
+                  </div>
+                )}
+                
+                <ItemDetailCard item={selectedItem} showFullDetails={true} />
+                
+                {/* View History Button */}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setShowHistory(true);
+                  }}
+                >
+                  مێژووی جوڵە
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Stock History Dialog */}
+        {selectedItem && (
+          <StockHistoryDialog
+            open={showHistory}
+            onOpenChange={setShowHistory}
+            itemId={selectedItem.id}
+            itemName={selectedItem.name}
           />
         )}
       </div>
