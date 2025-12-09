@@ -1,18 +1,12 @@
 import { Layout } from "@/components/layout/Layout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertsList } from "@/components/dashboard/AlertsList";
-import { TopItemsTable } from "@/components/dashboard/TopItemsTable";
 import { ItemsListDialog } from "@/components/dashboard/ItemsListDialog";
-import { StockValueReportDialog } from "@/components/reports/StockValueReportDialog";
-import { useItems, useStockMovements } from "@/hooks/useItems";
+import { useItems } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
-import { useUserRoles } from "@/hooks/useUserRoles";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  Package,
-  PackageCheck,
   AlertTriangle,
   PackageX,
   Clock,
@@ -20,28 +14,19 @@ import {
   Loader2,
   Bell,
   BellOff,
-  DollarSign,
-  TrendingUp,
-  Wallet,
-  FileText,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
   const { data: items, isLoading } = useItems();
-  const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings, updateSettings } = useNotificationSettings();
-  const { isAdmin } = useUserRoles();
   
   // Dialog states
   const [soonToExpireOpen, setSoonToExpireOpen] = useState(false);
   const [lowStockOpen, setLowStockOpen] = useState(false);
   const [outOfStockOpen, setOutOfStockOpen] = useState(false);
-  const [allItemsOpen, setAllItemsOpen] = useState(false);
   const [expiredOpen, setExpiredOpen] = useState(false);
-  const [stockReportOpen, setStockReportOpen] = useState(false);
   
   const isNotificationsEnabled = settings.interval !== 'off';
 
@@ -75,54 +60,16 @@ export default function Dashboard() {
       item.current_quantity <= item.min_stock && item.current_quantity > 0
     );
     const outOfStock = items.filter(item => item.current_quantity === 0);
-    const topMoving = [...items]
-      .sort((a, b) => b.total_out - a.total_out)
-      .slice(0, 5);
-
-    // Calculate total sales from stock movements
-    const totalSales = movements
-      ?.filter(m => m.movement_type === 'OUT')
-      .reduce((sum, m) => sum + ((m.price as number || 0) * m.quantity), 0) || 0;
-
-    // Calculate total purchases from stock movements
-    const totalPurchases = movements
-      ?.filter(m => m.movement_type === 'IN')
-      .reduce((sum, m) => sum + ((m.price as number || 0) * m.quantity), 0) || 0;
-
-    // Calculate total stock value based on IN movements price per item
-    // This is an estimation - total value = sum of (current_quantity * average_purchase_price)
-    const stockValueByItem = new Map<string, { totalCost: number; totalQty: number }>();
-    movements?.filter(m => m.movement_type === 'IN').forEach(m => {
-      const existing = stockValueByItem.get(m.item_id) || { totalCost: 0, totalQty: 0 };
-      existing.totalCost += (m.price as number || 0) * m.quantity;
-      existing.totalQty += m.quantity;
-      stockValueByItem.set(m.item_id, existing);
-    });
-
-    let totalStockValue = 0;
-    items.forEach(item => {
-      const purchaseData = stockValueByItem.get(item.id);
-      if (purchaseData && purchaseData.totalQty > 0) {
-        const avgPrice = purchaseData.totalCost / purchaseData.totalQty;
-        totalStockValue += item.current_quantity * avgPrice;
-      }
-    });
 
     return {
-      totalItems: items.length,
-      totalQuantity: items.reduce((sum, item) => sum + item.current_quantity, 0),
       expiredItems,
       soonToExpire,
       lowStockItems,
       outOfStock,
-      topMoving,
-      totalSales,
-      totalPurchases,
-      totalStockValue,
     };
-  }, [items, movements, settings.reminderDays]);
+  }, [items, settings.reminderDays]);
 
-  if (isLoading || movementsLoading || !stats) {
+  if (isLoading || !stats) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -131,15 +78,6 @@ export default function Dashboard() {
       </Layout>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}K`;
-    }
-    return value.toLocaleString();
-  };
 
   return (
     <Layout>
@@ -207,69 +145,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Report Button - Admin Only */}
-        {isAdmin && (
-          <div className="animate-fade-in">
-            <button
-              onClick={() => setStockReportOpen(true)}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
-            >
-              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <span className="text-sm font-semibold text-foreground">ڕاپۆرتی نرخی ستۆک</span>
-            </button>
-          </div>
-        )}
-
-        {/* Stats Grid - Financial stats only for Admin */}
-        {isAdmin && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
-            <StatCard
-              title="کۆی فرۆشراو"
-              value={`${formatCurrency(stats.totalSales)} د.ع`}
-              icon={DollarSign}
-              variant="success"
-              delay={0}
-            />
-            <StatCard
-              title="کۆی کڕاو"
-              value={`${formatCurrency(stats.totalPurchases)} د.ع`}
-              icon={TrendingUp}
-              delay={50}
-            />
-            <StatCard
-              title="نرخی ستۆک"
-              value={`${formatCurrency(stats.totalStockValue)} د.ع`}
-              icon={Wallet}
-              variant="success"
-              delay={75}
-            />
-            <StatCard
-              title="کۆی مادەکان"
-              value={stats.totalItems}
-              icon={Package}
-              delay={100}
-              clickable
-              onClick={() => setAllItemsOpen(true)}
-            />
-          </div>
-        )}
-
-        {/* Basic Stats - visible to all (without total stock) */}
-        {!isAdmin && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
-            <StatCard
-              title="کۆی مادەکان"
-              value={stats.totalItems}
-              icon={Package}
-              delay={100}
-              clickable
-              onClick={() => setAllItemsOpen(true)}
-            />
-          </div>
-        )}
-
         {/* Alerts Stats - 2x2 Grid */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
           <StatCard
@@ -310,55 +185,34 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-          {/* Alerts */}
-          <div className="space-y-3 sm:space-y-4">
-            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">
-              ئاگادارکردنەوەکان
-            </h2>
-            <AlertsList
-              expiredItems={stats.expiredItems.map(item => ({
-                id: item.id,
-                name: item.name,
-                expDate: item.exp_date || '',
-                quantity: item.current_quantity,
-                minStock: item.min_stock,
-              }))}
-              lowStockItems={stats.lowStockItems.map(item => ({
-                id: item.id,
-                name: item.name,
-                expDate: item.exp_date || '',
-                quantity: item.current_quantity,
-                minStock: item.min_stock,
-              }))}
-              soonToExpire={stats.soonToExpire.map(item => ({
-                id: item.id,
-                name: item.name,
-                expDate: item.exp_date || '',
-                quantity: item.current_quantity,
-                minStock: item.min_stock,
-              }))}
-            />
-          </div>
-
-          {/* Top Moving Items */}
-          <div className="space-y-3 sm:space-y-4">
-            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">
-              زۆرترین فرۆشراو
-            </h2>
-            <TopItemsTable 
-              items={stats.topMoving.map(item => ({
-                id: item.id,
-                name: item.name,
-                brand: item.brands?.name || '-',
-                quantity: item.current_quantity,
-                minStock: item.min_stock,
-                totalOut: item.total_out,
-              }))} 
-              title="5 مادەی زۆرترین خەرجکراو" 
-            />
-          </div>
+        {/* Alerts List */}
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground">
+            ئاگادارکردنەوەکان
+          </h2>
+          <AlertsList
+            expiredItems={stats.expiredItems.map(item => ({
+              id: item.id,
+              name: item.name,
+              expDate: item.exp_date || '',
+              quantity: item.current_quantity,
+              minStock: item.min_stock,
+            }))}
+            lowStockItems={stats.lowStockItems.map(item => ({
+              id: item.id,
+              name: item.name,
+              expDate: item.exp_date || '',
+              quantity: item.current_quantity,
+              minStock: item.min_stock,
+            }))}
+            soonToExpire={stats.soonToExpire.map(item => ({
+              id: item.id,
+              name: item.name,
+              expDate: item.exp_date || '',
+              quantity: item.current_quantity,
+              minStock: item.min_stock,
+            }))}
+          />
         </div>
       </div>
       
@@ -388,29 +242,12 @@ export default function Dashboard() {
       />
       
       <ItemsListDialog
-        open={allItemsOpen}
-        onOpenChange={setAllItemsOpen}
-        title="هەموو مادەکان"
-        items={items || []}
-        type="all-items"
-      />
-      
-      <ItemsListDialog
         open={expiredOpen}
         onOpenChange={setExpiredOpen}
         title="بەسەرچوو"
         items={stats.expiredItems}
         type="expired"
       />
-
-      {/* Stock Value Report Dialog - Admin Only */}
-      {isAdmin && items && (
-        <StockValueReportDialog
-          open={stockReportOpen}
-          onOpenChange={setStockReportOpen}
-          items={items}
-        />
-      )}
     </Layout>
   );
 }
