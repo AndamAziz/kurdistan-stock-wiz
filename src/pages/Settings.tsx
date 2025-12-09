@@ -29,7 +29,10 @@ import {
   FileText,
   Upload,
   Palette,
-  X
+  X,
+  Share2,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
@@ -202,6 +205,50 @@ export default function Settings() {
               )} />
             </div>
 
+            {/* Share App Link */}
+            <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Share2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <div>
+                  <p className="text-xs sm:text-sm font-medium">دابەزاندنی ئەپ</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">لینکی ئەپ بنێرە بۆ مۆبایل یان لاپتۆپ</p>
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    const appUrl = window.location.origin;
+                    navigator.clipboard.writeText(appUrl);
+                    hapticFeedback.success();
+                    toast.success("لینک کۆپی کرا!");
+                  }}
+                  className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1"
+                >
+                  <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  کۆپی
+                </Button>
+                {navigator.share && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      hapticFeedback.light();
+                      navigator.share({
+                        title: 'ئەپی کۆگا',
+                        text: 'ئەپی بەڕێوەبردنی کۆگا دابەزێنە',
+                        url: window.location.origin
+                      });
+                    }}
+                    className="h-7 sm:h-8 text-[10px] sm:text-xs gap-1"
+                  >
+                    <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                    بەشکردن
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {/* Install App */}
             {isInstallable && !isInstalled && (
               <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-primary/5 border border-primary/20">
@@ -232,6 +279,16 @@ export default function Settings() {
                 </div>
               </div>
             )}
+
+            {/* Install Instructions */}
+            <div className="p-2 sm:p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+              <p className="text-xs sm:text-sm font-medium text-blue-800 dark:text-blue-200 mb-1.5">چۆن ئەپەکە دابەزێنم؟</p>
+              <div className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <p><strong>iPhone:</strong> Share → Add to Home Screen</p>
+                <p><strong>Android:</strong> منیوی براوزەر → Install App</p>
+                <p><strong>Laptop:</strong> لە براوزەر ئایکۆنی دامەزراندن</p>
+              </div>
+            </div>
           </div>
         </div>
 
