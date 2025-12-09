@@ -268,7 +268,7 @@ export default function StockAdjust() {
                         <Input
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          placeholder="ناوی مادە"
+                          placeholder="ناوی بەرهەم"
                           required
                         />
                       </div>

@@ -149,9 +149,9 @@ export function AddItemDialog({ open, onOpenChange }: AddItemDialogProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ناوی مادە</FormLabel>
+                    <FormLabel>ناو</FormLabel>
                     <FormControl>
-                      <Input placeholder="ناوی مادە" {...field} />
+                      <Input placeholder="ناوی بەرهەم" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
