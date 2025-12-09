@@ -28,7 +28,6 @@ import {
   LayoutDashboard,
   Package,
   ArrowDownToLine,
-  ArrowUpFromLine,
   RefreshCw,
   AlertTriangle,
   Settings,
@@ -54,13 +53,11 @@ const mainNavigation = [
 
 const stockNavigation = [
   { name: 'داخڵکردن', href: '/stock-in', icon: ArrowDownToLine },
-  { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
   { name: 'ڕاستکردنەوە', href: '/stock-adjust', icon: RefreshCw },
 ];
 
 const reportNavigation = [
   { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
-  { name: 'ئینڤۆیسەکان', href: '/invoices', icon: FileText },
   { name: 'ئیمپۆرت/ئێکسپۆرت', href: '/import-export', icon: FileSpreadsheet },
 ];
 
@@ -234,7 +231,7 @@ export function TopNavigation() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-semibold block">جوڵەی ستۆک</span>
-                              <span className="text-[9px] text-muted-foreground block">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
+                              <span className="text-[9px] text-muted-foreground block">داخڵکردن، ڕاستکردنەوە</span>
                             </div>
                           </div>
                           <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'stock' && "rotate-180")} />
@@ -283,7 +280,7 @@ export function TopNavigation() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-semibold block truncate">جوڵەی ستۆک</span>
-                          <span className="text-[10px] text-muted-foreground truncate block">داخڵکردن، دەرکردن، ڕاستکردنەوە</span>
+                          <span className="text-[10px] text-muted-foreground truncate block">داخڵکردن، ڕاستکردنەوە</span>
                         </div>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuPortal>
@@ -334,7 +331,7 @@ export function TopNavigation() {
                             </div>
                             <div className="text-right">
                               <span className="text-xs font-semibold block">ڕاپۆرتەکان</span>
-                              <span className="text-[9px] text-muted-foreground block">بەسەرچوون، ئینڤۆیس، ئیمپۆرت</span>
+                              <span className="text-[9px] text-muted-foreground block">بەسەرچوون، ئیمپۆرت</span>
                             </div>
                           </div>
                           <ChevronDown className={cn("h-4 w-4 transition-transform", expandedGroup === 'reports' && "rotate-180")} />
