@@ -207,6 +207,21 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* Report Button - Admin Only */}
+        {isAdmin && (
+          <div className="animate-fade-in">
+            <button
+              onClick={() => setStockReportOpen(true)}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
+            >
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">ڕاپۆرتی نرخی ستۆک</span>
+            </button>
+          </div>
+        )}
+
         {/* Stats Grid - Financial stats only for Admin */}
         {isAdmin && (
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
