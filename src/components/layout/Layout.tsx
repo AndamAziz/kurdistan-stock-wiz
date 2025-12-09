@@ -56,8 +56,8 @@ export function Layout({ children }: LayoutProps) {
     <div ref={containerRef} className="min-h-screen bg-background">
       <Sidebar isOpen={sidebarOpen} onOpenChange={setSidebarOpen} />
       {/* Main content area - responsive margins with bottom padding for nav */}
-      <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-0 lg:mr-64 xl:mr-72 2xl:mr-80">
-        <div className="p-3 sm:p-5 lg:p-8 xl:p-10 max-w-[1600px]">
+      <main className="min-h-screen pt-16 pb-24 lg:pt-0 lg:pb-0 lg:mr-72 xl:mr-80 2xl:mr-96">
+        <div className="p-4 sm:p-6 lg:p-10 xl:p-12 max-w-[1800px]">
           {children}
         </div>
       </main>

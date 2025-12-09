@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   Package,
@@ -19,14 +25,25 @@ import {
   Users,
   Menu,
   FileText,
+  ChevronDown,
+  Boxes,
+  Wrench,
+  Shield,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
-const navigation = [
+const mainNavigation = [
   { name: 'داشبۆرد', href: '/', icon: LayoutDashboard },
   { name: 'مادەکان', href: '/items', icon: Package },
+];
+
+const stockNavigation = [
   { name: 'داخڵکردن', href: '/stock-in', icon: ArrowDownToLine },
   { name: 'دەرکردن', href: '/stock-out', icon: ArrowUpFromLine },
   { name: 'ڕاستکردنەوە', href: '/stock-adjust', icon: RefreshCw },
+];
+
+const reportNavigation = [
   { name: 'بەسەرچوون', href: '/expiry', icon: AlertTriangle },
   { name: 'ئینڤۆیسەکان', href: '/invoices', icon: FileText },
   { name: 'ئیمپۆرت/ئێکسپۆرت', href: '/import-export', icon: FileSpreadsheet },
@@ -47,9 +64,72 @@ interface SidebarProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+interface NavGroupProps {
+  title: string;
+  icon: React.ElementType;
+  items: { name: string; href: string; icon: React.ElementType }[];
+  onNavClick?: () => void;
+  defaultOpen?: boolean;
+}
+
+function NavGroup({ title, icon: GroupIcon, items, onNavClick, defaultOpen = false }: NavGroupProps) {
+  const location = useLocation();
+  const isActiveGroup = items.some(item => location.pathname === item.href);
+  const [isOpen, setIsOpen] = useState(defaultOpen || isActiveGroup);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-2">
+      <CollapsibleTrigger className="w-full">
+        <div className={cn(
+          "flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 mb-1 group cursor-pointer",
+          isActiveGroup 
+            ? "bg-sidebar-primary/20 text-sidebar-primary-foreground border border-sidebar-primary/30" 
+            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent"
+        )}>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+              isActiveGroup 
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30" 
+                : "bg-sidebar-accent/50 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground"
+            )}>
+              <GroupIcon className="h-4 w-4" strokeWidth={2.5} />
+            </div>
+            <span className="text-sm lg:text-base">{title}</span>
+          </div>
+          <ChevronDown className={cn(
+            "h-4 w-4 transition-transform duration-300 text-sidebar-foreground/50",
+            isOpen && "rotate-180"
+          )} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+        <div className="mr-6 pr-2 border-r-2 border-sidebar-accent/50 space-y-1 py-2">
+          {items.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              onClick={onNavClick}
+              className={cn(
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "text-sidebar-foreground/70 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground hover:pr-4"
+              )}
+              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-md pr-4"
+            >
+              <item.icon className="h-4 w-4" strokeWidth={2} />
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRoles();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -58,95 +138,94 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-sidebar">
       {/* Logo */}
-      <div className="flex h-14 lg:h-20 items-center justify-center border-b border-sidebar-border/50 px-3 lg:px-5">
+      <div className="flex h-16 lg:h-24 items-center justify-center border-b border-sidebar-border/30 px-4 lg:px-6 bg-sidebar-accent/20">
         <div className="text-center">
-          <h1 className="text-base lg:text-xl font-bold text-sidebar-foreground tracking-tight">
+          <h1 className="text-lg lg:text-2xl font-bold text-sidebar-foreground tracking-tight bg-gradient-to-r from-sidebar-primary to-sidebar-primary/60 bg-clip-text text-transparent">
             باکوری خۆشەویست
           </h1>
-          <p className="text-[9px] lg:text-xs text-sidebar-foreground/50 mt-0.5">
+          <p className="text-[10px] lg:text-xs text-sidebar-foreground/50 mt-1 font-medium">
             سیستمی بەڕێوەبردنی کۆگا
           </p>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 lg:px-3 py-2 lg:py-4 overflow-y-auto">
-        <div className="mb-2 px-3 text-[9px] lg:text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40">
-          سەرەکی
+      <nav className="flex-1 px-3 lg:px-4 py-4 lg:py-6 overflow-y-auto scrollbar-thin">
+        {/* Main Items - No dropdown */}
+        <div className="mb-4">
+          {mainNavigation.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              onClick={onNavClick}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
+                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
+              )}
+              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
+            >
+              <div className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                location.pathname === item.href 
+                  ? "bg-white/20 shadow-inner" 
+                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+              )}>
+                <item.icon className="h-4 w-4" strokeWidth={2.5} />
+              </div>
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
         </div>
-        {navigation.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            onClick={onNavClick}
-            className={cn(
-              "group flex items-center gap-3 rounded-lg px-3 py-2.5 lg:py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-1",
-              "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-            activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-md"
-          >
-            <item.icon className="h-5 w-5 lg:h-6 lg:w-6" strokeWidth={2} />
-            <span>{item.name}</span>
-          </NavLink>
-        ))}
 
-        <div className="mb-2 mt-4 px-3 text-[9px] lg:text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40">
-          ڕێکخستن
-        </div>
-        {settingsNavigation.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.href}
-            onClick={onNavClick}
-            className={cn(
-              "group flex items-center gap-3 rounded-lg px-3 py-2.5 lg:py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-1",
-              "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            )}
-            activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-md"
-          >
-            <item.icon className="h-5 w-5 lg:h-6 lg:w-6" strokeWidth={2} />
-            <span>{item.name}</span>
-          </NavLink>
-        ))}
+        {/* Stock Operations Dropdown */}
+        <NavGroup 
+          title="جوڵەی ستۆک" 
+          icon={Boxes} 
+          items={stockNavigation} 
+          onNavClick={onNavClick}
+        />
 
+        {/* Reports Dropdown */}
+        <NavGroup 
+          title="ڕاپۆرتەکان" 
+          icon={FileText} 
+          items={reportNavigation} 
+          onNavClick={onNavClick}
+        />
+
+        {/* Settings Dropdown */}
+        <NavGroup 
+          title="ڕێکخستن" 
+          icon={Wrench} 
+          items={settingsNavigation} 
+          onNavClick={onNavClick}
+        />
+
+        {/* Admin Dropdown */}
         {isAdmin && (
-          <>
-            <div className="mb-2 mt-4 px-3 text-[9px] lg:text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40">
-              بەڕێوەبەر
-            </div>
-            {adminNavigation.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                onClick={onNavClick}
-                className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 lg:py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-1",
-                  "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-                activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-md"
-              >
-                <item.icon className="h-5 w-5 lg:h-6 lg:w-6" strokeWidth={2} />
-                <span>{item.name}</span>
-              </NavLink>
-            ))}
-          </>
+          <NavGroup 
+            title="بەڕێوەبەر" 
+            icon={Shield} 
+            items={adminNavigation} 
+            onNavClick={onNavClick}
+          />
         )}
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border/50 p-4 lg:p-5">
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-sidebar-accent/30">
+      <div className="border-t border-sidebar-border/30 p-4 lg:p-5 bg-sidebar-accent/10">
+        <div className="flex items-center justify-between gap-3 p-3 lg:p-4 rounded-2xl bg-gradient-to-br from-sidebar-accent/40 to-sidebar-accent/20 border border-sidebar-border/30 backdrop-blur-sm">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="flex h-11 w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 text-sidebar-primary-foreground shadow-md shrink-0">
-              <span className="text-base lg:text-lg font-bold">
+            <div className="flex h-12 w-12 lg:h-14 lg:w-14 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/60 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30 shrink-0 ring-2 ring-sidebar-primary/20">
+              <span className="text-lg lg:text-xl font-bold">
                 {user?.email?.charAt(0).toUpperCase() || 'ب'}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm lg:text-base font-semibold text-sidebar-foreground truncate">
+              <p className="text-sm lg:text-base font-bold text-sidebar-foreground truncate">
                 {user?.user_metadata?.full_name || 'بەکارهێنەر'}
               </p>
-              <p className="text-xs lg:text-sm text-sidebar-foreground/50 truncate">
+              <p className="text-xs lg:text-sm text-sidebar-foreground/50 truncate font-medium">
                 {user?.email}
               </p>
             </div>
@@ -155,7 +234,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             variant="ghost"
             size="icon"
             onClick={handleSignOut}
-            className="text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 h-10 w-10 rounded-lg shrink-0 transition-colors duration-200"
+            className="text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/15 h-11 w-11 rounded-xl shrink-0 transition-all duration-200 hover:scale-105"
           >
             <LogOut className="h-5 w-5" />
           </Button>
@@ -169,14 +248,14 @@ export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 right-0 left-0 z-50 h-14 bg-gradient-sidebar border-b border-sidebar-border/50 flex items-center justify-between px-4 shadow-lg">
-        <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">
+      <header className="lg:hidden fixed top-0 right-0 left-0 z-50 h-16 bg-gradient-sidebar border-b border-sidebar-border/30 flex items-center justify-between px-4 shadow-xl backdrop-blur-sm">
+        <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">
           باکوری خۆشەویست
         </h1>
         <Button 
           variant="ghost" 
           size="icon" 
-          className="text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl h-10 w-10"
+          className="text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-xl h-11 w-11 transition-all duration-200 hover:scale-105"
           onClick={() => onOpenChange?.(!isOpen)}
         >
           <Menu className="h-5 w-5" />
@@ -185,13 +264,13 @@ export function Sidebar({ isOpen = false, onOpenChange }: SidebarProps) {
 
       {/* Mobile Sheet */}
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-72 p-0 border-l border-sidebar-border/50">
+        <SheetContent side="right" className="w-80 p-0 border-l border-sidebar-border/30">
           <SidebarContent onNavClick={() => onOpenChange?.(false)} />
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block fixed right-0 top-0 z-40 h-screen w-64 xl:w-72 2xl:w-80 shadow-2xl">
+      <aside className="hidden lg:block fixed right-0 top-0 z-40 h-screen w-72 xl:w-80 2xl:w-96 shadow-2xl">
         <SidebarContent />
       </aside>
     </>
