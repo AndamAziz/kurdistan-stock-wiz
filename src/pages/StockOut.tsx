@@ -171,7 +171,7 @@ export default function StockOut() {
       toast.success('مادە زیادکرا بۆ سەبەتە');
     }
 
-    // Reset form
+    // Reset only item fields, keep recipient info
     setSelectedItem('');
     setBoxCount('');
     setPieceCount('');
@@ -276,12 +276,13 @@ export default function StockOut() {
 
   const handleInvoiceClosed = () => {
     setInvoiceOpen(false);
-    // Reset everything after invoice is closed
+    // Reset cart and recipient info only after invoice is fully complete
     setCartItems([]);
     setRecipientName('');
     setRecipientPhone('');
     setDriverName('');
     setDriverPhone('');
+    setDate(new Date().toISOString().split('T')[0]);
     refetchItems();
   };
 
