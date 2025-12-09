@@ -6,7 +6,6 @@ import { NavLink } from "@/components/NavLink";
 import { 
   Settings, 
   Clock, 
-  FileText, 
   Tag, 
   FolderOpen, 
   FileSpreadsheet,
@@ -22,7 +21,6 @@ interface LayoutProps {
 const moreMenuItems = [
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
   { name: 'بەسەرچوون', href: '/expiry', icon: Clock },
-  { name: 'وەسڵەکان', href: '/invoices', icon: FileText },
   { name: 'براندەکان', href: '/brands', icon: Tag },
   { name: 'جۆرەکان', href: '/categories', icon: FolderOpen },
   { name: 'هاوردە/هەناردە', href: '/import-export', icon: FileSpreadsheet },
