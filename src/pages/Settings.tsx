@@ -582,28 +582,24 @@ export default function Settings() {
               <div className="flex items-center gap-2 sm:gap-3">
                 <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
                 <div>
-                  <p className="text-xs sm:text-sm font-medium">ڕۆژی بیرخستنەوە</p>
+                  <p className="text-xs sm:text-sm font-medium">ڕۆژی بیرخستنەوە (پێش بەسەرچوون)</p>
                   <p className="text-[10px] sm:text-xs text-muted-foreground">چەند ڕۆژ پێش بەسەرچوون ئاگادار بکرێتەوە</p>
                 </div>
               </div>
-              <Select
-                value={settings.reminderDays.toString()}
-                onValueChange={(value) => {
-                  hapticFeedback.selection();
-                  updateSettings({ reminderDays: parseInt(value) });
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={settings.reminderDays}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1 && value <= 365) {
+                    hapticFeedback.selection();
+                    updateSettings({ reminderDays: value });
+                  }
                 }}
-              >
-                <SelectTrigger className="w-[100px] sm:w-[120px] h-8 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {reminderDaysOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value.toString()}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="w-[80px] sm:w-[100px] h-8 text-xs sm:text-sm text-center"
+              />
             </div>
 
             <div className="flex items-center justify-between">
