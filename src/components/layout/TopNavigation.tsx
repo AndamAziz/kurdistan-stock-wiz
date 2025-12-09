@@ -41,6 +41,7 @@ import {
   Wrench,
   Shield,
   ChevronDown,
+  User,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -617,51 +618,48 @@ export function TopNavigation() {
                 <Button 
                   variant="ghost" 
                   className={cn(
-                    "h-12 sm:h-14 px-2 sm:px-4 gap-3 rounded-2xl",
-                    "hover:bg-accent/40 transition-all duration-300",
-                    "border border-transparent hover:border-border/50"
+                    "h-11 sm:h-12 px-3 sm:px-4 gap-2.5 rounded-xl",
+                    "bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10",
+                    "hover:from-primary/20 hover:via-accent/10 hover:to-primary/20",
+                    "border border-primary/20 hover:border-primary/40",
+                    "transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-primary/10"
                   )}
                 >
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-xl blur opacity-30" />
-                    <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20">
-                      <span className="text-base sm:text-lg font-bold">
-                        {user?.email?.charAt(0).toUpperCase() || 'ب'}
-                      </span>
-                    </div>
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md">
+                    <User className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div className="hidden lg:block text-right">
-                    <p className="text-sm font-bold text-foreground">
+                  <div className="hidden sm:block text-right">
+                    <p className="text-sm font-semibold text-foreground leading-tight">
                       {user?.user_metadata?.full_name || 'بەکارهێنەر'}
                     </p>
+                    <p className="text-[10px] text-primary/70 font-medium">باکوری خۆشەویست</p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
+                  <ChevronDown className="h-3.5 w-3.5 text-primary/60 hidden sm:block" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-64 p-3 bg-popover/98 backdrop-blur-2xl border-2 border-border/40 shadow-2xl rounded-2xl"
-                sideOffset={12}
+                className="w-56 p-2.5 bg-popover/98 backdrop-blur-2xl border border-border/50 shadow-xl rounded-xl"
+                sideOffset={8}
               >
-                <div className="flex items-center gap-3 px-3 py-3 mb-2 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
-                    <span className="text-lg font-bold">
-                      {user?.email?.charAt(0).toUpperCase() || 'ب'}
-                    </span>
+                <div className="flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-lg bg-gradient-to-r from-primary/10 to-accent/5 border border-primary/10">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+                    <User className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
+                    <p className="text-sm font-semibold truncate">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
+                    <p className="text-[10px] text-muted-foreground">باکوری خۆشەویست</p>
                   </div>
                 </div>
-                <DropdownMenuSeparator className="bg-border/50" />
+                <DropdownMenuSeparator className="bg-border/40 my-1.5" />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-all duration-200 mt-2"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer text-destructive hover:bg-destructive/10 transition-all duration-200"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/10">
                     <LogOut className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-semibold">چوونەدەرەوە</span>
+                  <span className="text-sm font-medium">چوونەدەرەوە</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
