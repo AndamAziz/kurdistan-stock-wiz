@@ -2011,6 +2011,9 @@ async function sendDailyNotifications() {
   return { success: true, sentCount };
 }
 
+// Webhook secret for validating Telegram requests
+const TELEGRAM_WEBHOOK_SECRET = Deno.env.get('TELEGRAM_WEBHOOK_SECRET');
+
 serve(async (req) => {
   console.log(`Received ${req.method} request`);
   
@@ -2021,12 +2024,32 @@ serve(async (req) => {
   
   try {
     const body = await req.json();
-    console.log("Received Telegram update:", JSON.stringify(body));
+    console.log("Received request body:", JSON.stringify(body));
     
     // Check if this is a cron job request for daily notifications
     if (body.action === "daily-notify") {
+      // Validate cron secret for daily-notify action
+      const cronSecret = req.headers.get('X-Cron-Secret') || body.cronSecret;
+      if (TELEGRAM_WEBHOOK_SECRET && cronSecret !== TELEGRAM_WEBHOOK_SECRET) {
+        console.error("Unauthorized: Invalid cron secret for daily-notify");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       const result = await sendDailyNotifications();
       return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    // Validate Telegram webhook secret for all other requests
+    const providedToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    if (TELEGRAM_WEBHOOK_SECRET && providedToken !== TELEGRAM_WEBHOOK_SECRET) {
+      console.error("Unauthorized: Invalid or missing Telegram webhook secret");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
