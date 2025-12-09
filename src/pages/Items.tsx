@@ -187,71 +187,71 @@ export default function Items() {
         />
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">مادەکان</h1>
-            <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">مادەکان</h1>
+            <p className="mt-1 text-sm lg:text-base text-muted-foreground">
               بەڕێوەبردنی هەموو مادەکان لە کۆگا
             </p>
           </div>
           <Button 
-            className="gap-2 h-9 sm:h-10 text-xs sm:text-sm w-full sm:w-auto"
+            className="gap-2 h-10 sm:h-11 lg:h-12 text-sm lg:text-base w-full sm:w-auto px-6"
             onClick={() => setAddItemOpen(true)}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             زیادکردنی مادە
           </Button>
         </div>
 
         {/* Search and Filters */}
-        <div className="rounded-lg sm:rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card animate-slide-up">
+        <div className="rounded-xl lg:rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6 shadow-card animate-slide-up">
           {/* Search - Always visible */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="گەڕان بە ناو یان باڕکۆد..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 h-9 sm:h-10 text-sm"
+                className="pr-12 h-11 sm:h-12 lg:h-14 text-base lg:text-lg rounded-xl"
               />
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="h-9 w-9 sm:h-10 sm:w-10 shrink-0"
+              className="h-11 w-11 sm:h-12 sm:w-12 lg:h-14 lg:w-14 shrink-0 rounded-xl"
               onClick={() => setScannerOpen(true)}
             >
-              <ScanLine className="h-4 w-4" />
+              <ScanLine className="h-5 w-5 lg:h-6 lg:w-6" />
             </Button>
           </div>
 
           {/* Mobile Filters Collapsible */}
-          <div className="lg:hidden mt-3">
+          <div className="lg:hidden mt-4">
             <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="w-full justify-between h-9 text-xs"
+                  className="w-full justify-between h-11 text-sm rounded-xl"
                 >
                   <span className="flex items-center gap-2">
-                    <Filter className="h-3.5 w-3.5" />
+                    <Filter className="h-4 w-4" />
                     فلتەرەکان
                     {activeFilterCount > 0 && (
-                      <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                      <Badge variant="secondary" className="h-6 px-2 text-xs">
                         {activeFilterCount}
                       </Badge>
                     )}
                   </span>
                   <ChevronDown className={cn(
-                    "h-4 w-4 transition-transform",
+                    "h-5 w-5 transition-transform",
                     filtersOpen && "rotate-180"
                   )} />
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3 space-y-3">
+              <CollapsibleContent className="mt-4 space-y-3">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full h-9 text-xs">
+                  <SelectTrigger className="w-full h-11 text-sm rounded-xl">
                     <SelectValue placeholder="کەتەگۆری" />
                   </SelectTrigger>
                   <SelectContent>
@@ -265,7 +265,7 @@ export default function Items() {
                 </Select>
 
                 <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                  <SelectTrigger className="w-full h-9 text-xs">
+                  <SelectTrigger className="w-full h-11 text-sm rounded-xl">
                     <SelectValue placeholder="براند" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +279,7 @@ export default function Items() {
                 </Select>
 
                 <Select value={stockFilter} onValueChange={setStockFilter}>
-                  <SelectTrigger className="w-full h-9 text-xs">
+                  <SelectTrigger className="w-full h-11 text-sm rounded-xl">
                     <SelectValue placeholder="دۆخی ستۆک" />
                   </SelectTrigger>
                   <SelectContent>
@@ -296,9 +296,9 @@ export default function Items() {
                     variant="ghost"
                     size="sm"
                     onClick={handleClearFilters}
-                    className="w-full text-muted-foreground hover:text-destructive text-xs h-8"
+                    className="w-full text-muted-foreground hover:text-destructive text-sm h-10 rounded-xl"
                   >
-                    <X className="h-3.5 w-3.5 ml-1" />
+                    <X className="h-4 w-4 ml-1" />
                     پاککردنەوەی فلتەرەکان
                   </Button>
                 )}
@@ -307,9 +307,9 @@ export default function Items() {
           </div>
 
           {/* Desktop Filters */}
-          <div className="hidden lg:flex flex-wrap items-center gap-4 mt-4">
+          <div className="hidden lg:flex flex-wrap items-center gap-4 mt-5">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[200px] h-12 text-base rounded-xl">
                 <SelectValue placeholder="کەتەگۆری" />
               </SelectTrigger>
               <SelectContent>
@@ -323,7 +323,7 @@ export default function Items() {
             </Select>
 
             <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[200px] h-12 text-base rounded-xl">
                 <SelectValue placeholder="براند" />
               </SelectTrigger>
               <SelectContent>
@@ -337,7 +337,7 @@ export default function Items() {
             </Select>
 
             <Select value={stockFilter} onValueChange={setStockFilter}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[200px] h-12 text-base rounded-xl">
                 <SelectValue placeholder="دۆخی ستۆک" />
               </SelectTrigger>
               <SelectContent>
@@ -352,11 +352,11 @@ export default function Items() {
             {hasFilters && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="lg"
                 onClick={handleClearFilters}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive rounded-xl h-12"
               >
-                <X className="h-4 w-4 ml-1" />
+                <X className="h-5 w-5 ml-1" />
                 پاککردنەوە
               </Button>
             )}
@@ -365,23 +365,23 @@ export default function Items() {
 
         {/* Results Count */}
         <div className="flex items-center justify-between animate-fade-in">
-          <p className="text-xs sm:text-sm text-muted-foreground">
+          <p className="text-sm lg:text-base text-muted-foreground font-medium">
             {filteredItems.length} مادە دۆزرایەوە
           </p>
         </div>
 
         {/* Items Display */}
         {isLoading ? (
-          <div className="flex items-center justify-center h-48 sm:h-64">
-            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center h-56 sm:h-72 lg:h-96">
+            <Loader2 className="h-8 w-8 lg:h-12 lg:w-12 animate-spin text-primary" />
           </div>
         ) : (
           <>
             {/* Mobile Cards View */}
-            <div className="lg:hidden space-y-2">
+            <div className="lg:hidden space-y-3">
               {filteredItems.length === 0 ? (
-                <div className="flex items-center justify-center h-32 rounded-lg border border-border bg-card">
-                  <p className="text-xs sm:text-sm text-muted-foreground">هیچ مادەیەک نەدۆزرایەوە</p>
+                <div className="flex items-center justify-center h-40 rounded-xl border border-border bg-card">
+                  <p className="text-sm text-muted-foreground">هیچ مادەیەک نەدۆزرایەوە</p>
                 </div>
               ) : (
                 filteredItems.map((item, index) => (
@@ -395,25 +395,25 @@ export default function Items() {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block rounded-xl border border-border bg-card shadow-card overflow-hidden">
+            <div className="hidden lg:block rounded-2xl border border-border bg-card shadow-card overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="text-center font-semibold w-14">وێنە</TableHead>
-                      <TableHead className="text-right font-semibold">باڕکۆد</TableHead>
-                      <TableHead className="text-right font-semibold">ناو</TableHead>
-                      <TableHead className="text-right font-semibold">براند</TableHead>
-                      <TableHead className="text-right font-semibold">کەتەگۆری</TableHead>
-                      <TableHead className="text-center font-semibold">ستۆک</TableHead>
-                      <TableHead className="text-center font-semibold">بەسەرچوون</TableHead>
-                      <TableHead className="text-center font-semibold">کردارەکان</TableHead>
+                      <TableHead className="text-center font-semibold w-20 text-base py-4">وێنە</TableHead>
+                      <TableHead className="text-right font-semibold text-base py-4">باڕکۆد</TableHead>
+                      <TableHead className="text-right font-semibold text-base py-4">ناو</TableHead>
+                      <TableHead className="text-right font-semibold text-base py-4">براند</TableHead>
+                      <TableHead className="text-right font-semibold text-base py-4">کەتەگۆری</TableHead>
+                      <TableHead className="text-center font-semibold text-base py-4">ستۆک</TableHead>
+                      <TableHead className="text-center font-semibold text-base py-4">بەسەرچوون</TableHead>
+                      <TableHead className="text-center font-semibold text-base py-4">کردارەکان</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                        <TableCell colSpan={8} className="h-40 text-center text-muted-foreground text-base">
                           هیچ مادەیەک نەدۆزرایەوە
                         </TableCell>
                       </TableRow>
@@ -429,12 +429,12 @@ export default function Items() {
                             style={{ animationDelay: `${index * 30}ms` }}
                           >
                             {/* Item Image */}
-                            <TableCell className="text-center">
+                            <TableCell className="text-center py-4">
                               {item.image_url ? (
                                 <button
                                   type="button"
                                   onClick={() => setPreviewImage({ url: item.image_url!, name: item.name })}
-                                  className="h-10 w-10 rounded-lg overflow-hidden border border-border bg-muted mx-auto hover:ring-2 hover:ring-primary/50 transition-all"
+                                  className="h-14 w-14 rounded-xl overflow-hidden border border-border bg-muted mx-auto hover:ring-2 hover:ring-primary/50 transition-all shadow-sm"
                                 >
                                   <img 
                                     src={item.image_url} 
@@ -443,52 +443,52 @@ export default function Items() {
                                   />
                                 </button>
                               ) : (
-                                <div className="h-10 w-10 rounded-lg bg-muted border border-border flex items-center justify-center mx-auto text-muted-foreground text-xs">
+                                <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-muted to-muted/50 border border-border flex items-center justify-center mx-auto text-muted-foreground text-lg">
                                   📦
                                 </div>
                               )}
                             </TableCell>
-                            <TableCell className="font-mono text-sm text-muted-foreground">
+                            <TableCell className="font-mono text-sm text-muted-foreground py-4">
                               {item.barcode}
                             </TableCell>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="font-semibold text-base py-4">{item.name}</TableCell>
+                            <TableCell className="text-muted-foreground text-base py-4">
                               {item.brands?.name || '-'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-4">
                               {item.categories ? (
-                                <Badge variant="outline" className="bg-secondary/50">
+                                <Badge variant="outline" className="bg-secondary/50 text-sm px-3 py-1">
                                   {item.categories.name}
                                 </Badge>
                               ) : '-'}
                             </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="font-semibold">{item.current_quantity}</span>
+                            <TableCell className="text-center py-4">
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="font-bold text-lg">{item.current_quantity}</span>
                                 <Badge 
                                   variant="outline" 
-                                  className={cn("text-xs", badgeVariants[stockStatus.variant])}
+                                  className={cn("text-sm px-2.5 py-0.5", badgeVariants[stockStatus.variant])}
                                 >
                                   {stockStatus.label}
                                 </Badge>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-center py-4">
                               <Badge 
                                 variant="outline" 
-                                className={cn("text-xs", badgeVariants[expiryStatus.variant])}
+                                className={cn("text-sm px-2.5 py-0.5", badgeVariants[expiryStatus.variant])}
                               >
                                 {expiryStatus.label}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-4">
                               <div className="flex items-center justify-center">
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                  className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-5 w-5" />
                                 </Button>
                               </div>
                             </TableCell>
