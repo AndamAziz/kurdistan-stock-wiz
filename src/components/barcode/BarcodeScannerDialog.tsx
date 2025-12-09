@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { hapticFeedback } from "@/lib/haptics";
 import { X, Loader2, AlertCircle, QrCode, Camera } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 interface BarcodeScannerDialogProps {
   open: boolean;
@@ -72,13 +72,37 @@ export function BarcodeScannerDialog({
     }
 
     try {
-      const scanner = new Html5Qrcode(SCANNER_ID, { verbose: false });
+      // Support all barcode formats for better detection
+      const formatsToSupport = [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.CODABAR,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+        Html5QrcodeSupportedFormats.AZTEC,
+        Html5QrcodeSupportedFormats.PDF_417,
+      ];
+
+      const scanner = new Html5Qrcode(SCANNER_ID, { 
+        verbose: false,
+        formatsToSupport: formatsToSupport
+      });
       scannerRef.current = scanner;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
+        fps: 15, // Higher FPS for faster detection
+        qrbox: { width: 280, height: 180 }, // Larger scan area
         aspectRatio: 1.333,
+        disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true // Use native BarcodeDetector when available
+        }
       };
 
       const onSuccess = (decodedText: string) => {
