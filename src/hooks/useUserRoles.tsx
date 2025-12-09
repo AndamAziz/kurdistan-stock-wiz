@@ -69,12 +69,22 @@ export function useUserRoles() {
         usersMap.get(role.user_id)!.roles.push(role.role as AppRole);
       });
 
-      // Fetch profiles for users we have roles for
+      // Fetch profiles for users we have roles for - admin can see all profiles via RLS policy
       const userIds = Array.from(usersMap.keys());
       if (userIds.length > 0) {
-        // Admin can view their own profile, so we fetch profiles one by one or use a function
-        // For now, we'll just show user IDs - profiles are restricted to own profile only
-        // This is a security tradeoff - admin sees roles but not full profile data
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', userIds);
+        
+        if (profiles) {
+          profiles.forEach(profile => {
+            const user = usersMap.get(profile.id);
+            if (user) {
+              user.full_name = profile.full_name;
+            }
+          });
+        }
       }
 
       return Array.from(usersMap.values());
