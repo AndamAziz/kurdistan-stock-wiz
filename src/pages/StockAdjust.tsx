@@ -301,13 +301,13 @@ export default function StockAdjust() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">هاوپۆل</Label>
+                        <Label className="text-sm font-medium">کەتەگۆری</Label>
                         <Select value={editCategoryId || "none"} onValueChange={(val) => setEditCategoryId(val === "none" ? "" : val)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="هاوپۆل هەڵبژێرە" />
+                            <SelectValue placeholder="کەتەگۆری هەڵبژێرە" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">-- بێ هاوپۆل --</SelectItem>
+                            <SelectItem value="none">-- بێ کەتەگۆری --</SelectItem>
                             {categories?.map((cat) => (
                               <SelectItem key={cat.id} value={cat.id}>
                                 {cat.name}

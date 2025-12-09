@@ -46,9 +46,9 @@ export default function Categories() {
               <Tags className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">هاوپۆلەکان</h1>
+              <h1 className="text-3xl font-bold text-foreground">کەتەگۆریەکان</h1>
               <p className="mt-1 text-muted-foreground">
-                بەڕێوەبردنی هاوپۆلەکانی مادە
+                بەڕێوەبردنی کەتەگۆریەکانی مادە
               </p>
             </div>
           </div>
@@ -57,13 +57,13 @@ export default function Categories() {
         {/* Add New Category */}
         <div className="rounded-xl border border-border bg-card p-6 shadow-card animate-slide-up">
           <h2 className="mb-4 text-lg font-semibold text-card-foreground">
-            زیادکردنی هاوپۆلی نوێ
+            زیادکردنی کەتەگۆریی نوێ
           </h2>
           <div className="flex gap-3">
             <Input
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              placeholder="ناوی هاوپۆل..."
+              placeholder="ناوی کەتەگۆری..."
               className="flex-1"
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
@@ -115,7 +115,7 @@ export default function Categories() {
           <AlertDialogHeader>
             <AlertDialogTitle>دڵنیای لە سڕینەوە؟</AlertDialogTitle>
             <AlertDialogDescription>
-              ئایا دڵنیای دەتەوێت هاوپۆلی "{deletingCategory?.name}" بسڕیتەوە؟ ئەم کردارە ناگەڕێتەوە.
+              ئایا دڵنیای دەتەوێت کەتەگۆریی "{deletingCategory?.name}" بسڕیتەوە؟ ئەم کردارە ناگەڕێتەوە.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

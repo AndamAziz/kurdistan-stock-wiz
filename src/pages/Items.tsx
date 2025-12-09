@@ -252,10 +252,10 @@ export default function Items() {
               <CollapsibleContent className="mt-3 space-y-3">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full h-9 text-xs">
-                    <SelectValue placeholder="هاوپۆل" />
+                    <SelectValue placeholder="کەتەگۆری" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">هەموو هاوپۆلەکان</SelectItem>
+                    <SelectItem value="all">هەموو کەتەگۆریەکان</SelectItem>
                     {categories?.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
@@ -310,10 +310,10 @@ export default function Items() {
           <div className="hidden lg:flex flex-wrap items-center gap-4 mt-4">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="هاوپۆل" />
+                <SelectValue placeholder="کەتەگۆری" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">هەموو هاوپۆلەکان</SelectItem>
+                <SelectItem value="all">هەموو کەتەگۆریەکان</SelectItem>
                 {categories?.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
@@ -404,7 +404,7 @@ export default function Items() {
                       <TableHead className="text-right font-semibold">باڕکۆد</TableHead>
                       <TableHead className="text-right font-semibold">ناو</TableHead>
                       <TableHead className="text-right font-semibold">براند</TableHead>
-                      <TableHead className="text-right font-semibold">هاوپۆل</TableHead>
+                      <TableHead className="text-right font-semibold">کەتەگۆری</TableHead>
                       <TableHead className="text-center font-semibold">ستۆک</TableHead>
                       <TableHead className="text-center font-semibold">بەسەرچوون</TableHead>
                       <TableHead className="text-center font-semibold">کردارەکان</TableHead>
