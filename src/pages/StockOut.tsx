@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/select";
 import { useItems, useStockMovements, useAddStockMovement, ItemWithRelations } from "@/hooks/useItems";
 import { useCreateInvoice, useInvoices, useInvoiceWithItems, useDeleteInvoice, Invoice } from "@/hooks/useInvoices";
+import { useMarkets } from "@/hooks/useMarkets";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
-import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil, Eye, MoreVertical } from "lucide-react";
+import { ArrowUpFromLine, Clock, Search, Loader2, ScanBarcode, FileText, Plus, Trash2, ShoppingCart, Pencil, Eye, MoreVertical, Store } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -89,12 +90,33 @@ export default function StockOut() {
   const { user } = useAuth();
   const { isAdmin } = useUserRoles();
   const { data: items, refetch: refetchItems } = useItems();
+  const { data: markets = [] } = useMarkets();
   const { data: movements, isLoading: movementsLoading } = useStockMovements();
   const { data: recentInvoices, isLoading: invoicesLoading } = useInvoices('stock_out');
   const { data: selectedInvoice } = useInvoiceWithItems(selectedInvoiceId);
   const addMovement = useAddStockMovement();
   const deleteInvoice = useDeleteInvoice();
   const createInvoice = useCreateInvoice();
+
+  // State for market selection
+  const [selectedMarket, setSelectedMarket] = useState<string>('');
+  const [marketSearchQuery, setMarketSearchQuery] = useState<string>('');
+
+  const filteredMarkets = markets.filter(market =>
+    market.name.toLowerCase().includes(marketSearchQuery.toLowerCase()) ||
+    market.code.includes(marketSearchQuery) ||
+    market.phone?.includes(marketSearchQuery)
+  );
+
+  const handleMarketSelect = (marketId: string) => {
+    const market = markets.find(m => m.id === marketId);
+    if (market) {
+      setSelectedMarket(marketId);
+      setRecipientName(market.name);
+      setRecipientPhone(market.phone || '');
+      setMarketSearchQuery('');
+    }
+  };
 
   const filteredItems = items?.filter(item => 
     item.name.includes(searchQuery) || item.barcode.includes(searchQuery)
@@ -282,6 +304,8 @@ export default function StockOut() {
     setRecipientPhone('');
     setDriverName('');
     setDriverPhone('');
+    setSelectedMarket('');
+    setMarketSearchQuery('');
     setDate(new Date().toISOString().split('T')[0]);
     refetchItems();
   };
@@ -316,12 +340,83 @@ export default function StockOut() {
                 زانیاری وەرگر
               </h2>
               
+              {/* Market Selection */}
+              {markets.length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Store className="h-4 w-4 text-primary" />
+                    هەڵبژاردنی ماڕکێت
+                  </Label>
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="گەڕان بۆ ماڕکێت بە ناو، کۆد یان مۆبایل..."
+                      value={marketSearchQuery}
+                      onChange={(e) => setMarketSearchQuery(e.target.value)}
+                      className="pr-10 bg-background"
+                    />
+                  </div>
+                  {marketSearchQuery && filteredMarkets.length > 0 && (
+                    <div className="border border-border rounded-lg bg-popover max-h-48 overflow-y-auto shadow-lg">
+                      {filteredMarkets.slice(0, 10).map((market) => (
+                        <button
+                          key={market.id}
+                          type="button"
+                          onClick={() => handleMarketSelect(market.id)}
+                          className="w-full text-right px-4 py-3 hover:bg-accent transition-colors border-b border-border last:border-0 flex items-center justify-between gap-2"
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium text-sm">{market.name}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>کۆد: {market.code}</span>
+                              {market.trader_category && (
+                                <>
+                                  <span>•</span>
+                                  <span>{market.trader_category}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {market.phone && (
+                            <span className="text-xs font-mono text-muted-foreground" dir="ltr">
+                              {market.phone}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedMarket && (
+                    <div className="flex items-center gap-2 text-sm text-success">
+                      <Store className="h-4 w-4" />
+                      <span>ماڕکێتی هەڵبژێردراو: {markets.find(m => m.id === selectedMarket)?.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedMarket('');
+                          setRecipientName('');
+                          setRecipientPhone('');
+                        }}
+                        className="h-6 text-xs text-destructive hover:text-destructive"
+                      >
+                        پاککردنەوە
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">ناوی کۆمپانیا / دوکان <span className="text-destructive">*</span></Label>
                   <Input
                     value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
+                    onChange={(e) => {
+                      setRecipientName(e.target.value);
+                      if (selectedMarket) setSelectedMarket('');
+                    }}
                     placeholder="نمونە: کۆمپانیای ئاشتی"
                     className="bg-background"
                     required

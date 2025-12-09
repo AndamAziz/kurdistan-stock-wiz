@@ -20,6 +20,7 @@ import ImportExport from "./pages/ImportExport";
 import Settings from "./pages/Settings";
 import UserRoles from "./pages/UserRoles";
 import Invoices from "./pages/Invoices";
+import Markets from "./pages/Markets";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
               <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+              <Route path="/markets" element={<ProtectedRoute><Markets /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

@@ -31,6 +31,7 @@ import {
   Boxes,
   Wrench,
   Shield,
+  Store,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -54,6 +55,7 @@ const reportNavigation = [
 const settingsNavigation = [
   { name: 'کەتەگۆریەکان', href: '/categories', icon: Tags },
   { name: 'براندەکان', href: '/brands', icon: Building2 },
+  { name: 'ماڕکێتەکان', href: '/markets', icon: Store },
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
 ];
 
