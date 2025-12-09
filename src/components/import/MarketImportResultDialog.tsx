@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,14 +49,16 @@ export function MarketImportResultDialog({
   importedMarkets: initialMarkets,
   onImportComplete,
 }: MarketImportResultDialogProps) {
-  const [markets, setMarkets] = useState<ImportedMarket[]>(initialMarkets);
+  const [markets, setMarkets] = useState<ImportedMarket[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Update state when dialog opens with new data
-  useState(() => {
-    setMarkets(initialMarkets);
-  });
+  useEffect(() => {
+    if (open && initialMarkets.length > 0) {
+      setMarkets(initialMarkets);
+    }
+  }, [open, initialMarkets]);
 
   const completeMarkets = markets.filter((m) => m.isComplete);
   const incompleteMarkets = markets.filter((m) => !m.isComplete);
