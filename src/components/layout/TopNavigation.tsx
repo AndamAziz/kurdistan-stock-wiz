@@ -634,9 +634,6 @@ export function TopNavigation() {
                     <p className="text-sm font-bold text-foreground">
                       {user?.user_metadata?.full_name || 'بەکارهێنەر'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate max-w-[140px]">
-                      {user?.email}
-                    </p>
                   </div>
                   <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
                 </Button>
@@ -654,7 +651,6 @@ export function TopNavigation() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate">{user?.user_metadata?.full_name || 'بەکارهێنەر'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator className="bg-border/50" />
