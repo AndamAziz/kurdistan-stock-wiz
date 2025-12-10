@@ -361,9 +361,9 @@ export default function VisitReports() {
                   <SelectValue placeholder="هەموو ماڕکێتەکان" />
                 </div>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">هەموو ماڕکێتەکان</SelectItem>
-                {uniqueMarkets.map(market => (
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">هەموو ماڕکێتەکان ({markets.length})</SelectItem>
+                {markets.map(market => (
                   <SelectItem key={market.id} value={market.id}>
                     {market.name} ({market.code})
                   </SelectItem>
