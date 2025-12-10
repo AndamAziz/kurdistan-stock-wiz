@@ -68,7 +68,7 @@ export function MarketImportResultDialog({
       // Get all codes from the imported markets
       const codes = marketsToCheck.map(m => m.code.trim()).filter(Boolean);
       
-      // Fetch existing markets with matching codes
+      // Fetch existing markets with matching codes from database
       const { data: existingMarkets } = await supabase
         .from("markets")
         .select("code")
@@ -77,13 +77,34 @@ export function MarketImportResultDialog({
       const existingCodesSet = new Set(existingMarkets?.map(m => m.code) || []);
       setExistingCodes(existingCodesSet);
       
+      // Also find duplicate codes WITHIN the Excel file itself
+      const excelCodeCounts = new Map<string, number>();
+      marketsToCheck.forEach(m => {
+        const code = m.code.trim();
+        if (code) {
+          excelCodeCounts.set(code, (excelCodeCounts.get(code) || 0) + 1);
+        }
+      });
+      
+      // Track which codes we've seen (to mark only first occurrence as new)
+      const seenCodes = new Set<string>();
+      
       // Mark markets as duplicate or new
       const processedMarkets = marketsToCheck.map(market => {
-        const isDuplicate = existingCodesSet.has(market.code.trim());
+        const code = market.code.trim();
+        const isDbDuplicate = existingCodesSet.has(code);
+        const isExcelDuplicate = seenCodes.has(code); // Already seen in this Excel
+        const isDuplicate = isDbDuplicate || isExcelDuplicate;
+        
+        // Mark this code as seen
+        seenCodes.add(code);
+        
         return {
           ...market,
           isDuplicate,
-          errorMessage: isDuplicate ? "ئەم ماڕکێتە پێشتر هەیە" : market.errorMessage,
+          errorMessage: isDuplicate 
+            ? (isDbDuplicate ? "ئەم ماڕکێتە پێشتر هەیە" : "دووبارە لە ناو فایل") 
+            : market.errorMessage,
         };
       });
       
