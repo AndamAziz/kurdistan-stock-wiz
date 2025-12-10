@@ -41,20 +41,32 @@ export default function ImportExport() {
   const { data: categories = [] } = useCategories();
   const { data: markets = [], refetch: refetchMarkets } = useMarkets();
 
-  // Column name mappings for items (Kurdish -> English)
+  // Column name mappings for items (Kurdish/Arabic/English -> English)
   const columnMappings: Record<string, keyof ImportedItem> = {
+    // Name mappings
     "ناوی مادە": "name",
     "ناو": "name",
     "name": "name",
+    "Name": "name",
+    // Barcode mappings
     "باڕکۆد": "barcode",
     "barcode": "barcode",
+    "باركود": "barcode",
+    "Barcode": "barcode",
+    // Brand mappings
     "براند": "brand",
     "brand": "brand",
+    "Brand": "brand",
+    // Category mappings
     "کەتەگۆری": "category",
     "category": "category",
+    "Category": "category",
+    // Quantity mappings
     "ستۆک": "quantity",
     "بڕ": "quantity",
     "quantity": "quantity",
+    "Quantity": "quantity",
+    // Price mappings
     "نرخی بۆکس (د.ع)": "box_price",
     "نرخی بۆکس": "box_price",
     "box_price": "box_price",
@@ -64,15 +76,22 @@ export default function ImportExport() {
     "نرخی کیلۆ (د.ع)": "price_per_kg",
     "نرخی کیلۆ": "price_per_kg",
     "price_per_kg": "price_per_kg",
+    // Unit mappings
     "یەکە": "unit",
     "unit": "unit",
+    "Unit": "unit",
+    // Min stock mappings
     "کەمترین ستۆک": "min_stock",
     "min_stock": "min_stock",
+    // Date mappings
     "بەرواری بەرهەمهێنان": "mfg_date",
+    "بةروارى انتاج": "mfg_date",
     "mfg_date": "mfg_date",
     "بەرواری بەسەرچوون": "exp_date",
+    "بةروارى بةسةرجون": "exp_date",
     "exp_date": "exp_date",
     "بەرواری بیرخستنەوە": "remind_date",
+    "بةروارى بير خستنةوة": "remind_date",
     "remind_date": "remind_date",
   };
 
