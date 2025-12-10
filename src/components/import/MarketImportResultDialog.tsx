@@ -57,6 +57,7 @@ export interface ImportedMarket {
   hasChanges?: boolean;
   changes?: MarketChanges[];
   existingData?: ExistingMarket;
+  codeConflict?: boolean;
 }
 
 interface MarketImportResultDialogProps {
@@ -179,10 +180,25 @@ export function MarketImportResultDialog({
             ? existingNameMap.get(market.name.trim().toLowerCase())
             : null;
 
-          // If code exists, match by code; if not, match by name
-          const matchedMarket = market.code?.trim()
-            ? codeMatch
-            : codeMatch || nameMatch;
+          // Match by name first (exact match), then by code only if names match too
+          // This prevents updating wrong market when code is reused for different market
+          let matchedMarket: ExistingMarket | null = null;
+          let matchedBy: "code" | "name" | null = null;
+          
+          if (nameMatch) {
+            // Exact name match - this is the same market
+            matchedMarket = nameMatch;
+            matchedBy = "name";
+          } else if (codeMatch) {
+            // Code matches but name doesn't - check if it's really the same market
+            // Only match by code if the import market has no name (unlikely)
+            // Otherwise treat as a new market with a code conflict
+            if (!market.name?.trim()) {
+              matchedMarket = codeMatch;
+              matchedBy = "code";
+            }
+            // If names are different, don't match - this is a new market that needs a new code
+          }
 
           if (matchedMarket) {
             const changes = getMarketChanges(market, matchedMarket);
@@ -190,12 +206,16 @@ export function MarketImportResultDialog({
               ...market,
               isDuplicate: true,
               existingMarketId: matchedMarket.id,
-              matchedBy: codeMatch ? ("code" as const) : ("name" as const),
+              matchedBy,
               hasChanges: changes.length > 0,
               changes,
               existingData: matchedMarket,
+              codeConflict: false,
             };
           }
+
+          // Check if code already exists (conflict - need new code)
+          const hasCodeConflict = codeMatch !== null;
 
           return {
             ...market,
@@ -204,6 +224,7 @@ export function MarketImportResultDialog({
             matchedBy: null,
             hasChanges: false,
             changes: [],
+            codeConflict: hasCodeConflict,
           };
         });
 
