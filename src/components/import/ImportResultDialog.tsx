@@ -391,6 +391,7 @@ export function ImportResultDialog({
       let addedCount = 0;
       let updatedCount = 0;
       let errorCount = 0;
+      const failedItems: string[] = [];
 
       for (let i = 0; i < allItemsToProcess.length; i++) {
         const item = allItemsToProcess[i];
@@ -452,7 +453,9 @@ export function ImportResultDialog({
               .eq("barcode", item.barcode.trim());
 
             if (updateError) {
+              console.error("Update error for item:", item.name, updateError);
               errorCount++;
+              failedItems.push(item.name);
             } else {
               updatedCount++;
             }
@@ -476,13 +479,17 @@ export function ImportResultDialog({
             });
 
             if (insertError) {
+              console.error("Insert error for item:", item.name, item.barcode, insertError);
               errorCount++;
+              failedItems.push(`${item.name} (${item.barcode})`);
             } else {
               addedCount++;
             }
           }
-        } catch {
+        } catch (err) {
+          console.error("Error processing item:", item.name, err);
           errorCount++;
+          failedItems.push(item.name);
         }
       }
 
@@ -490,7 +497,8 @@ export function ImportResultDialog({
         toast.success(`${addedCount} مادەی نوێ زیادکرا، ${updatedCount} مادە نوێکرایەوە`);
       }
       if (errorCount > 0) {
-        toast.error(`${errorCount} مادە نەتوانرا بگۆڕدرێت`);
+        console.error("Failed items:", failedItems);
+        toast.error(`${errorCount} مادە نەتوانرا بگۆڕدرێت: ${failedItems.slice(0, 3).join("، ")}${failedItems.length > 3 ? "..." : ""}`);
       }
 
       onImportComplete();
