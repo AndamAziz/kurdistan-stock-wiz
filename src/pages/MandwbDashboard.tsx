@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
+import { useMandwbTab } from "@/hooks/useMandwbTab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +48,7 @@ export default function MandwbDashboard() {
   const createVisit = useCreateVisit();
   const addVisitItem = useAddVisitItem();
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const { activeTab, setActiveTab } = useMandwbTab();
   const [searchTerm, setSearchTerm] = useState("");
   const [isVisitDialogOpen, setIsVisitDialogOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<{ id: string; name: string; code: string } | null>(null);

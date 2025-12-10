@@ -13,6 +13,7 @@ import {
   BarChart3
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useMandwbTab } from "@/hooks/useMandwbTab";
 
 interface LayoutProps {
   children: ReactNode;
@@ -30,6 +31,7 @@ const moreMenuItems = [
 export function Layout({ children }: LayoutProps) {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const { isAdmin } = useUserRoles();
+  const { activeTab: mandwbActiveTab, setActiveTab: setMandwbActiveTab } = useMandwbTab();
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,7 +46,11 @@ export function Layout({ children }: LayoutProps) {
       </main>
       
       {/* Bottom Navigation for Mobile */}
-      <BottomNav onMenuClick={() => setMoreMenuOpen(true)} />
+      <BottomNav 
+        onMenuClick={() => setMoreMenuOpen(true)} 
+        mandwbActiveTab={mandwbActiveTab}
+        onMandwbTabChange={setMandwbActiveTab}
+      />
 
       {/* More Menu Sheet */}
       <Sheet open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
