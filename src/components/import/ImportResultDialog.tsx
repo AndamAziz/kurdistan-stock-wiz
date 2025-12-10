@@ -33,6 +33,9 @@ import {
   X,
   Save,
   Loader2,
+  Trash2,
+  Plus,
+  RefreshCw,
 } from "lucide-react";
 import { useBrands, useCategories, useAddItem } from "@/hooks/useItems";
 import { toast } from "sonner";
@@ -110,6 +113,10 @@ export function ImportResultDialog({
         };
       })
     );
+  };
+
+  const handleDeleteItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleImportAll = async () => {
@@ -238,7 +245,9 @@ export function ImportResultDialog({
       }
       
       if (messages.length > 0) {
-        toast.success(messages.join(" و "));
+        toast.success(messages.join(" و "), {
+          icon: addedCount > 0 && updatedCount > 0 ? <RefreshCw className="h-4 w-4" /> : undefined,
+        });
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} مادە نەتوانرا هێندرێت`);
@@ -392,25 +401,36 @@ export function ImportResultDialog({
         )}
       </TableCell>
       <TableCell>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setEditingId(editingId === item.id ? null : item.id)}
-        >
-          {editingId === item.id ? (
-            <Save className="h-4 w-4" />
-          ) : (
-            <Edit2 className="h-4 w-4" />
-          )}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0"
+            onClick={() => setEditingId(editingId === item.id ? null : item.id)}
+          >
+            {editingId === item.id ? (
+              <Save className="h-4 w-4" />
+            ) : (
+              <Edit2 className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+            onClick={() => handleDeleteItem(item.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0" dir="rtl">
-        <DialogHeader className="p-4 pb-0">
+      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[95vh] p-0" dir="rtl">
+        <DialogHeader className="p-4 pb-2 border-b">
           <DialogTitle className="flex items-center justify-between">
             <span>ئەنجامی هێنان - {items.length} مادە</span>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
@@ -421,15 +441,23 @@ export function ImportResultDialog({
 
         <div className="p-4">
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+            <div className="rounded-lg bg-muted/50 p-4 text-center">
+              <p className="text-2xl font-bold text-foreground">{items.length}</p>
+              <p className="text-sm text-muted-foreground">کۆی مادەکان</p>
+            </div>
             <div className="rounded-lg bg-success/10 p-4 text-center">
-              <p className="text-2xl font-bold text-success">{completeItems.length}</p>
+              <div className="flex items-center justify-center gap-2">
+                <Plus className="h-5 w-5 text-success" />
+                <p className="text-2xl font-bold text-success">{completeItems.length}</p>
+              </div>
               <p className="text-sm text-muted-foreground">ئامادە بۆ هێنان</p>
             </div>
             <div className="rounded-lg bg-destructive/10 p-4 text-center">
-              <p className="text-2xl font-bold text-destructive">
-                {incompleteItems.length}
-              </p>
+              <div className="flex items-center justify-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <p className="text-2xl font-bold text-destructive">{incompleteItems.length}</p>
+              </div>
               <p className="text-sm text-muted-foreground">پێویستی چاککردن</p>
             </div>
           </div>
@@ -445,9 +473,9 @@ export function ImportResultDialog({
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="h-[400px] rounded-md border">
+            <ScrollArea className="h-[50vh] rounded-md border">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
                     <TableHead>ناوی بەرهەم</TableHead>
                     <TableHead>باڕکۆد</TableHead>
@@ -459,7 +487,7 @@ export function ImportResultDialog({
                     <TableHead>نرخی کیلۆ</TableHead>
                     <TableHead>کەمترین ستۆک</TableHead>
                     <TableHead>بارودۆخ</TableHead>
-                    <TableHead>دەسکاری</TableHead>
+                    <TableHead>کردار</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

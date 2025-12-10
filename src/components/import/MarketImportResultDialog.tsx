@@ -19,7 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, AlertCircle, Edit, Save } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Edit, Save, Trash2, X, Plus, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ImportedMarket {
@@ -86,6 +86,10 @@ export function MarketImportResultDialog({
     );
   };
 
+  const handleDeleteMarket = (id: string) => {
+    setMarkets((prev) => prev.filter((m) => m.id !== id));
+  };
+
   const handleImportAll = async () => {
     if (completeMarkets.length === 0) {
       toast.error("هیچ ماڕکێتێکی تەواو نییە بۆ import کردن");
@@ -95,11 +99,19 @@ export function MarketImportResultDialog({
     setIsImporting(true);
 
     try {
-      let successCount = 0;
+      let addedCount = 0;
+      let updatedCount = 0;
       let errorCount = 0;
 
       for (const market of completeMarkets) {
         try {
+          // Check if market already exists by code
+          const { data: existingMarket } = await supabase
+            .from("markets")
+            .select("id")
+            .eq("code", market.code.trim())
+            .maybeSingle();
+
           const { error } = await supabase.from("markets").upsert(
             {
               code: market.code.trim(),
@@ -114,15 +126,31 @@ export function MarketImportResultDialog({
           );
 
           if (error) throw error;
-          successCount++;
+          
+          if (existingMarket) {
+            updatedCount++;
+          } else {
+            addedCount++;
+          }
         } catch (error) {
           console.error("Error importing market:", error);
           errorCount++;
         }
       }
 
-      if (successCount > 0) {
-        toast.success(`${successCount} ماڕکێت بە سەرکەوتوویی زیادکران`);
+      // Show detailed result message
+      const messages: string[] = [];
+      if (addedCount > 0) {
+        messages.push(`${addedCount} ماڕکێتی نوێ زیادکرا`);
+      }
+      if (updatedCount > 0) {
+        messages.push(`${updatedCount} ماڕکێت نوێکرایەوە`);
+      }
+      
+      if (messages.length > 0) {
+        toast.success(messages.join(" و "), {
+          icon: addedCount > 0 && updatedCount > 0 ? <RefreshCw className="h-4 w-4" /> : undefined,
+        });
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} ماڕکێت زیادنەکران`);
@@ -163,7 +191,7 @@ export function MarketImportResultDialog({
   };
 
   const renderMarketRow = (market: ImportedMarket) => (
-    <TableRow key={market.id}>
+    <TableRow key={market.id} className={!market.isComplete ? "bg-destructive/5" : ""}>
       <TableCell className="text-xs">
         {renderEditableCell(market, "code")}
       </TableCell>
@@ -186,21 +214,24 @@ export function MarketImportResultDialog({
         {renderEditableCell(market, "zone")}
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          {market.isComplete ? (
-            <Badge variant="default" className="bg-success text-xs">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              تەواو
-            </Badge>
-          ) : (
-            <Badge variant="destructive" className="text-xs">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              کەموکوڕی
-            </Badge>
-          )}
+        {market.isComplete ? (
+          <Badge variant="default" className="bg-success text-xs">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            تەواو
+          </Badge>
+        ) : (
+          <Badge variant="destructive" className="text-xs">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            کەموکوڕی
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
+            className="h-7 w-7 p-0"
             onClick={() =>
               setEditingId(editingId === market.id ? null : market.id)
             }
@@ -211,6 +242,14 @@ export function MarketImportResultDialog({
               <Edit className="w-4 h-4" />
             )}
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+            onClick={() => handleDeleteMarket(market.id)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>
@@ -218,117 +257,107 @@ export function MarketImportResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>ئەنجامی خوێندنەوەی ماڕکێتەکان</DialogTitle>
+      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[95vh] p-0" dir="rtl">
+        <DialogHeader className="p-4 pb-2 border-b">
+          <DialogTitle className="flex items-center justify-between">
+            <span>ئەنجامی خوێندنەوەی ماڕکێتەکان - {markets.length} ماڕکێت</span>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+              <X className="h-5 w-5" />
+            </Button>
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Summary */}
-          <div className="flex gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-success">
-                {completeMarkets.length}
-              </Badge>
-              <span>ماڕکێتی تەواو</span>
+        <div className="p-4 space-y-4">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="rounded-lg bg-muted/50 p-4 text-center">
+              <p className="text-2xl font-bold text-foreground">{markets.length}</p>
+              <p className="text-sm text-muted-foreground">کۆی ماڕکێتەکان</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-              <span>ماڕکێتی ناتەواو</span>
+            <div className="rounded-lg bg-success/10 p-4 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <Plus className="h-5 w-5 text-success" />
+                <p className="text-2xl font-bold text-success">{completeMarkets.length}</p>
+              </div>
+              <p className="text-sm text-muted-foreground">ئامادە بۆ Import</p>
+            </div>
+            <div className="rounded-lg bg-destructive/10 p-4 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <p className="text-2xl font-bold text-destructive">{incompleteMarkets.length}</p>
+              </div>
+              <p className="text-sm text-muted-foreground">پێویستی چاککردن</p>
             </div>
           </div>
 
           <Tabs defaultValue="all">
-            <TabsList>
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="all">هەموو ({markets.length})</TabsTrigger>
               <TabsTrigger value="complete">
-                تەواو ({completeMarkets.length})
+                ئامادە ({completeMarkets.length})
               </TabsTrigger>
               <TabsTrigger value="incomplete">
-                ناتەواو ({incompleteMarkets.length})
+                پێویستی چاککردن ({incompleteMarkets.length})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="all">
-              <ScrollArea className="h-[400px] border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">کۆد</TableHead>
-                      <TableHead className="text-xs">ناو</TableHead>
-                      <TableHead className="text-xs">جۆر</TableHead>
-                      <TableHead className="text-xs">مۆبایل</TableHead>
-                      <TableHead className="text-xs">ناونیشان</TableHead>
-                      <TableHead className="text-xs">شار</TableHead>
-                      <TableHead className="text-xs">ناوچە</TableHead>
-                      <TableHead className="text-xs">بارودۆخ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+            <ScrollArea className="h-[50vh] rounded-md border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="text-xs w-[80px]">کۆد</TableHead>
+                    <TableHead className="text-xs w-[150px]">ناو</TableHead>
+                    <TableHead className="text-xs w-[100px]">جۆر</TableHead>
+                    <TableHead className="text-xs w-[120px]">مۆبایل</TableHead>
+                    <TableHead className="text-xs">ناونیشان</TableHead>
+                    <TableHead className="text-xs w-[100px]">شار</TableHead>
+                    <TableHead className="text-xs w-[100px]">ناوچە</TableHead>
+                    <TableHead className="text-xs w-[80px]">بارودۆخ</TableHead>
+                    <TableHead className="text-xs w-[80px]">کردار</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TabsContent value="all" className="mt-0">
                     {markets.map((market) => renderMarketRow(market))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="complete">
-              <ScrollArea className="h-[400px] border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">کۆد</TableHead>
-                      <TableHead className="text-xs">ناو</TableHead>
-                      <TableHead className="text-xs">جۆر</TableHead>
-                      <TableHead className="text-xs">مۆبایل</TableHead>
-                      <TableHead className="text-xs">ناونیشان</TableHead>
-                      <TableHead className="text-xs">شار</TableHead>
-                      <TableHead className="text-xs">ناوچە</TableHead>
-                      <TableHead className="text-xs">بارودۆخ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                  </TabsContent>
+                  <TabsContent value="complete" className="mt-0">
                     {completeMarkets.map((market) => renderMarketRow(market))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="incomplete">
-              <ScrollArea className="h-[400px] border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">کۆد</TableHead>
-                      <TableHead className="text-xs">ناو</TableHead>
-                      <TableHead className="text-xs">جۆر</TableHead>
-                      <TableHead className="text-xs">مۆبایل</TableHead>
-                      <TableHead className="text-xs">ناونیشان</TableHead>
-                      <TableHead className="text-xs">شار</TableHead>
-                      <TableHead className="text-xs">ناوچە</TableHead>
-                      <TableHead className="text-xs">بارودۆخ</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                  </TabsContent>
+                  <TabsContent value="incomplete" className="mt-0">
                     {incompleteMarkets.map((market) => renderMarketRow(market))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
-            </TabsContent>
+                  </TabsContent>
+                </TableBody>
+              </Table>
+            </ScrollArea>
           </Tabs>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              داخستن
-            </Button>
-            <Button
-              onClick={handleImportAll}
-              disabled={isImporting || completeMarkets.length === 0}
-              className="gap-2"
-            >
-              {isImporting && <Loader2 className="w-4 h-4 animate-spin" />}
-              Import کردنی ماڕکێتەکان ({completeMarkets.length})
-            </Button>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              {completeMarkets.length} ماڕکێت ئامادەن بۆ Import
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                پاشگەزبوونەوە
+              </Button>
+              <Button
+                onClick={handleImportAll}
+                disabled={isImporting || completeMarkets.length === 0}
+                className="gap-2"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    چاوەڕوان بە...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Import کردنی {completeMarkets.length} ماڕکێت
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
