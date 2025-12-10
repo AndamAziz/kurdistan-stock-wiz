@@ -51,6 +51,7 @@ export default function MandwbDashboard() {
 
   const { activeTab, setActiveTab, isVisitMode, visitMarket, startVisit, endVisit } = useMandwbTab();
   const [searchTerm, setSearchTerm] = useState("");
+  const [marketFilter, setMarketFilter] = useState<"all" | "visited" | "remaining">("all");
 
   // Get reminder days from settings
   const reminderDays = settings?.reminderDays || 30;
@@ -100,10 +101,22 @@ export default function MandwbDashboard() {
     };
   }, [myVisits, assignedMarkets]);
 
-  const filteredMarkets = assignedMarkets.filter(market =>
-    market.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(market.market?.code || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMarkets = useMemo(() => {
+    let markets = assignedMarkets;
+    
+    // Apply filter by visit status
+    if (marketFilter === "visited") {
+      markets = markets.filter(m => visitedMarketIds.has(m.market?.id || ""));
+    } else if (marketFilter === "remaining") {
+      markets = markets.filter(m => !visitedMarketIds.has(m.market?.id || ""));
+    }
+    
+    // Apply search filter
+    return markets.filter(market =>
+      market.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(market.market?.code || "").toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [assignedMarkets, searchTerm, marketFilter, visitedMarketIds]);
 
   // Check if a market was visited today
   const isMarketVisitedToday = (marketId: string) => visitedMarketIds.has(marketId);
@@ -454,7 +467,14 @@ export default function MandwbDashboard() {
             <TabsContent value="markets" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
               {/* Visit Stats */}
               <div className="grid gap-2 sm:gap-3 grid-cols-2">
-                <Card className="bg-green-500/10 border-green-500/20">
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    marketFilter === "visited" 
+                      ? "bg-green-500/20 border-green-500/50 ring-2 ring-green-500/30" 
+                      : "bg-green-500/10 border-green-500/20 hover:border-green-500/40"
+                  }`}
+                  onClick={() => setMarketFilter(marketFilter === "visited" ? "all" : "visited")}
+                >
                   <CardContent className="pt-3 pb-2 sm:pt-4 sm:pb-3 px-3 sm:px-4">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/20 flex-shrink-0">
@@ -468,7 +488,14 @@ export default function MandwbDashboard() {
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-orange-500/10 border-orange-500/20">
+                <Card 
+                  className={`cursor-pointer transition-all ${
+                    marketFilter === "remaining" 
+                      ? "bg-orange-500/20 border-orange-500/50 ring-2 ring-orange-500/30" 
+                      : "bg-orange-500/10 border-orange-500/20 hover:border-orange-500/40"
+                  }`}
+                  onClick={() => setMarketFilter(marketFilter === "remaining" ? "all" : "remaining")}
+                >
                   <CardContent className="pt-3 pb-2 sm:pt-4 sm:pb-3 px-3 sm:px-4">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-orange-500/20 flex-shrink-0">
@@ -482,6 +509,23 @@ export default function MandwbDashboard() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Filter indicator */}
+              {marketFilter !== "all" && (
+                <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-muted/50">
+                  <span className="text-xs text-muted-foreground">
+                    {marketFilter === "visited" ? "تەنها سەردانکراوەکان" : "تەنها ماوەکان"}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-xs px-2"
+                    onClick={() => setMarketFilter("all")}
+                  >
+                    پیشاندانی هەموو
+                  </Button>
+                </div>
+              )}
 
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
