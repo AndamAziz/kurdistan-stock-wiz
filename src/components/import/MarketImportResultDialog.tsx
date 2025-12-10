@@ -142,41 +142,37 @@ export function MarketImportResultDialog({
     setIsImporting(true);
 
     try {
-      let successCount = 0;
-      let errorCount = 0;
+      // Prepare all markets for batch insert
+      const marketsToInsert = newMarkets.map(market => ({
+        code: market.code.trim(),
+        name: market.name.trim(),
+        trader_category: market.trader_category?.trim() || null,
+        phone: market.phone?.trim() || null,
+        address: market.address?.trim() || null,
+        city: market.city?.trim() || null,
+        zone: market.zone?.trim() || null,
+      }));
 
-      for (const market of newMarkets) {
-        try {
-          const { error } = await supabase.from("markets").insert({
-            code: market.code.trim(),
-            name: market.name.trim(),
-            trader_category: market.trader_category?.trim() || null,
-            phone: market.phone?.trim() || null,
-            address: market.address?.trim() || null,
-            city: market.city?.trim() || null,
-            zone: market.zone?.trim() || null,
-          });
+      // Batch insert all at once
+      const { error, data } = await supabase
+        .from("markets")
+        .insert(marketsToInsert)
+        .select();
 
-          if (error) throw error;
-          successCount++;
-        } catch (error) {
-          console.error("Error importing market:", error);
-          errorCount++;
-        }
-      }
-
-      if (successCount > 0) {
+      if (error) {
+        console.error("Batch insert error:", error);
+        toast.error("هەڵە لە زیادکردنی ماڕکێتەکان");
+      } else {
+        const successCount = data?.length || 0;
         toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
+        
+        if (duplicateMarkets.length > 0) {
+          toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
+        }
+        
+        onImportComplete();
+        onOpenChange(false);
       }
-      if (errorCount > 0) {
-        toast.error(`${errorCount} ماڕکێت زیادنەکران`);
-      }
-      if (duplicateMarkets.length > 0) {
-        toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
-      }
-
-      onImportComplete();
-      onOpenChange(false);
     } catch (error) {
       console.error("Import error:", error);
       toast.error("هەڵە لە import کردن");
