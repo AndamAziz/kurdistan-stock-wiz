@@ -280,33 +280,38 @@ export function MarketImportResultDialog({
           <DialogTitle>ئەنجامی خوێندنەوەی ماڕکێتەکان</DialogTitle>
         </DialogHeader>
 
+        {isChecking ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-4">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-lg font-medium text-foreground">چاوەڕوان بە...</p>
+              <p className="text-sm text-muted-foreground">زانیاری ماڕکێتەکان import دەکرێت</p>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           {/* Summary */}
-          {isChecking ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              پشکنینی ماڕکێتە دووبارەکان...
+          <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="bg-success">
+                {newMarkets.length}
+              </Badge>
+              <span>ماڕکێتی نوێ</span>
             </div>
-          ) : (
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <Badge variant="default" className="bg-success">
-                  {newMarkets.length}
-                </Badge>
-                <span>ماڕکێتی نوێ</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {duplicateMarkets.length}
-                </Badge>
-                <span>دووبارە (زیاد ناکرێن)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-                <span>ناتەواو</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {duplicateMarkets.length}
+              </Badge>
+              <span>دووبارە (زیاد ناکرێن)</span>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <Badge variant="destructive">{incompleteMarkets.length}</Badge>
+              <span>ناتەواو</span>
+            </div>
+          </div>
 
           <Tabs defaultValue="all">
             <TabsList>
@@ -426,6 +431,7 @@ export function MarketImportResultDialog({
             </Button>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
