@@ -80,14 +80,20 @@ export default function Markets() {
     }
   };
 
-  const filteredMarkets = markets.filter(
-    (market) =>
-      market.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      market.code.includes(searchQuery) ||
-      market.phone?.includes(searchQuery) ||
-      market.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      market.zone?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMarkets = markets.filter((market) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    
+    return (
+      market.name.toLowerCase().includes(query) ||
+      market.code.toLowerCase().includes(query) ||
+      (market.phone && market.phone.includes(query)) ||
+      (market.city && market.city.toLowerCase().includes(query)) ||
+      (market.zone && market.zone.toLowerCase().includes(query)) ||
+      (market.trader_category && market.trader_category.toLowerCase().includes(query)) ||
+      (market.address && market.address.toLowerCase().includes(query))
+    );
+  });
 
   const resetForm = () => {
     setFormData({
