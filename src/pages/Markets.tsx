@@ -42,6 +42,8 @@ import {
   Building,
   Loader2,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMarkets, useAddMarket, useUpdateMarket, useDeleteMarket, useDeleteAllMarkets, Market } from "@/hooks/useMarkets";
@@ -54,6 +56,8 @@ export default function Markets() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
   
   // Form state
   const [formData, setFormData] = useState({
@@ -82,13 +86,26 @@ export default function Markets() {
     }
   };
 
-  const filteredMarkets = markets.filter((market) => {
+  const filteredMarkets = useMemo(() => {
     const query = searchQuery.trim();
-    if (!query) return true;
+    if (!query) return markets;
     
     // Filter only by exact code match (case-insensitive)
-    return market.code.toLowerCase() === query.toLowerCase();
-  });
+    return markets.filter(market => market.code.toLowerCase() === query.toLowerCase());
+  }, [markets, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredMarkets.length / itemsPerPage);
+  const paginatedMarkets = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredMarkets.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredMarkets, currentPage, itemsPerPage]);
+
+  // Reset to page 1 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -382,7 +399,7 @@ export default function Markets() {
             <Input
               placeholder="گەڕان بە کۆدی ماڕکێت..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pr-10"
             />
           </div>
@@ -414,7 +431,7 @@ export default function Markets() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMarkets.map((market) => (
+                  {paginatedMarkets.map((market) => (
                     <TableRow key={market.id}>
                       <TableCell className="font-mono text-sm">{market.code}</TableCell>
                       <TableCell>
@@ -463,6 +480,38 @@ export default function Markets() {
               </Table>
             )}
           </ScrollArea>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
+              <div className="text-sm text-muted-foreground">
+                پیشاندانی {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredMarkets.length)} لە {filteredMarkets.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                  پێشتر
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  دواتر
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
