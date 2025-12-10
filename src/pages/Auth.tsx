@@ -67,6 +67,26 @@ export default function Auth() {
     }
   };
 
+  // Format phone number to E.164 format for Supabase
+  const formatPhoneNumber = (phoneInput: string): string => {
+    // Remove all non-digit characters
+    let digits = phoneInput.replace(/\D/g, '');
+    
+    // Handle Iraqi phone numbers
+    if (digits.startsWith('964')) {
+      return '+' + digits;
+    } else if (digits.startsWith('07')) {
+      // Convert 07XX to +9647XX
+      return '+964' + digits.substring(1);
+    } else if (digits.startsWith('7') && digits.length >= 10) {
+      // Convert 7XX to +9647XX
+      return '+964' + digits;
+    }
+    
+    // If already has country code or unknown format, add + if missing
+    return digits.startsWith('+') ? digits : '+' + digits;
+  };
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -79,7 +99,14 @@ export default function Auth() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ phone, password });
+      // Format phone to E.164 format
+      const formattedPhone = formatPhoneNumber(phone);
+
+      const { error } = await supabase.auth.signInWithPassword({ 
+        phone: formattedPhone, 
+        password 
+      });
+      
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە');
