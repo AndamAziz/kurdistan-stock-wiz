@@ -87,7 +87,7 @@ export function ImportResultDialog({
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
 
-  // Check for duplicates when dialog opens
+  // Check for duplicates when dialog opens - by BARCODE and NAME
   useEffect(() => {
     const checkDuplicates = async () => {
       if (!open || importedItems.length === 0) return;
@@ -95,25 +95,38 @@ export function ImportResultDialog({
       setIsCheckingDuplicates(true);
       
       try {
-        // Get all barcodes from imported items
-        const barcodes = importedItems.map(item => item.barcode.trim()).filter(Boolean);
+        // Get all barcodes and names from imported items
+        const barcodes = importedItems.map(item => item.barcode?.trim()).filter(Boolean);
+        const names = importedItems.map(item => item.name?.trim()).filter(Boolean);
         
-        // Query existing items with these barcodes
+        // Query existing items with these barcodes OR names
         const { data: existingItems } = await supabase
           .from("items")
-          .select("id, barcode")
-          .in("barcode", barcodes);
+          .select("id, barcode, name");
         
+        // Create maps for both barcode and name matching
         const existingBarcodeMap = new Map(
-          existingItems?.map(item => [item.barcode, item.id]) || []
+          existingItems?.filter(item => item.barcode).map(item => [item.barcode.toLowerCase(), item.id]) || []
+        );
+        const existingNameMap = new Map(
+          existingItems?.filter(item => item.name).map(item => [item.name.toLowerCase().trim(), item.id]) || []
         );
         
-        // Mark duplicates
-        const itemsWithDuplicates = importedItems.map(item => ({
-          ...item,
-          isDuplicate: existingBarcodeMap.has(item.barcode.trim()),
-          existingItemId: existingBarcodeMap.get(item.barcode.trim()),
-        }));
+        // Mark duplicates - check by barcode first, then by name if no barcode
+        const itemsWithDuplicates = importedItems.map(item => {
+          const barcodeMatch = item.barcode?.trim() ? existingBarcodeMap.get(item.barcode.trim().toLowerCase()) : null;
+          const nameMatch = item.name?.trim() ? existingNameMap.get(item.name.trim().toLowerCase()) : null;
+          
+          // If barcode exists, match by barcode; if not, match by name
+          const matchedId = item.barcode?.trim() ? barcodeMatch : (barcodeMatch || nameMatch);
+          
+          return {
+            ...item,
+            isDuplicate: !!matchedId,
+            existingItemId: matchedId,
+            matchedBy: barcodeMatch ? 'barcode' : (nameMatch ? 'name' : null),
+          };
+        });
         
         setItems(itemsWithDuplicates);
       } catch (error) {
@@ -437,17 +450,33 @@ export function ImportResultDialog({
           // Auto-generate name if missing
           const itemName = item.name?.trim() || `مادە-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
           
-          // Auto-generate barcode if missing
+          // Smart matching: check by barcode first, then by name if no barcode
+          let existingItemId: string | null = null;
+          
+          if (item.barcode?.trim()) {
+            // Has barcode - check by barcode
+            const { data: byBarcode } = await supabase
+              .from("items")
+              .select("id")
+              .eq("barcode", item.barcode.trim())
+              .maybeSingle();
+            existingItemId = byBarcode?.id || null;
+          }
+          
+          // If no barcode or no match by barcode, try matching by name
+          if (!existingItemId && itemName) {
+            const { data: byName } = await supabase
+              .from("items")
+              .select("id, barcode")
+              .ilike("name", itemName)
+              .maybeSingle();
+            existingItemId = byName?.id || null;
+          }
+          
+          // Generate barcode only if inserting new item
           const itemBarcode = item.barcode?.trim() || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-          // Check if item exists in database by barcode
-          const { data: existingItem } = await supabase
-            .from("items")
-            .select("id")
-            .eq("barcode", itemBarcode)
-            .maybeSingle();
-
-          if (existingItem) {
+          if (existingItemId) {
             // Update existing item
             const { error: updateError } = await supabase
               .from("items")
@@ -465,7 +494,7 @@ export function ImportResultDialog({
                 exp_date: item.exp_date || null,
                 remind_date: item.remind_date || null,
               })
-              .eq("id", existingItem.id);
+              .eq("id", existingItemId);
 
             if (updateError) {
               console.error("Update error for item:", item.name, updateError);
