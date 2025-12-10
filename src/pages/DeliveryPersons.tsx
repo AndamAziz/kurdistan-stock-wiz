@@ -89,10 +89,10 @@ export default function DeliveryPersons() {
     const city = (market.city || "").toLowerCase();
     const zone = (market.zone || "").toLowerCase();
     
-    // If search is a number, only match codes that START with the search term
+    // If search is a number, only match codes that EXACTLY equal the search term
     const isNumericSearch = /^\d+$/.test(search);
     if (isNumericSearch) {
-      return code.startsWith(search);
+      return code === search;
     }
     
     // For text search, search in name, city, zone (not phone)
