@@ -46,6 +46,7 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import {
   useMarketVisits,
   useVisitItems,
+  useVisitItemsByVisitIds,
   useUpdateVisitStatus,
   useUpdateVisitItem,
   useDeliveryPersons,
@@ -74,6 +75,17 @@ export default function VisitReports() {
   const { data: assignedMarkets = [] } = useAssignedMarkets(
     deliveryPersonFilter !== "all" ? deliveryPersonFilter : undefined
   );
+  
+  // Get all visit IDs for the selected delivery person's assigned markets
+  const allVisitIdsForDeliveryPerson = useMemo(() => {
+    if (deliveryPersonFilter === "all") return [];
+    return visits
+      .filter(v => v.delivery_person_id === deliveryPersonFilter)
+      .map(v => v.id);
+  }, [visits, deliveryPersonFilter]);
+  
+  const { data: allVisitItemsForDeliveryPerson = [] } = useVisitItemsByVisitIds(allVisitIdsForDeliveryPerson);
+  
   const updateVisitStatus = useUpdateVisitStatus();
   const updateVisitItem = useUpdateVisitItem();
 
@@ -96,7 +108,7 @@ export default function VisitReports() {
     return Array.from(mkts.entries()).map(([id, data]) => ({ id, ...data }));
   }, [visits]);
 
-  // Get market visit status for assigned markets
+  // Get market visit status for assigned markets with reported items data
   const assignedMarketsWithVisitStatus = useMemo(() => {
     if (deliveryPersonFilter === "all") return [];
     
@@ -125,6 +137,21 @@ export default function VisitReports() {
       // Count pending visits
       const pendingVisits = marketVisits.filter(v => v.status === "pending");
       
+      // Get all visits with their IDs for fetching items
+      const allVisitIds = marketVisits.map(v => v.id);
+      
+      // Get reported items for this market from all visits
+      const reportedItems = allVisitItemsForDeliveryPerson.filter(
+        item => item.visit?.market_id === marketId
+      );
+      
+      // Categorize items by issue type
+      const expiredItems = reportedItems.filter(item => item.issue_type === "expired");
+      const expiringItems = reportedItems.filter(item => item.issue_type === "expiring");
+      
+      // Get pending items (not yet actioned)
+      const pendingItems = reportedItems.filter(item => !item.action_taken);
+      
       return {
         ...assignment,
         todayVisit,
@@ -132,9 +159,15 @@ export default function VisitReports() {
         last7DaysVisits,
         pendingVisits,
         totalVisits: marketVisits.length,
+        allVisitIds,
+        marketVisits,
+        reportedItems,
+        expiredItems,
+        expiringItems,
+        pendingItems,
       };
     });
-  }, [assignedMarkets, visits, deliveryPersonFilter]);
+  }, [assignedMarkets, visits, deliveryPersonFilter, allVisitItemsForDeliveryPerson]);
 
   const filteredVisits = useMemo(() => {
     return visits.filter(visit => {
@@ -461,8 +494,9 @@ export default function VisitReports() {
                     <TableRow>
                       <TableHead>ماڕکێت</TableHead>
                       <TableHead>شار</TableHead>
+                      <TableHead>مادە بەسەرچوو</TableHead>
+                      <TableHead>نزیک بەسەرچوون</TableHead>
                       <TableHead>دۆخی سەردان</TableHead>
-                      <TableHead>دوایین سەردان</TableHead>
                       <TableHead>ڕاپۆرتەکان</TableHead>
                       <TableHead>کردار</TableHead>
                     </TableRow>
@@ -483,6 +517,24 @@ export default function VisitReports() {
                           <span className="text-sm">{assignment.market?.city || "-"}</span>
                         </TableCell>
                         <TableCell>
+                          {assignment.expiredItems.length > 0 ? (
+                            <Badge variant="destructive" className="text-xs">
+                              {assignment.expiredItems.reduce((sum, item) => sum + item.quantity, 0)} دانە
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {assignment.expiringItems.length > 0 ? (
+                            <Badge className="bg-warning/10 text-warning border-warning/20 text-xs">
+                              {assignment.expiringItems.reduce((sum, item) => sum + item.quantity, 0)} دانە
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           {assignment.todayVisit ? (
                             <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                               <CheckCircle className="h-3 w-3 ml-1" />
@@ -499,27 +551,15 @@ export default function VisitReports() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {assignment.lastVisit ? (
-                            <div className="text-sm">
-                              <p>{format(new Date(assignment.lastVisit.visit_date), 'yyyy/MM/dd')}</p>
-                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                                {assignment.lastVisit.notes}
-                              </p>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
                           <div className="flex items-center gap-2">
-                            {assignment.pendingVisits.length > 0 && (
+                            {assignment.pendingItems.length > 0 && (
                               <Badge variant="destructive" className="text-xs">
-                                {assignment.pendingVisits.length} چاوەڕوان
+                                {assignment.pendingItems.length} چاوەڕوان
                               </Badge>
                             )}
                             {assignment.totalVisits > 0 && (
                               <Badge variant="outline" className="text-xs">
-                                {assignment.totalVisits} کۆی سەردان
+                                {assignment.totalVisits} سەردان
                               </Badge>
                             )}
                           </div>
