@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useMandwbTab } from "@/hooks/useMandwbTab";
 import {
   LayoutDashboard,
   Package,
@@ -10,7 +12,19 @@ import {
   Menu,
   Settings,
   Store,
+  ChevronUp,
+  Trash2,
+  Clock,
+  X,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const regularNavItems = [
   { name: 'داشبۆرد', href: '/', icon: LayoutDashboard },
@@ -23,11 +37,29 @@ interface BottomNavProps {
   onMenuClick: () => void;
   mandwbActiveTab?: string;
   onMandwbTabChange?: (tab: string) => void;
+  expiredCount?: number;
+  expiringCount?: number;
+  onExpiredChange?: (value: number) => void;
+  onExpiringChange?: (value: number) => void;
+  onSubmitVisit?: () => void;
+  isSubmitting?: boolean;
 }
 
-export function BottomNav({ onMenuClick, mandwbActiveTab, onMandwbTabChange }: BottomNavProps) {
+export function BottomNav({ 
+  onMenuClick, 
+  mandwbActiveTab, 
+  onMandwbTabChange,
+  expiredCount = 0,
+  expiringCount = 0,
+  onExpiredChange,
+  onExpiringChange,
+  onSubmitVisit,
+  isSubmitting = false,
+}: BottomNavProps) {
   const location = useLocation();
   const { isMandwb, currentUserRoles, isLoadingCurrentUserRoles } = useUserRoles();
+  const { isVisitMode, visitMarket, endVisit } = useMandwbTab();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   
   // Check if user is mandwb only
   const isOnlyMandwb = !isLoadingCurrentUserRoles && isMandwb && 
@@ -47,6 +79,112 @@ export function BottomNav({ onMenuClick, mandwbActiveTab, onMandwbTabChange }: B
     hapticFeedback.light();
     onMandwbTabChange?.(tab);
   };
+
+  // Mandwb visit mode - show dropdown menu for expired/expiring quantities
+  if (isOnlyMandwb && location.pathname === '/mandwb' && isVisitMode && visitMarket) {
+    return (
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t-2 border-primary/20 safe-area-bottom shadow-[0_-8px_30px_-5px_hsl(var(--primary)/0.15)]">
+        <div className="flex items-center justify-between h-[76px] px-3 gap-2">
+          {/* Cancel Visit Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              hapticFeedback.medium();
+              endVisit();
+            }}
+            className="h-12 px-3"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          {/* Dropdown Menu for Quantities */}
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                className="flex-1 h-12 justify-between"
+              >
+                <span className="text-sm truncate">{visitMarket.name}</span>
+                <div className="flex items-center gap-2">
+                  {(expiredCount > 0 || expiringCount > 0) && (
+                    <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded">
+                      {expiredCount + expiringCount}
+                    </span>
+                  )}
+                  <ChevronUp className={cn(
+                    "h-4 w-4 transition-transform",
+                    isDropdownOpen && "rotate-180"
+                  )} />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              side="top" 
+              align="center" 
+              className="w-[calc(100vw-100px)] p-3 space-y-3 bg-background"
+            >
+              <div className="text-center text-sm font-medium text-muted-foreground mb-2">
+                ژمارەی بەسەرچوو و نزیک بەسەرچوون
+              </div>
+              
+              {/* Expired Input */}
+              <div className="flex items-center gap-3 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-destructive/20">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-destructive font-medium">بەسەرچوو</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={expiredCount || ""}
+                    onChange={(e) => onExpiredChange?.(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="h-9 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Expiring Input */}
+              <div className="flex items-center gap-3 p-2 rounded-lg bg-warning/5 border border-warning/20">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-warning/20">
+                  <Clock className="h-5 w-5 text-warning" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-warning font-medium">نزیک بەسەرچوون</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={expiringCount || ""}
+                    onChange={(e) => onExpiringChange?.(parseInt(e.target.value) || 0)}
+                    placeholder="0"
+                    className="h-9 mt-1"
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-center text-muted-foreground">
+                ئەگەر هەردووکیان 0 بن = ماڕکێت سەلامەتە
+              </p>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Submit Button */}
+          <Button
+            onClick={() => {
+              hapticFeedback.success();
+              onSubmitVisit?.();
+            }}
+            disabled={isSubmitting}
+            className="h-12 px-4"
+          >
+            {isSubmitting ? "..." : "ناردن"}
+          </Button>
+        </div>
+      </nav>
+    );
+  }
 
   // Mandwb-specific navigation when on /mandwb page
   if (isOnlyMandwb && location.pathname === '/mandwb') {
