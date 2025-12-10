@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -71,13 +71,20 @@ export function ImportResultDialog({
   importedItems,
   onImportComplete,
 }: ImportResultDialogProps) {
-  const [items, setItems] = useState<ImportedItem[]>(importedItems);
+  const [items, setItems] = useState<ImportedItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
 
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
+
+  // Update state when dialog opens with new data
+  useEffect(() => {
+    if (open && importedItems.length > 0) {
+      setItems(importedItems);
+    }
+  }, [open, importedItems]);
 
   const completeItems = items.filter((item) => item.isComplete && !item.hasError);
   const incompleteItems = items.filter((item) => !item.isComplete || item.hasError);
