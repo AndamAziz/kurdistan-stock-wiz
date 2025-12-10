@@ -531,10 +531,29 @@ export default function Items() {
         </div>
 
         {/* Results Count */}
-        <div className="flex items-center justify-between animate-fade-in">
-          <p className="text-sm lg:text-base text-muted-foreground font-medium">
-            {filteredItems.length} مادە دۆزرایەوە
-          </p>
+        <div className="flex items-center justify-between gap-3 animate-fade-in bg-card rounded-xl border border-border p-3 sm:p-4">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="text-center">
+              <p className="text-xl sm:text-2xl font-bold text-primary">{items?.length || 0}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">کۆی مادەکان</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{filteredItems.length}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">پیشانکراو</p>
+            </div>
+          </div>
+          {hasFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+              className="gap-1.5 text-xs"
+            >
+              <X className="h-3.5 w-3.5" />
+              پاککردنەوەی فلتەر
+            </Button>
+          )}
         </div>
 
         {/* Items Display */}
