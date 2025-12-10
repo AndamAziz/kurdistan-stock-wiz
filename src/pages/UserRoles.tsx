@@ -248,11 +248,21 @@ export default function UserRoles() {
                       <Input
                         type="tel"
                         value={newUserPhone}
-                        onChange={(e) => setNewUserPhone(e.target.value)}
+                        onChange={(e) => {
+                          // Only allow numbers
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          setNewUserPhone(value);
+                        }}
                         placeholder="07XXXXXXXXX"
                         className="h-12 rounded-xl text-base"
                         dir="ltr"
+                        maxLength={11}
                       />
+                      {newUserPhone && (
+                        <p className="text-xs text-muted-foreground">
+                          دەگۆڕدرێت بۆ: +964{newUserPhone.startsWith('0') ? newUserPhone.slice(1) : newUserPhone}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-2">
