@@ -19,7 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, AlertCircle, Edit, Save, Trash2, X, Plus, RefreshCw, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Edit, Save, Trash2, X, Plus, RefreshCw, ArrowRight, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ExistingMarket {
@@ -221,13 +221,16 @@ export function MarketImportResultDialog({
 
   // Categorize markets
   const incompleteMarkets = markets.filter((m) => !m.name?.trim());
-  const newMarkets = markets.filter((m) => !m.isDuplicate);
+  const newMarkets = markets.filter((m) => !m.isDuplicate && m.name?.trim());
   const duplicateWithChanges = markets.filter(
     (m) => m.isDuplicate && m.hasChanges
   );
   const duplicateNoChanges = markets.filter(
     (m) => m.isDuplicate && !m.hasChanges
   );
+  
+  // Markets without phone number
+  const noPhoneMarkets = markets.filter((m) => m.name?.trim() && !m.phone?.trim());
 
   // Markets that will be imported (new + duplicates with changes)
   const marketsToImport = [...newMarkets, ...duplicateWithChanges];
@@ -680,6 +683,8 @@ export function MarketImportResultDialog({
         return duplicateNoChanges;
       case "incomplete":
         return incompleteMarkets;
+      case "nophone":
+        return noPhoneMarkets;
       default:
         return markets;
     }
@@ -744,7 +749,7 @@ export function MarketImportResultDialog({
           {!isCheckingDuplicates && (
             <>
               {/* Summary Stats - Responsive Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
                 <div className="rounded-lg bg-muted/50 p-2 md:p-3 text-center">
                   <p className="text-lg md:text-xl font-bold text-foreground">
                     {markets.length}
@@ -783,7 +788,19 @@ export function MarketImportResultDialog({
                     بێ گۆڕانکاری
                   </p>
                 </div>
-                <div className="rounded-lg bg-destructive/10 p-2 md:p-3 text-center border border-destructive/20 col-span-2 md:col-span-1">
+                {/* No Phone Stats */}
+                <div className="rounded-lg bg-orange-500/10 p-2 md:p-3 text-center border border-orange-500/20">
+                  <div className="flex items-center justify-center gap-1">
+                    <Phone className="h-3 w-3 md:h-4 md:w-4 text-orange-500" />
+                    <p className="text-lg md:text-xl font-bold text-orange-500">
+                      {noPhoneMarkets.length}
+                    </p>
+                  </div>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                    بێ مۆبایل
+                  </p>
+                </div>
+                <div className="rounded-lg bg-destructive/10 p-2 md:p-3 text-center border border-destructive/20">
                   <div className="flex items-center justify-center gap-1">
                     <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
                     <p className="text-lg md:text-xl font-bold text-destructive">
@@ -797,7 +814,7 @@ export function MarketImportResultDialog({
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5 mb-3 h-auto">
+                <TabsList className="grid w-full grid-cols-6 mb-3 h-auto">
                   <TabsTrigger value="all" className="text-[10px] md:text-xs py-1.5 px-1">
                     هەموو ({markets.length})
                   </TabsTrigger>
@@ -811,13 +828,19 @@ export function MarketImportResultDialog({
                     value="changes"
                     className="text-[10px] md:text-xs py-1.5 px-1 data-[state=active]:text-warning"
                   >
-                    گۆڕانکاری ({duplicateWithChanges.length})
+                    گۆڕان ({duplicateWithChanges.length})
                   </TabsTrigger>
                   <TabsTrigger
                     value="nochange"
                     className="text-[10px] md:text-xs py-1.5 px-1"
                   >
-                    وەک خۆی ({duplicateNoChanges.length})
+                    وەکخۆی ({duplicateNoChanges.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="nophone"
+                    className="text-[10px] md:text-xs py-1.5 px-1 data-[state=active]:text-orange-500"
+                  >
+                    بێمۆبایل ({noPhoneMarkets.length})
                   </TabsTrigger>
                   <TabsTrigger
                     value="incomplete"
