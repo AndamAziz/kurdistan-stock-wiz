@@ -383,18 +383,21 @@ export default function VisitReports() {
               </Button>
             )}
 
-            {/* Show All Markets Button - Only when no delivery person is selected */}
-            {deliveryPersonFilter === "all" && (
-              <Button 
-                variant={showAllMarkets ? "default" : "outline"}
-                size="sm" 
-                onClick={() => setShowAllMarkets(!showAllMarkets)}
-                className="flex items-center gap-2"
-              >
-                <Store className="h-4 w-4" />
-                {showAllMarkets ? "شاردنەوەی ماڕکێتەکان" : `هەموو ماڕکێتەکان (${markets.length})`}
-              </Button>
-            )}
+            {/* Show All Markets Button - Shows different content based on delivery person selection */}
+            <Button 
+              variant={showAllMarkets ? "default" : "outline"}
+              size="sm" 
+              onClick={() => setShowAllMarkets(!showAllMarkets)}
+              className="flex items-center gap-2"
+            >
+              <Store className="h-4 w-4" />
+              {showAllMarkets 
+                ? "شاردنەوەی ماڕکێتەکان" 
+                : deliveryPersonFilter === "all"
+                  ? `هەموو ماڕکێتەکان (${markets.length})`
+                  : `ماڕکێتەکان (${assignedMarkets.length})`
+              }
+            </Button>
           </div>
         </div>
 
@@ -512,8 +515,8 @@ export default function VisitReports() {
           </div>
         )}
 
-        {/* Assigned Markets View - When delivery person is selected */}
-        {deliveryPersonFilter !== "all" && (
+        {/* Assigned Markets View - When delivery person is selected AND showAllMarkets is false */}
+        {deliveryPersonFilter !== "all" && !showAllMarkets && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -620,14 +623,19 @@ export default function VisitReports() {
           </Card>
         )}
 
-        {/* All Markets View - When no delivery person is selected and button is clicked */}
-        {deliveryPersonFilter === "all" && showAllMarkets && (
+        {/* All Markets View - When showAllMarkets button is clicked */}
+        {showAllMarkets && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Store className="h-5 w-5" />
-                هەموو ماڕکێتەکان
-                <Badge variant="secondary" className="mr-2">{markets.length} ماڕکێت</Badge>
+                {deliveryPersonFilter === "all" 
+                  ? "هەموو ماڕکێتەکان"
+                  : `ماڕکێتەکانی ${uniqueDeliveryPersons.find(p => p.id === deliveryPersonFilter)?.name}`
+                }
+                <Badge variant="secondary" className="mr-2">
+                  {deliveryPersonFilter === "all" ? markets.length : assignedMarkets.length} ماڕکێت
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -645,36 +653,45 @@ export default function VisitReports() {
                         <TableHead>شار</TableHead>
                         <TableHead>ناوچە</TableHead>
                         <TableHead>مەندوبی بەرپرس</TableHead>
+                        {deliveryPersonFilter !== "all" && <TableHead>دۆخی سەردان</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {allMarketsWithAssignment
+                      {(deliveryPersonFilter === "all" 
+                        ? allMarketsWithAssignment
+                        : assignedMarketsWithVisitStatus.map(a => ({
+                            ...a.market,
+                            assignedDeliveryPerson: uniqueDeliveryPersons.find(p => p.id === deliveryPersonFilter) || null,
+                            visitStatus: a.todayVisit ? 'today' : a.lastVisit ? 'past' : 'never',
+                            lastVisitDate: a.lastVisit?.visit_date,
+                          }))
+                      )
                         .filter(market => 
                           searchTerm === "" ||
-                          market.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          market.assignedDeliveryPerson?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                          market?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market?.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market?.assignedDeliveryPerson?.name?.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                         .map((market) => (
-                          <TableRow key={market.id}>
+                          <TableRow key={market?.id}>
                             <TableCell>
-                              <span className="text-sm font-mono">{market.code}</span>
+                              <span className="text-sm font-mono">{market?.code}</span>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Store className="h-4 w-4 text-muted-foreground" />
-                                <p className="font-medium">{market.name}</p>
+                                <p className="font-medium">{market?.name}</p>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm">{market.city || "-"}</span>
+                              <span className="text-sm">{market?.city || "-"}</span>
                             </TableCell>
                             <TableCell>
-                              <span className="text-sm">{market.zone || "-"}</span>
+                              <span className="text-sm">{market?.zone || "-"}</span>
                             </TableCell>
                             <TableCell>
-                              {market.assignedDeliveryPerson ? (
+                              {market?.assignedDeliveryPerson ? (
                                 <Badge variant="secondary" className="flex items-center gap-1 w-fit">
                                   <Truck className="h-3 w-3" />
                                   {market.assignedDeliveryPerson.name}
@@ -685,6 +702,24 @@ export default function VisitReports() {
                                 </Badge>
                               )}
                             </TableCell>
+                            {deliveryPersonFilter !== "all" && (
+                              <TableCell>
+                                {(market as any).visitStatus === 'today' ? (
+                                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                                    <CheckCircle className="h-3 w-3 ml-1" />
+                                    سەردانکرا ئەمڕۆ
+                                  </Badge>
+                                ) : (market as any).visitStatus === 'past' ? (
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    دوایین: {format(new Date((market as any).lastVisitDate), 'MM/dd')}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-orange-500 border-orange-500/30">
+                                    سەردان نەکراوە
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                     </TableBody>
