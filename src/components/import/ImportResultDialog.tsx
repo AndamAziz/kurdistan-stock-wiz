@@ -270,6 +270,109 @@ export function ImportResultDialog({
     }
   };
 
+  // Update duplicate items (already exist in database)
+  const handleUpdateDuplicates = async () => {
+    if (duplicateItems.length === 0) {
+      toast.info("هیچ مادەیەکی دووبارە نییە بۆ نوێکردنەوە");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress({ current: 0, total: duplicateItems.length });
+
+    try {
+      const brandMap = new Map(brands.map((b) => [b.name.toLowerCase(), b.id]));
+      const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
+
+      let updatedCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < duplicateItems.length; i++) {
+        const item = duplicateItems[i];
+        setImportProgress({ current: i + 1, total: duplicateItems.length });
+        
+        try {
+          // Find or create brand
+          let brandId: string | null = null;
+          if (item.brand) {
+            brandId = brandMap.get(item.brand.toLowerCase()) || null;
+            if (!brandId && item.brand.trim()) {
+              const { data: newBrand } = await supabase
+                .from("brands")
+                .insert({ name: item.brand.trim() })
+                .select()
+                .single();
+              if (newBrand) {
+                brandId = newBrand.id;
+                brandMap.set(item.brand.toLowerCase(), newBrand.id);
+              }
+            }
+          }
+
+          // Find or create category
+          let categoryId: string | null = null;
+          if (item.category) {
+            categoryId = categoryMap.get(item.category.toLowerCase()) || null;
+            if (!categoryId && item.category.trim()) {
+              const { data: newCategory } = await supabase
+                .from("categories")
+                .insert({ name: item.category.trim() })
+                .select()
+                .single();
+              if (newCategory) {
+                categoryId = newCategory.id;
+                categoryMap.set(item.category.toLowerCase(), newCategory.id);
+              }
+            }
+          }
+
+          // Update existing item by barcode
+          const { error: updateError } = await supabase
+            .from("items")
+            .update({
+              name: item.name.trim(),
+              brand_id: brandId,
+              category_id: categoryId,
+              current_quantity: item.quantity,
+              min_stock: item.min_stock || 10,
+              unit: item.unit || "دانە",
+              box_price: item.box_price || 0,
+              piece_price: item.piece_price || 0,
+              price_per_kg: item.price_per_kg || 0,
+              mfg_date: item.mfg_date || null,
+              exp_date: item.exp_date || null,
+              remind_date: item.remind_date || null,
+            })
+            .eq("barcode", item.barcode.trim());
+
+          if (updateError) {
+            errorCount++;
+          } else {
+            updatedCount++;
+          }
+        } catch {
+          errorCount++;
+        }
+      }
+
+      if (updatedCount > 0) {
+        toast.success(`${updatedCount} مادە نوێکرایەوە`);
+      }
+      if (errorCount > 0) {
+        toast.error(`${errorCount} مادە نەتوانرا نوێبکرێتەوە`);
+      }
+
+      onImportComplete();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("هەڵە لە نوێکردنەوەی مادەکان");
+    } finally {
+      setIsImporting(false);
+      setImportProgress({ current: 0, total: 0 });
+    }
+  };
+
   const renderEditableCell = (
     item: ImportedItem,
     field: keyof ImportedItem,
@@ -647,35 +750,57 @@ export function ImportResultDialog({
               </Tabs>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4 pt-4 border-t">
-                <div className="text-center sm:text-right">
+              <div className="flex flex-col gap-3 mt-4 pt-4 border-t">
+                <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     {newItems.length > 0 && <span className="text-success font-medium">{newItems.length} مادەی نوێ</span>}
                     {newItems.length > 0 && duplicateItems.length > 0 && " · "}
-                    {duplicateItems.length > 0 && <span className="text-warning font-medium">{duplicateItems.length} دووبارە (زیادناکرێن)</span>}
+                    {duplicateItems.length > 0 && <span className="text-warning font-medium">{duplicateItems.length} دووبارە</span>}
                   </p>
                 </div>
-                <div className="flex gap-2 justify-end">
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
                     پاشگەزبوونەوە
                   </Button>
-                  <Button
-                    onClick={handleImportNew}
-                    disabled={newItems.length === 0 || isImporting}
-                    className="gap-2 flex-1 sm:flex-none"
-                  >
-                    {isImporting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="hidden sm:inline">چاوەڕوان بە...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        هێنانی {newItems.length} مادەی نوێ
-                      </>
-                    )}
-                  </Button>
+                  {newItems.length > 0 && (
+                    <Button
+                      onClick={handleImportNew}
+                      disabled={isImporting}
+                      className="gap-2 flex-1 sm:flex-none bg-success hover:bg-success/90"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="hidden sm:inline">چاوەڕوان بە...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          زیادکردنی {newItems.length} مادەی نوێ
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {duplicateItems.length > 0 && (
+                    <Button
+                      onClick={handleUpdateDuplicates}
+                      disabled={isImporting}
+                      variant="outline"
+                      className="gap-2 flex-1 sm:flex-none border-warning text-warning hover:bg-warning/10"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="hidden sm:inline">چاوەڕوان بە...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          نوێکردنەوەی {duplicateItems.length} مادەی دووبارە
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
