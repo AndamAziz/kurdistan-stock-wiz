@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Lock, Loader2, ShieldCheck, Phone } from 'lucide-react';
+import { Mail, Lock, Loader2, ShieldCheck, Phone, Eye, EyeOff } from 'lucide-react';
 import bakuryLogo from '@/assets/bakury-logo-new.jpg';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
+  const [showPassword, setShowPassword] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -197,15 +198,27 @@ export default function Auth() {
                     <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
                     <Input
                       id="password-email"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      className="pr-10 sm:pr-11 pl-10 sm:pl-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
                       dir="ltr"
                       disabled={loading}
                       autoComplete="current-password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                      ) : (
+                        <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -250,15 +263,27 @@ export default function Auth() {
                     <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
                     <Input
                       id="password-phone"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      className="pr-10 sm:pr-11 pl-10 sm:pl-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
                       dir="ltr"
                       disabled={loading}
                       autoComplete="current-password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                      ) : (
+                        <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
