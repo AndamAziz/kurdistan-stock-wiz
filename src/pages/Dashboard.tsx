@@ -6,6 +6,7 @@ import { useItems } from "@/hooks/useItems";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   PackageX,
@@ -14,10 +15,12 @@ import {
   Loader2,
   Bell,
   BellOff,
+  Store,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { data: items, isLoading } = useItems();
   const { permission, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings, updateSettings } = useNotificationSettings();
@@ -142,6 +145,19 @@ export default function Dashboard() {
                 : 'bg-muted-foreground/40'
               }
             `} />
+          </button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="animate-fade-in">
+          <button
+            onClick={() => navigate('/markets')}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
+          >
+            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <Store className="h-5 w-5 text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">ماڕکێتەکان</span>
           </button>
         </div>
 
