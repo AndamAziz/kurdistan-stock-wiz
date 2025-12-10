@@ -47,8 +47,9 @@ Deno.serve(async (req) => {
     // Get the current user
     const { data: { user: currentUser }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !currentUser) {
+      console.error('Auth error:', userError?.message || 'No user found - session may have expired');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized', details: 'Session expired. Please log out and log back in.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
