@@ -81,10 +81,21 @@ export default function DeliveryPersons() {
     const isAssigned = assignedMarkets.some(am => am.market_id === market.id);
     if (isAssigned) return false;
     
+    const search = marketSearchTerm.toLowerCase().trim();
+    if (!search) return true;
+    
+    const code = String(market.code || "").toLowerCase();
+    const name = (market.name || "").toLowerCase();
+    const city = (market.city || "").toLowerCase();
+    const phone = (market.phone || "").toLowerCase();
+    const zone = (market.zone || "").toLowerCase();
+    
     return (
-      market.name.toLowerCase().includes(marketSearchTerm.toLowerCase()) ||
-      market.code.toLowerCase().includes(marketSearchTerm.toLowerCase()) ||
-      market.city?.toLowerCase().includes(marketSearchTerm.toLowerCase())
+      code.includes(search) ||
+      name.includes(search) ||
+      city.includes(search) ||
+      phone.includes(search) ||
+      zone.includes(search)
     );
   });
 
