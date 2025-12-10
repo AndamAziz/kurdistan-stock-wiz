@@ -17,6 +17,7 @@ import {
   BellOff,
   Store,
   ClipboardList,
+  Truck,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -150,7 +151,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="animate-fade-in grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="animate-fade-in grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/markets')}
             className="relative overflow-hidden flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200/60 dark:border-emerald-800/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 group"
@@ -170,6 +171,16 @@ export default function Dashboard() {
             </div>
             <span className="relative z-10 text-sm sm:text-base font-bold text-amber-800 dark:text-amber-200">ڕاپۆرتی سەردان</span>
             <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+          </button>
+          <button
+            onClick={() => navigate('/delivery-persons')}
+            className="relative overflow-hidden flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/30 border border-violet-200/60 dark:border-violet-800/40 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 group col-span-2 sm:col-span-1"
+          >
+            <div className="relative z-10 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 group-hover:scale-110 transition-all duration-300">
+              <Truck className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            </div>
+            <span className="relative z-10 text-sm sm:text-base font-bold text-violet-800 dark:text-violet-200">مەندوبەکان</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-400/0 via-violet-400/10 to-violet-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </button>
         </div>
 
