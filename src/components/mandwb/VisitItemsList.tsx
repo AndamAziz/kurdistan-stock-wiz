@@ -135,22 +135,22 @@ export function VisitItemsList({
   const hasNoIssues = expiredItems.length === 0 && expiringItems.length === 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 px-1 sm:px-0">
       {/* Market Header */}
       <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                <Package className="h-6 w-6 text-primary" />
+        <CardContent className="py-3 sm:py-4 px-3 sm:px-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary/20 flex-shrink-0">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold">سەردانی {marketName}</h1>
-                <p className="text-sm text-muted-foreground">کۆد: {marketCode}</p>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg font-bold truncate">سەردانی {marketName}</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">کۆد: {marketCode}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onCancel}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </CardContent>
@@ -159,14 +159,14 @@ export function VisitItemsList({
       {/* If no items with expiry issues */}
       {hasNoIssues ? (
         <Card className="border-green-500/30 bg-green-500/5">
-          <CardContent className="py-8">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <ShieldCheck className="h-12 w-12 text-green-500" />
+          <CardContent className="py-6 sm:py-8">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
+              <ShieldCheck className="h-10 w-10 sm:h-12 sm:w-12 text-green-500" />
               <div>
-                <p className="font-semibold text-green-600 text-lg">
+                <p className="font-semibold text-green-600 text-base sm:text-lg">
                   هیچ مادە کێشەدارێک نییە!
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   هەموو مادەکان سەلامەتن - دەتوانیت ڕاپۆرتی سەلامەت بنێریت
                 </p>
               </div>
@@ -182,12 +182,12 @@ export function VisitItemsList({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="گەڕان بە ناو یان بارکۆد..."
-              className="pr-10"
+              className="pr-10 h-10 sm:h-11 text-sm"
             />
           </div>
 
           {/* Info */}
-          <div className="text-sm text-muted-foreground text-center bg-muted/30 rounded-lg p-3">
+          <div className="text-xs sm:text-sm text-muted-foreground text-center bg-muted/30 rounded-lg p-2.5 sm:p-3">
             <p>
               بۆ هەر مادەیەک کە لە ماڕکێت بەسەرچووە یان نزیکە بەسەرچوون،
               <br />
@@ -195,28 +195,28 @@ export function VisitItemsList({
             </p>
           </div>
 
-          <ScrollArea className="h-[calc(100vh-380px)] pr-1">
-            <div className="space-y-4">
+          <ScrollArea className="h-[calc(100vh-420px)] sm:h-[calc(100vh-380px)] pr-1">
+            <div className="space-y-3 sm:space-y-4">
               {/* Expired Items Section */}
               {filteredExpired.length > 0 && (
                 <Card className="border-destructive/30 bg-destructive/5">
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-destructive">
-                      <AlertTriangle className="h-4 w-4" />
+                  <CardHeader className="pb-1.5 sm:pb-2 pt-2.5 sm:pt-3 px-3 sm:px-4">
+                    <CardTitle className="text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       مادە بەسەرچووەکان ({filteredExpired.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 space-y-2">
+                  <CardContent className="pb-2.5 sm:pb-3 px-3 sm:px-4 space-y-1.5 sm:space-y-2">
                     {filteredExpired.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border border-destructive/20"
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-background/80 border border-destructive/20"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{item.barcode}</span>
-                            <Badge variant="destructive" className="text-[10px] px-1.5">
+                          <p className="font-medium text-xs sm:text-sm truncate">{item.name}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
+                            <span className="truncate">{item.barcode}</span>
+                            <Badge variant="destructive" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0">
                               {item.daysAgo} ڕۆژ تێپەڕیوە
                             </Badge>
                           </div>
@@ -227,7 +227,7 @@ export function VisitItemsList({
                           placeholder="0"
                           value={itemQuantities[item.id] || ""}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                          className="w-20 h-10 text-center text-lg font-bold"
+                          className="w-16 sm:w-20 h-9 sm:h-10 text-center text-base sm:text-lg font-bold"
                         />
                       </div>
                     ))}
@@ -238,25 +238,25 @@ export function VisitItemsList({
               {/* Expiring Items Section */}
               {filteredExpiring.length > 0 && (
                 <Card className="border-warning/30 bg-warning/5">
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm flex items-center gap-2 text-warning">
-                      <Clock className="h-4 w-4" />
+                  <CardHeader className="pb-1.5 sm:pb-2 pt-2.5 sm:pt-3 px-3 sm:px-4">
+                    <CardTitle className="text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 text-warning">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       مادە نزیک بەسەرچوون ({filteredExpiring.length})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 space-y-2">
+                  <CardContent className="pb-2.5 sm:pb-3 px-3 sm:px-4 space-y-1.5 sm:space-y-2">
                     {filteredExpiring.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border border-warning/20"
+                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-background/80 border border-warning/20"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{item.name}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{item.barcode}</span>
+                          <p className="font-medium text-xs sm:text-sm truncate">{item.name}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground">
+                            <span className="truncate">{item.barcode}</span>
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-1.5 text-warning border-warning/30"
+                              className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 text-warning border-warning/30"
                             >
                               {item.daysLeft === 0 ? "ئەمڕۆ" : `${item.daysLeft} ڕۆژ ماوە`}
                             </Badge>
@@ -268,7 +268,7 @@ export function VisitItemsList({
                           placeholder="0"
                           value={itemQuantities[item.id] || ""}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                          className="w-20 h-10 text-center text-lg font-bold"
+                          className="w-16 sm:w-20 h-9 sm:h-10 text-center text-base sm:text-lg font-bold"
                         />
                       </div>
                     ))}
@@ -281,19 +281,19 @@ export function VisitItemsList({
       )}
 
       {/* Bottom Submit Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 safe-area-bottom shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.1)]">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={onCancel} className="flex-1">
-            <X className="h-4 w-4 ml-2" />
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 sm:p-4 safe-area-bottom shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.1)]">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" onClick={onCancel} className="flex-1 h-10 sm:h-11 text-xs sm:text-sm">
+            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
             هەڵوەشاندنەوە
           </Button>
 
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 gap-2"
+            className="flex-1 gap-1.5 sm:gap-2 h-10 sm:h-11 text-xs sm:text-sm"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {isSubmitting ? (
               "ناردن..."
             ) : hasNoIssues || totalQuantity === 0 ? (
@@ -306,7 +306,7 @@ export function VisitItemsList({
 
         {/* Summary */}
         {totalItemsReported > 0 && (
-          <div className="mt-2 text-center text-xs text-muted-foreground">
+          <div className="mt-1.5 sm:mt-2 text-center text-[10px] sm:text-xs text-muted-foreground">
             {totalItemsReported} مادە تۆمارکرا • کۆی ژمارە: {totalQuantity}
           </div>
         )}
