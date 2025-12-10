@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useItems, useCategories, useBrands, ItemWithRelations } from "@/hooks/useItems";
+import { useItems, useCategories, useBrands, useDeleteAllItems, ItemWithRelations } from "@/hooks/useItems";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine } from "lucide-react";
+import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -56,10 +57,22 @@ export default function Items() {
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [selectedItem, setSelectedItem] = useState<ItemWithRelations | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
 
   const { data: items, isLoading, refetch } = useItems();
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
+  const { isAdmin } = useUserRoles();
+  const deleteAllItems = useDeleteAllItems();
+
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllItems.mutateAsync();
+      setDeleteAllDialogOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
 
   // Sync URL search param with search query
   useEffect(() => {
@@ -204,13 +217,25 @@ export default function Items() {
               بەڕێوەبردنی هەموو مادەکان لە کۆگا
             </p>
           </div>
-          <Button 
-            className="gap-2 h-10 sm:h-11 lg:h-12 text-sm lg:text-base w-full sm:w-auto px-6"
-            onClick={() => setAddItemOpen(true)}
-          >
-            <Plus className="h-5 w-5" />
-            زیادکردنی مادە
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {isAdmin && items && items.length > 0 && (
+              <Button 
+                variant="destructive" 
+                className="gap-2 h-10 sm:h-11 lg:h-12 text-sm lg:text-base"
+                onClick={() => setDeleteAllDialogOpen(true)}
+              >
+                <Trash2 className="h-5 w-5" />
+                <span className="hidden sm:inline">سڕینەوەی هەموو</span>
+              </Button>
+            )}
+            <Button 
+              className="gap-2 h-10 sm:h-11 lg:h-12 text-sm lg:text-base flex-1 sm:flex-none px-6"
+              onClick={() => setAddItemOpen(true)}
+            >
+              <Plus className="h-5 w-5" />
+              زیادکردنی مادە
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -585,6 +610,31 @@ export default function Items() {
             itemName={selectedItem.name}
           />
         )}
+
+        {/* Delete All Confirmation Dialog */}
+        <Dialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">سڕینەوەی هەموو مادەکان</DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground">
+              ئایا دڵنیایت لە سڕینەوەی هەموو {items?.length || 0} مادە؟ ئەم کردارە ناگەڕێتەوە.
+            </p>
+            <div className="flex justify-end gap-3 mt-4">
+              <Button variant="outline" onClick={() => setDeleteAllDialogOpen(false)}>
+                پاشگەزبوونەوە
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteAll}
+                disabled={deleteAllItems.isPending}
+              >
+                {deleteAllItems.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                سڕینەوەی هەموو
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

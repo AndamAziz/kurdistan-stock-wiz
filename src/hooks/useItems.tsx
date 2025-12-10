@@ -315,3 +315,47 @@ export function useDeleteBrand() {
     },
   });
 }
+
+export function useDeleteItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      toast.success('مادەکە سڕایەوە');
+    },
+    onError: () => {
+      toast.error('هەڵە لە سڕینەوە');
+    },
+  });
+}
+
+export function useDeleteAllItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      toast.success('هەموو مادەکان سڕانەوە');
+    },
+    onError: () => {
+      toast.error('هەڵە لە سڕینەوەی هەموو مادەکان');
+    },
+  });
+}
