@@ -36,7 +36,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Search, X, Eye, Loader2, Filter, ChevronDown, ScanLine, Trash2, AlertTriangle, Package, Calendar, AlertCircle } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -150,6 +160,43 @@ export default function Items() {
     });
   }, [items, searchQuery, selectedCategory, selectedBrand, stockFilter]);
 
+  // Calculate items with issues
+  const itemIssues = useMemo(() => {
+    if (!items) return { expired: [], expiringSoon: [], lowStock: [], outOfStock: [] };
+    
+    const today = new Date();
+    const expired: ItemWithRelations[] = [];
+    const expiringSoon: ItemWithRelations[] = [];
+    const lowStock: ItemWithRelations[] = [];
+    const outOfStock: ItemWithRelations[] = [];
+
+    items.forEach(item => {
+      // Check expiry
+      if (item.exp_date) {
+        const expDate = new Date(item.exp_date);
+        const daysUntilExpiry = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry < 0) {
+          expired.push(item);
+        } else if (daysUntilExpiry <= 30) {
+          expiringSoon.push(item);
+        }
+      }
+
+      // Check stock
+      if (item.current_quantity === 0) {
+        outOfStock.push(item);
+      } else if (item.current_quantity <= item.min_stock) {
+        lowStock.push(item);
+      }
+    });
+
+    return { expired, expiringSoon, lowStock, outOfStock };
+  }, [items]);
+
+  const totalIssues = itemIssues.expired.length + itemIssues.expiringSoon.length + 
+                      itemIssues.lowStock.length + itemIssues.outOfStock.length;
+
   const handleClearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
@@ -216,7 +263,88 @@ export default function Items() {
             <p className="mt-1 text-sm lg:text-base text-muted-foreground">
               بەڕێوەبردنی هەموو مادەکان لە کۆگا
             </p>
+        </div>
+
+        {/* Issues Alert Box */}
+        {totalIssues > 0 && (
+          <div className="rounded-xl lg:rounded-2xl border border-destructive/30 bg-destructive/5 p-4 sm:p-5 animate-slide-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-lg bg-destructive/10 p-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">کێشەکانی مادەکان</h3>
+                <p className="text-sm text-muted-foreground">{totalIssues} مادە پێویستی سەرنج و چاککردن هەیە</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Expired Items */}
+              {itemIssues.expired.length > 0 && (
+                <button
+                  onClick={() => setStockFilter('expired')}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors text-right"
+                >
+                  <div className="rounded-full bg-destructive/20 p-2">
+                    <Calendar className="h-4 w-4 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-destructive">{itemIssues.expired.length}</p>
+                    <p className="text-xs text-muted-foreground">بەسەرچوو</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Expiring Soon */}
+              {itemIssues.expiringSoon.length > 0 && (
+                <button
+                  onClick={() => setStockFilter('soon-expire')}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 hover:bg-warning/20 transition-colors text-right"
+                >
+                  <div className="rounded-full bg-warning/20 p-2">
+                    <AlertCircle className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-warning">{itemIssues.expiringSoon.length}</p>
+                    <p className="text-xs text-muted-foreground">نزیک بەسەرچوون</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Out of Stock */}
+              {itemIssues.outOfStock.length > 0 && (
+                <button
+                  onClick={() => setStockFilter('out')}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors text-right"
+                >
+                  <div className="rounded-full bg-destructive/20 p-2">
+                    <Package className="h-4 w-4 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-destructive">{itemIssues.outOfStock.length}</p>
+                    <p className="text-xs text-muted-foreground">نەماوە</p>
+                  </div>
+                </button>
+              )}
+
+              {/* Low Stock */}
+              {itemIssues.lowStock.length > 0 && (
+                <button
+                  onClick={() => setStockFilter('low')}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 hover:bg-warning/20 transition-colors text-right"
+                >
+                  <div className="rounded-full bg-warning/20 p-2">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-warning">{itemIssues.lowStock.length}</p>
+                    <p className="text-xs text-muted-foreground">کەم ستۆک</p>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
+        )}
           <div className="flex gap-2 w-full sm:w-auto">
             {isAdmin && items && items.length > 0 && (
               <Button 
