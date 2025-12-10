@@ -119,7 +119,8 @@ export function ImportResultDialog({
       const brandMap = new Map(brands.map((b) => [b.name.toLowerCase(), b.id]));
       const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
 
-      let successCount = 0;
+      let addedCount = 0;
+      let updatedCount = 0;
       let errorCount = 0;
 
       for (const item of itemsToImport) {
@@ -158,63 +159,79 @@ export function ImportResultDialog({
             }
           }
 
-          // Insert item
-          const { error } = await supabase.from("items").insert({
-            name: item.name.trim(),
-            barcode: item.barcode.trim(),
-            brand_id: brandId,
-            category_id: categoryId,
-            current_quantity: item.quantity,
-            total_in: item.quantity,
-            min_stock: item.min_stock || 10,
-            unit: item.unit || "دانە",
-            box_price: item.box_price || 0,
-            piece_price: item.piece_price || 0,
-            price_per_kg: item.price_per_kg || 0,
-            mfg_date: item.mfg_date || null,
-            exp_date: item.exp_date || null,
-            remind_date: item.remind_date || null,
-          });
+          // Check if item already exists by barcode
+          const { data: existingItem } = await supabase
+            .from("items")
+            .select("id")
+            .eq("barcode", item.barcode.trim())
+            .maybeSingle();
 
-          if (error) {
-            if (error.message.includes("duplicate key")) {
-              // Try updating existing item
-              const { error: updateError } = await supabase
-                .from("items")
-                .update({
-                  name: item.name.trim(),
-                  brand_id: brandId,
-                  category_id: categoryId,
-                  current_quantity: item.quantity,
-                  min_stock: item.min_stock || 10,
-                  unit: item.unit || "دانە",
-                  box_price: item.box_price || 0,
-                  piece_price: item.piece_price || 0,
-                  price_per_kg: item.price_per_kg || 0,
-                  mfg_date: item.mfg_date || null,
-                  exp_date: item.exp_date || null,
-                  remind_date: item.remind_date || null,
-                })
-                .eq("barcode", item.barcode.trim());
+          if (existingItem) {
+            // Update existing item
+            const { error: updateError } = await supabase
+              .from("items")
+              .update({
+                name: item.name.trim(),
+                brand_id: brandId,
+                category_id: categoryId,
+                current_quantity: item.quantity,
+                min_stock: item.min_stock || 10,
+                unit: item.unit || "دانە",
+                box_price: item.box_price || 0,
+                piece_price: item.piece_price || 0,
+                price_per_kg: item.price_per_kg || 0,
+                mfg_date: item.mfg_date || null,
+                exp_date: item.exp_date || null,
+                remind_date: item.remind_date || null,
+              })
+              .eq("id", existingItem.id);
 
-              if (updateError) {
-                errorCount++;
-              } else {
-                successCount++;
-              }
-            } else {
+            if (updateError) {
               errorCount++;
+            } else {
+              updatedCount++;
             }
           } else {
-            successCount++;
+            // Insert new item
+            const { error: insertError } = await supabase.from("items").insert({
+              name: item.name.trim(),
+              barcode: item.barcode.trim(),
+              brand_id: brandId,
+              category_id: categoryId,
+              current_quantity: item.quantity,
+              total_in: item.quantity,
+              min_stock: item.min_stock || 10,
+              unit: item.unit || "دانە",
+              box_price: item.box_price || 0,
+              piece_price: item.piece_price || 0,
+              price_per_kg: item.price_per_kg || 0,
+              mfg_date: item.mfg_date || null,
+              exp_date: item.exp_date || null,
+              remind_date: item.remind_date || null,
+            });
+
+            if (insertError) {
+              errorCount++;
+            } else {
+              addedCount++;
+            }
           }
         } catch {
           errorCount++;
         }
       }
 
-      if (successCount > 0) {
-        toast.success(`${successCount} مادە بە سەرکەوتوویی هێندرا`);
+      // Show appropriate messages
+      const messages: string[] = [];
+      if (addedCount > 0) {
+        messages.push(`${addedCount} مادەی نوێ زیادکرا`);
+      }
+      if (updatedCount > 0) {
+        messages.push(`${updatedCount} مادە نوێکرایەوە`);
+      }
+      
+      if (messages.length > 0) {
+        toast.success(messages.join(" و "));
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} مادە نەتوانرا هێندرێت`);
