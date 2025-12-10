@@ -54,6 +54,8 @@ export function MarketImportResultDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [existingCodes, setExistingCodes] = useState<Set<string>>(new Set());
   const [isChecking, setIsChecking] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [currentImportMarket, setCurrentImportMarket] = useState("");
 
   // Check for existing markets when dialog opens
   useEffect(() => {
@@ -140,12 +142,18 @@ export function MarketImportResultDialog({
     }
 
     setIsImporting(true);
+    setImportProgress(0);
 
     try {
       let successCount = 0;
       let errorCount = 0;
+      const total = newMarkets.length;
 
-      for (const market of newMarkets) {
+      for (let i = 0; i < newMarkets.length; i++) {
+        const market = newMarkets[i];
+        setCurrentImportMarket(market.name);
+        setImportProgress(Math.round(((i + 1) / total) * 100));
+        
         try {
           const { error } = await supabase.from("markets").insert({
             code: market.code.trim(),
@@ -288,7 +296,32 @@ export function MarketImportResultDialog({
             </div>
             <div className="text-center space-y-2">
               <p className="text-lg font-medium text-foreground">چاوەڕوان بە...</p>
-              <p className="text-sm text-muted-foreground">زانیاری ماڕکێتەکان import دەکرێت</p>
+              <p className="text-sm text-muted-foreground">پشکنینی ماڕکێتە دووبارەکان...</p>
+            </div>
+          </div>
+        ) : isImporting ? (
+          <div className="flex flex-col items-center justify-center py-16 px-8 space-y-6">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold text-primary">{importProgress}%</span>
+              </div>
+            </div>
+            
+            <div className="w-full max-w-md space-y-3">
+              <div className="h-3 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${importProgress}%` }}
+                />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-lg font-medium text-foreground">import کردن...</p>
+                <p className="text-sm text-muted-foreground truncate max-w-xs mx-auto">
+                  {currentImportMarket && `هێنانی: ${currentImportMarket}`}
+                </p>
+              </div>
             </div>
           </div>
         ) : (
