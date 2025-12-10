@@ -16,6 +16,7 @@ import {
   Bell,
   BellOff,
   Store,
+  ClipboardList,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -149,15 +150,24 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="animate-fade-in">
+        <div className="animate-fade-in grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate('/markets')}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
+            className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
           >
             <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Store className="h-5 w-5 text-primary" />
             </div>
             <span className="text-sm font-semibold text-foreground">ماڕکێتەکان</span>
+          </button>
+          <button
+            onClick={() => navigate('/visit-reports')}
+            className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500/10 to-orange-500/5 border border-orange-500/20 hover:border-orange-500/40 hover:from-orange-500/15 hover:to-orange-500/10 transition-all duration-300 group"
+          >
+            <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+              <ClipboardList className="h-5 w-5 text-orange-500" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">ڕاپۆرتی سەردان</span>
           </button>
         </div>
 
