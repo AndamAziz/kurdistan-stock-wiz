@@ -131,9 +131,17 @@ export default function ImportExport() {
 
     // If it's already a string in date format
     if (typeof value === "string") {
-      // Try parsing common formats
-      const dateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/;
-      if (dateRegex.test(value)) {
+      // Try parsing DD/MM/YYYY or DD-MM-YYYY format
+      const ddmmyyyyRegex = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
+      const ddmmyyyyMatch = value.match(ddmmyyyyRegex);
+      if (ddmmyyyyMatch) {
+        const [, day, month, year] = ddmmyyyyMatch;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Try parsing YYYY-MM-DD or YYYY/MM/DD format
+      const yyyymmddRegex = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/;
+      if (yyyymmddRegex.test(value)) {
         return value.replace(/\//g, "-");
       }
       return null;
