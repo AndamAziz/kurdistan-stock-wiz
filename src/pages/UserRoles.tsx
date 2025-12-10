@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
-import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2 } from "lucide-react";
+import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,21 +45,24 @@ const roleLabels: Record<AppRole, string> = {
   admin: 'بەڕێوەبەر',
   storekeeper: 'کۆگادار',
   viewer: 'بینەر',
+  mandwb: 'مەندوب',
 };
 
 const roleColors: Record<AppRole, string> = {
   admin: 'bg-gradient-to-r from-destructive/20 to-destructive/10 text-destructive border-destructive/30',
   storekeeper: 'bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30',
   viewer: 'bg-gradient-to-r from-muted to-muted/50 text-muted-foreground border-border',
+  mandwb: 'bg-gradient-to-r from-blue-500/20 to-blue-500/10 text-blue-600 border-blue-500/30',
 };
 
 const roleIcons: Record<AppRole, typeof Shield> = {
   admin: ShieldCheck,
   storekeeper: Shield,
   viewer: Eye,
+  mandwb: Truck,
 };
 
-const allRoles: AppRole[] = ['admin', 'storekeeper', 'viewer'];
+const allRoles: AppRole[] = ['admin', 'storekeeper', 'viewer', 'mandwb'];
 
 export default function UserRoles() {
   const {
