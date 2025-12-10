@@ -265,81 +265,64 @@ export default function Items() {
             </p>
         </div>
 
-        {/* Issues Alert Box */}
+        {/* Issues Alert Box - Compact */}
         {totalIssues > 0 && (
-          <div className="rounded-xl lg:rounded-2xl border border-destructive/30 bg-destructive/5 p-4 sm:p-5 animate-slide-up">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="rounded-lg bg-destructive/10 p-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+          <div className="rounded-xl border border-border bg-card p-3 animate-slide-up shadow-sm">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <span className="font-medium">{totalIssues} کێشە:</span>
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground">کێشەکانی مادەکان</h3>
-                <p className="text-sm text-muted-foreground">{totalIssues} مادە پێویستی سەرنج و چاککردن هەیە</p>
+              
+              <div className="flex flex-wrap gap-1.5">
+                {itemIssues.expired.length > 0 && (
+                  <button
+                    onClick={() => setStockFilter('expired')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                  >
+                    <Calendar className="h-3 w-3" />
+                    {itemIssues.expired.length} بەسەرچوو
+                  </button>
+                )}
+
+                {itemIssues.expiringSoon.length > 0 && (
+                  <button
+                    onClick={() => setStockFilter('soon-expire')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                  >
+                    <AlertCircle className="h-3 w-3" />
+                    {itemIssues.expiringSoon.length} نزیکە
+                  </button>
+                )}
+
+                {itemIssues.outOfStock.length > 0 && (
+                  <button
+                    onClick={() => setStockFilter('out')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                  >
+                    <Package className="h-3 w-3" />
+                    {itemIssues.outOfStock.length} نەماوە
+                  </button>
+                )}
+
+                {itemIssues.lowStock.length > 0 && (
+                  <button
+                    onClick={() => setStockFilter('low')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    {itemIssues.lowStock.length} کەم
+                  </button>
+                )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Expired Items */}
-              {itemIssues.expired.length > 0 && (
+              {stockFilter !== 'all' && (
                 <button
-                  onClick={() => setStockFilter('expired')}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors text-right"
+                  onClick={() => setStockFilter('all')}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:bg-muted transition-colors mr-auto"
                 >
-                  <div className="rounded-full bg-destructive/20 p-2">
-                    <Calendar className="h-4 w-4 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-destructive">{itemIssues.expired.length}</p>
-                    <p className="text-xs text-muted-foreground">بەسەرچوو</p>
-                  </div>
-                </button>
-              )}
-
-              {/* Expiring Soon */}
-              {itemIssues.expiringSoon.length > 0 && (
-                <button
-                  onClick={() => setStockFilter('soon-expire')}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 hover:bg-warning/20 transition-colors text-right"
-                >
-                  <div className="rounded-full bg-warning/20 p-2">
-                    <AlertCircle className="h-4 w-4 text-warning" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-warning">{itemIssues.expiringSoon.length}</p>
-                    <p className="text-xs text-muted-foreground">نزیک بەسەرچوون</p>
-                  </div>
-                </button>
-              )}
-
-              {/* Out of Stock */}
-              {itemIssues.outOfStock.length > 0 && (
-                <button
-                  onClick={() => setStockFilter('out')}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors text-right"
-                >
-                  <div className="rounded-full bg-destructive/20 p-2">
-                    <Package className="h-4 w-4 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-destructive">{itemIssues.outOfStock.length}</p>
-                    <p className="text-xs text-muted-foreground">نەماوە</p>
-                  </div>
-                </button>
-              )}
-
-              {/* Low Stock */}
-              {itemIssues.lowStock.length > 0 && (
-                <button
-                  onClick={() => setStockFilter('low')}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-warning/10 hover:bg-warning/20 transition-colors text-right"
-                >
-                  <div className="rounded-full bg-warning/20 p-2">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-warning">{itemIssues.lowStock.length}</p>
-                    <p className="text-xs text-muted-foreground">کەم ستۆک</p>
-                  </div>
+                  <X className="h-3 w-3" />
+                  پاککردنەوە
                 </button>
               )}
             </div>
