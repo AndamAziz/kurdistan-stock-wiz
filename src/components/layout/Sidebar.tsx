@@ -31,6 +31,8 @@ import {
   Wrench,
   Shield,
   Store,
+  Truck,
+  ClipboardList,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -59,6 +61,8 @@ const settingsNavigation = [
 
 const adminNavigation = [
   { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
+  { name: 'مەندوبەکان', href: '/delivery-persons', icon: Truck },
+  { name: 'ڕاپۆرتی سەردان', href: '/visit-reports', icon: ClipboardList },
 ];
 
 interface SidebarProps {

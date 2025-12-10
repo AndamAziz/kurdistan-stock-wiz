@@ -20,6 +20,9 @@ import Settings from "./pages/Settings";
 import UserRoles from "./pages/UserRoles";
 import Markets from "./pages/Markets";
 import IncompleteMarkets from "./pages/IncompleteMarkets";
+import DeliveryPersons from "./pages/DeliveryPersons";
+import MandwbDashboard from "./pages/MandwbDashboard";
+import VisitReports from "./pages/VisitReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +50,9 @@ const App = () => (
               <Route path="/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
               <Route path="/markets" element={<ProtectedRoute><Markets /></ProtectedRoute>} />
               <Route path="/incomplete-markets" element={<ProtectedRoute><IncompleteMarkets /></ProtectedRoute>} />
+              <Route path="/delivery-persons" element={<ProtectedRoute><DeliveryPersons /></ProtectedRoute>} />
+              <Route path="/mandwb" element={<ProtectedRoute><MandwbDashboard /></ProtectedRoute>} />
+              <Route path="/visit-reports" element={<ProtectedRoute><VisitReports /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
