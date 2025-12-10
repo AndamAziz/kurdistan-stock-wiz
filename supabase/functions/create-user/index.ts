@@ -69,8 +69,37 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, phone, password, fullName, role } = await req.json();
+    const { action, email, phone, password, fullName, role, userId } = await req.json();
 
+    // Handle password update action
+    if (action === 'update-password') {
+      if (!userId || !password) {
+        return new Response(
+          JSON.stringify({ error: 'User ID and password are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password,
+      });
+
+      if (updateError) {
+        console.error('Error updating password:', updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Password updated successfully for user:', userId);
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create user action (default)
     if (!password) {
       return new Response(
         JSON.stringify({ error: 'Password is required' }),

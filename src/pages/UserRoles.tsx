@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
-import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2, Truck, Phone } from "lucide-react";
+import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2, Truck, Phone, Lock, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { hapticFeedback } from "@/lib/haptics";
 import {
   Select,
   SelectContent,
@@ -85,6 +86,53 @@ export default function UserRoles() {
   const [newUserName, setNewUserName] = useState("");
   const [newUserRole, setNewUserRole] = useState<AppRole>("viewer");
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; role: AppRole } | null>(null);
+
+  // Password change state
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<string | null>(null);
+
+  const handleChangeUserPassword = async (userId: string) => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('تکایە هەموو خانەکان پڕبکەوە');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('وشەی نهێنی نوێ دەبێت لانیکەم ٦ پیت بێت');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('وشەی نهێنی نوێ جیاوازە لە دووبارەکردنەوەی');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.functions.invoke('create-user', {
+        body: {
+          action: 'update-password',
+          userId,
+          password: newPassword,
+        },
+      });
+      if (error) {
+        toast.error(error.message || 'هەڵە لە گۆڕینی وشەی نهێنی');
+      } else {
+        toast.success('وشەی نهێنی گۆڕدرا');
+        setNewPassword("");
+        setConfirmPassword("");
+        setSelectedUserForPassword(null);
+        hapticFeedback.success();
+      }
+    } catch (err) {
+      toast.error('هەڵەیەک ڕوویدا');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const handleCreateUser = async () => {
     const isMandwb = newUserRole === 'mandwb';
@@ -438,55 +486,142 @@ export default function UserRoles() {
                     </div>
 
                     {/* Actions */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isAssigningRole || isRemovingRole}
-                          className="h-10 px-3 rounded-xl shrink-0"
-                        >
-                          {(isAssigningRole || isRemovingRole) ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <span className="hidden sm:inline ml-2">زیادکردن</span>
-                              <ChevronDown className="h-4 w-4" />
-                            </>
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedUserForPassword(selectedUserForPassword === user.id ? null : user.id)}
+                        className="h-10 px-3 rounded-xl"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={isAssigningRole || isRemovingRole}
+                            className="h-10 px-3 rounded-xl"
+                          >
+                            {(isAssigningRole || isRemovingRole) ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <span className="hidden sm:inline ml-2">زیادکردن</span>
+                                <ChevronDown className="h-4 w-4" />
+                              </>
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          {allRoles
+                            .filter((role) => !user.roles.includes(role))
+                            .map((role) => {
+                              const Icon = roleIcons[role];
+                              return (
+                                <DropdownMenuItem
+                                  key={role}
+                                  onClick={() => assignRole({ userId: user.id, role })}
+                                  className="gap-3 py-3 rounded-lg cursor-pointer"
+                                >
+                                  <div className={cn(
+                                    "flex h-8 w-8 items-center justify-center rounded-lg",
+                                    role === 'admin' && "bg-destructive/15 text-destructive",
+                                    role === 'storekeeper' && "bg-primary/15 text-primary",
+                                    role === 'viewer' && "bg-muted text-muted-foreground"
+                                  )}>
+                                    <Icon className="h-4 w-4" />
+                                  </div>
+                                  <span className="font-medium">{roleLabels[role]}</span>
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          {user.roles.length === allRoles.length && (
+                            <DropdownMenuItem disabled className="text-center py-3">
+                              هەموو ڕۆڵەکان هەیە
+                            </DropdownMenuItem>
                           )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                        {allRoles
-                          .filter((role) => !user.roles.includes(role))
-                          .map((role) => {
-                            const Icon = roleIcons[role];
-                            return (
-                              <DropdownMenuItem
-                                key={role}
-                                onClick={() => assignRole({ userId: user.id, role })}
-                                className="gap-3 py-3 rounded-lg cursor-pointer"
-                              >
-                                <div className={cn(
-                                  "flex h-8 w-8 items-center justify-center rounded-lg",
-                                  role === 'admin' && "bg-destructive/15 text-destructive",
-                                  role === 'storekeeper' && "bg-primary/15 text-primary",
-                                  role === 'viewer' && "bg-muted text-muted-foreground"
-                                )}>
-                                  <Icon className="h-4 w-4" />
-                                </div>
-                                <span className="font-medium">{roleLabels[role]}</span>
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        {user.roles.length === allRoles.length && (
-                          <DropdownMenuItem disabled className="text-center py-3">
-                            هەموو ڕۆڵەکان هەیە
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
+                  
+                  {/* Password Change Form - Expandable */}
+                  {selectedUserForPassword === user.id && (
+                    <div className="mt-4 pt-4 border-t border-border space-y-3">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-primary" />
+                        گۆڕینی وشەی نهێنی
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">وشەی نهێنی نوێ</Label>
+                          <div className="relative">
+                            <Input
+                              type={showNewPassword ? "text" : "password"}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="لانیکەم ٦ پیت"
+                              className="pr-3 pl-9 h-10 text-sm rounded-xl"
+                              dir="ltr"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              tabIndex={-1}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">دووبارەکردنەوە</Label>
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              placeholder="دووبارەکردنەوە"
+                              className="pr-3 pl-9 h-10 text-sm rounded-xl"
+                              dir="ltr"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              tabIndex={-1}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleChangeUserPassword(user.id)}
+                          disabled={isChangingPassword}
+                          className="h-9 rounded-xl gap-2"
+                        >
+                          {isChangingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                          گۆڕین
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedUserForPassword(null);
+                            setNewPassword("");
+                            setConfirmPassword("");
+                          }}
+                          className="h-9 rounded-xl"
+                        >
+                          پاشگەزبوونەوە
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
