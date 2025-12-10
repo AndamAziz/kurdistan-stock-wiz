@@ -42,7 +42,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useMarkets, useAddMarket, useUpdateMarket, useDeleteMarket, Market } from "@/hooks/useMarkets";
+import { useMarkets, useAddMarket, useUpdateMarket, useDeleteMarket, useDeleteAllMarkets, Market } from "@/hooks/useMarkets";
 import { useUserRoles } from "@/hooks/useUserRoles";
 
 export default function Markets() {
@@ -50,6 +50,7 @@ export default function Markets() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   
   // Form state
@@ -68,6 +69,16 @@ export default function Markets() {
   const addMarket = useAddMarket();
   const updateMarket = useUpdateMarket();
   const deleteMarket = useDeleteMarket();
+  const deleteAllMarkets = useDeleteAllMarkets();
+
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllMarkets.mutateAsync();
+      setDeleteAllDialogOpen(false);
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
 
   const filteredMarkets = markets.filter(
     (market) =>
@@ -192,13 +203,24 @@ export default function Markets() {
               </div>
             </div>
 
-            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-5 w-5" />
-                  زیادکردنی ماڕکێت
+            <div className="flex gap-2">
+              {isAdmin && markets.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="gap-2"
+                  onClick={() => setDeleteAllDialogOpen(true)}
+                >
+                  <Trash2 className="h-5 w-5" />
+                  سڕینەوەی هەموو
                 </Button>
-              </DialogTrigger>
+              )}
+              <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-5 w-5" />
+                    زیادکردنی ماڕکێت
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>زیادکردنی ماڕکێتی نوێ</DialogTitle>
@@ -277,6 +299,7 @@ export default function Markets() {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </div>
 
@@ -519,6 +542,28 @@ export default function Markets() {
             >
               {deleteMarket.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               سڕینەوە
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Confirmation */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>سڕینەوەی هەموو ماڕکێتەکان</AlertDialogTitle>
+            <AlertDialogDescription>
+              ئایا دڵنیایت لە سڕینەوەی هەموو {markets.length} ماڕکێت؟ ئەم کردارە ناگەڕێتەوە.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>پاشگەزبوونەوە</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteAllMarkets.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              سڕینەوەی هەموو
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -151,3 +151,25 @@ export function useDeleteMarket() {
     },
   });
 }
+
+export function useDeleteAllMarkets() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('markets')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['markets'] });
+      toast.success('هەموو ماڕکێتەکان سڕانەوە');
+    },
+    onError: () => {
+      toast.error('هەڵە لە سڕینەوەی هەموو ماڕکێتەکان');
+    },
+  });
+}
