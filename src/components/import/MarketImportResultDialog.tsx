@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, AlertCircle, Edit, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export interface ImportedMarket {
   id: string;
@@ -175,9 +176,11 @@ export function MarketImportResultDialog({
 
       if (successCount > 0) {
         toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
+        playSuccessSound();
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} ماڕکێت زیادنەکران`);
+        playErrorSound();
       }
       if (duplicateMarkets.length > 0) {
         toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
