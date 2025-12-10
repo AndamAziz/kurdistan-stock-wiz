@@ -459,6 +459,11 @@ export function ImportResultDialog({
                 <p className="text-2xl font-bold text-destructive">{incompleteItems.length}</p>
               </div>
               <p className="text-sm text-muted-foreground">پێویستی چاککردن</p>
+              {incompleteItems.length > 0 && (
+                <p className="text-xs text-destructive mt-1">
+                  ناو یان باڕکۆد بەتاڵە
+                </p>
+              )}
             </div>
           </div>
 
