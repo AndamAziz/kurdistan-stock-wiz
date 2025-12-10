@@ -87,14 +87,19 @@ export default function DeliveryPersons() {
     const code = String(market.code || "").toLowerCase();
     const name = (market.name || "").toLowerCase();
     const city = (market.city || "").toLowerCase();
-    const phone = (market.phone || "").toLowerCase();
     const zone = (market.zone || "").toLowerCase();
     
+    // If search is a number, only search in code field
+    const isNumericSearch = /^\d+$/.test(search);
+    if (isNumericSearch) {
+      return code.includes(search);
+    }
+    
+    // For text search, search in name, city, zone (not phone)
     return (
       code.includes(search) ||
       name.includes(search) ||
       city.includes(search) ||
-      phone.includes(search) ||
       zone.includes(search)
     );
   });
