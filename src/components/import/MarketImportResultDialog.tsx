@@ -52,72 +52,15 @@ export function MarketImportResultDialog({
   const [markets, setMarkets] = useState<ImportedMarket[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [existingCodes, setExistingCodes] = useState<Set<string>>(new Set());
-  const [isChecking, setIsChecking] = useState(false);
 
-  // Check for existing markets when dialog opens
+  // Initialize markets when dialog opens - duplicates already marked by parent
   useEffect(() => {
     if (open && initialMarkets.length > 0) {
-      checkExistingMarkets(initialMarkets);
+      setMarkets(initialMarkets);
     }
   }, [open, initialMarkets]);
 
-  const checkExistingMarkets = async (marketsToCheck: ImportedMarket[]) => {
-    setIsChecking(true);
-    try {
-      // Get all codes from the imported markets
-      const codes = marketsToCheck.map(m => m.code.trim()).filter(Boolean);
-      
-      // Fetch existing markets with matching codes from database
-      const { data: existingMarkets } = await supabase
-        .from("markets")
-        .select("code")
-        .in("code", codes);
-      
-      const existingCodesSet = new Set(existingMarkets?.map(m => m.code) || []);
-      setExistingCodes(existingCodesSet);
-      
-      // Also find duplicate codes WITHIN the Excel file itself
-      const excelCodeCounts = new Map<string, number>();
-      marketsToCheck.forEach(m => {
-        const code = m.code.trim();
-        if (code) {
-          excelCodeCounts.set(code, (excelCodeCounts.get(code) || 0) + 1);
-        }
-      });
-      
-      // Track which codes we've seen (to mark only first occurrence as new)
-      const seenCodes = new Set<string>();
-      
-      // Mark markets as duplicate or new
-      const processedMarkets = marketsToCheck.map(market => {
-        const code = market.code.trim();
-        const isDbDuplicate = existingCodesSet.has(code);
-        const isExcelDuplicate = seenCodes.has(code); // Already seen in this Excel
-        const isDuplicate = isDbDuplicate || isExcelDuplicate;
-        
-        // Mark this code as seen
-        seenCodes.add(code);
-        
-        return {
-          ...market,
-          isDuplicate,
-          errorMessage: isDuplicate 
-            ? (isDbDuplicate ? "ئەم ماڕکێتە پێشتر هەیە" : "دووبارە لە ناو فایل") 
-            : market.errorMessage,
-        };
-      });
-      
-      setMarkets(processedMarkets);
-    } catch (error) {
-      console.error("Error checking existing markets:", error);
-      setMarkets(initialMarkets);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  // Filter markets
+  // Filter markets - isDuplicate is already set by parent component
   const newMarkets = markets.filter((m) => m.isComplete && !(m as any).isDuplicate);
   const duplicateMarkets = markets.filter((m) => (m as any).isDuplicate);
   const incompleteMarkets = markets.filter((m) => !m.isComplete && !(m as any).isDuplicate);
@@ -139,15 +82,6 @@ export function MarketImportResultDialog({
         updated.isComplete = isComplete;
         updated.hasError = !isComplete;
         updated.errorMessage = isComplete ? undefined : "ناو و کۆد پێویستن";
-
-        // Check if the new code is a duplicate
-        if (field === "code") {
-          const isDuplicate = existingCodes.has(value.trim());
-          (updated as any).isDuplicate = isDuplicate;
-          if (isDuplicate) {
-            updated.errorMessage = "ئەم ماڕکێتە پێشتر هەیە";
-          }
-        }
 
         return updated;
       })
@@ -299,13 +233,7 @@ export function MarketImportResultDialog({
 
         <div className="space-y-4">
           {/* Summary */}
-          {isChecking ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              پشکنینی ماڕکێتە دووبارەکان...
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Badge variant="default" className="bg-success">
                   {newMarkets.length}
@@ -320,10 +248,9 @@ export function MarketImportResultDialog({
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-                <span>ناتەواو</span>
-              </div>
-            </div>
-          )}
+            <span>ناتەواو</span>
+          </div>
+        </div>
 
           <Tabs defaultValue="all">
             <TabsList>
@@ -435,7 +362,7 @@ export function MarketImportResultDialog({
             </Button>
             <Button
               onClick={handleImportAll}
-              disabled={isImporting || isChecking || newMarkets.length === 0}
+              disabled={isImporting || newMarkets.length === 0}
               className="gap-2"
             >
               {isImporting && <Loader2 className="w-4 h-4 animate-spin" />}

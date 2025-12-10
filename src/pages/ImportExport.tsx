@@ -281,6 +281,12 @@ export default function ImportExport() {
         return;
       }
 
+      // Get existing market codes from the already loaded markets data
+      const existingCodes = new Set(markets.map(m => m.code));
+      
+      // Track codes we've seen in this Excel file (to detect internal duplicates)
+      const seenCodesInExcel = new Set<string>();
+
       // Parse each row for markets
       const parsedMarkets: ImportedMarket[] = jsonData.map((row: any, index) => {
         const market: ImportedMarket = {
@@ -310,13 +316,32 @@ export default function ImportExport() {
           market.code = row.key.toString();
         }
 
+        const code = market.code?.trim() || "";
+        
+        // Check if duplicate in database
+        const isDbDuplicate = existingCodes.has(code);
+        // Check if duplicate within Excel file
+        const isExcelDuplicate = seenCodesInExcel.has(code);
+        
+        // Mark this code as seen
+        if (code) {
+          seenCodesInExcel.add(code);
+        }
+
         // Validate required fields
-        const isComplete =
-          market.name?.trim() !== "" && market.code?.trim() !== "";
+        const isComplete = market.name?.trim() !== "" && code !== "";
 
         market.isComplete = isComplete;
-        market.hasError = !isComplete;
-        if (!isComplete) {
+        market.hasError = !isComplete || isDbDuplicate || isExcelDuplicate;
+        
+        // Set isDuplicate flag
+        (market as any).isDuplicate = isDbDuplicate || isExcelDuplicate;
+        
+        if (isDbDuplicate) {
+          market.errorMessage = "ئەم ماڕکێتە پێشتر هەیە";
+        } else if (isExcelDuplicate) {
+          market.errorMessage = "دووبارە لە ناو فایل";
+        } else if (!isComplete) {
           market.errorMessage = "ناو و کۆد پێویستن";
         }
 
@@ -329,9 +354,13 @@ export default function ImportExport() {
         return;
       }
 
+      // Count new markets
+      const newCount = parsedMarkets.filter(m => !(m as any).isDuplicate && m.isComplete).length;
+      const dupCount = parsedMarkets.filter(m => (m as any).isDuplicate).length;
+
       setImportedMarkets(parsedMarkets);
       setShowMarketResultDialog(true);
-      toast.success(`${parsedMarkets.length} ماڕکێت خوێندرایەوە لە فایلەکە`);
+      toast.success(`${parsedMarkets.length} ماڕکێت خوێندرایەوە (${newCount} نوێ، ${dupCount} دووبارە)`);
     } catch (error) {
       console.error("Excel parse error:", error);
       toast.error("هەڵە لە خوێندنەوەی فایلەکە");
