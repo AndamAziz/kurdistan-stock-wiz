@@ -15,18 +15,38 @@ export interface Market {
   updated_at: string;
 }
 
+// Helper function to fetch all rows without 1000 limit
+async function fetchAllMarkets(): Promise<Market[]> {
+  const allMarkets: Market[] = [];
+  const batchSize = 1000;
+  let start = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('markets')
+      .select('*')
+      .order('name')
+      .range(start, start + batchSize - 1);
+
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      allMarkets.push(...(data as Market[]));
+      start += batchSize;
+      hasMore = data.length === batchSize;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allMarkets;
+}
+
 export function useMarkets() {
   return useQuery({
     queryKey: ['markets'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('markets')
-        .select('*')
-        .order('name');
-
-      if (error) throw error;
-      return data as Market[];
-    },
+    queryFn: fetchAllMarkets,
   });
 }
 
