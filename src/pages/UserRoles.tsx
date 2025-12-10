@@ -116,11 +116,27 @@ export default function UserRoles() {
         return;
       }
 
+      // Format phone number to E.164 format (required by Supabase)
+      let formattedPhone = newUserPhone;
+      if (isMandwb && newUserPhone) {
+        // Remove any spaces, dashes, or other characters
+        formattedPhone = newUserPhone.replace(/[\s\-\(\)]/g, '');
+        // Add + prefix if not present (assume Iraqi country code +964)
+        if (!formattedPhone.startsWith('+')) {
+          // If starts with 0, replace with +964
+          if (formattedPhone.startsWith('0')) {
+            formattedPhone = '+964' + formattedPhone.slice(1);
+          } else {
+            formattedPhone = '+964' + formattedPhone;
+          }
+        }
+      }
+
       // Use edge function to create user (prevents logout of current admin)
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: isMandwb ? undefined : newUserEmail,
-          phone: isMandwb ? newUserPhone : undefined,
+          phone: isMandwb ? formattedPhone : undefined,
           password: newUserPassword,
           fullName: newUserName,
           role: newUserRole,
