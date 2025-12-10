@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useItems, useBrands, useCategories } from "@/hooks/useItems";
 import { useMarkets } from "@/hooks/useMarkets";
-import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
   ImportResultDialog,
@@ -282,17 +281,6 @@ export default function ImportExport() {
         return;
       }
 
-      // Fetch ALL existing market codes directly from database (not limited by hook's 1000 limit)
-      const { data: existingMarketCodes } = await supabase
-        .from("markets")
-        .select("code");
-      
-      const existingCodes = new Set(existingMarketCodes?.map(m => m.code) || []);
-      console.log("Existing codes in DB:", existingCodes.size);
-      
-      // Track codes we've seen in this Excel file (to detect internal duplicates)
-      const seenCodesInExcel = new Set<string>();
-
       // Parse each row for markets
       const parsedMarkets: ImportedMarket[] = jsonData.map((row: any, index) => {
         const market: ImportedMarket = {
@@ -322,32 +310,13 @@ export default function ImportExport() {
           market.code = row.key.toString();
         }
 
-        const code = market.code?.trim() || "";
-        
-        // Check if duplicate in database
-        const isDbDuplicate = existingCodes.has(code);
-        // Check if duplicate within Excel file
-        const isExcelDuplicate = seenCodesInExcel.has(code);
-        
-        // Mark this code as seen
-        if (code) {
-          seenCodesInExcel.add(code);
-        }
-
         // Validate required fields
-        const isComplete = market.name?.trim() !== "" && code !== "";
+        const isComplete =
+          market.name?.trim() !== "" && market.code?.trim() !== "";
 
         market.isComplete = isComplete;
-        market.hasError = !isComplete || isDbDuplicate || isExcelDuplicate;
-        
-        // Set isDuplicate flag
-        (market as any).isDuplicate = isDbDuplicate || isExcelDuplicate;
-        
-        if (isDbDuplicate) {
-          market.errorMessage = "ئەم ماڕکێتە پێشتر هەیە";
-        } else if (isExcelDuplicate) {
-          market.errorMessage = "دووبارە لە ناو فایل";
-        } else if (!isComplete) {
+        market.hasError = !isComplete;
+        if (!isComplete) {
           market.errorMessage = "ناو و کۆد پێویستن";
         }
 
@@ -360,13 +329,9 @@ export default function ImportExport() {
         return;
       }
 
-      // Count new markets
-      const newCount = parsedMarkets.filter(m => !(m as any).isDuplicate && m.isComplete).length;
-      const dupCount = parsedMarkets.filter(m => (m as any).isDuplicate).length;
-
       setImportedMarkets(parsedMarkets);
       setShowMarketResultDialog(true);
-      toast.success(`${parsedMarkets.length} ماڕکێت خوێندرایەوە (${newCount} نوێ، ${dupCount} دووبارە)`);
+      toast.success(`${parsedMarkets.length} ماڕکێت خوێندرایەوە لە فایلەکە`);
     } catch (error) {
       console.error("Excel parse error:", error);
       toast.error("هەڵە لە خوێندنەوەی فایلەکە");

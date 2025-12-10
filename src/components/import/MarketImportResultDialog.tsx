@@ -52,15 +52,51 @@ export function MarketImportResultDialog({
   const [markets, setMarkets] = useState<ImportedMarket[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [existingCodes, setExistingCodes] = useState<Set<string>>(new Set());
+  const [isChecking, setIsChecking] = useState(false);
 
-  // Initialize markets when dialog opens - duplicates already marked by parent
+  // Check for existing markets when dialog opens
   useEffect(() => {
     if (open && initialMarkets.length > 0) {
-      setMarkets(initialMarkets);
+      checkExistingMarkets(initialMarkets);
     }
   }, [open, initialMarkets]);
 
-  // Filter markets - isDuplicate is already set by parent component
+  const checkExistingMarkets = async (marketsToCheck: ImportedMarket[]) => {
+    setIsChecking(true);
+    try {
+      // Get all codes from the imported markets
+      const codes = marketsToCheck.map(m => m.code.trim()).filter(Boolean);
+      
+      // Fetch existing markets with matching codes
+      const { data: existingMarkets } = await supabase
+        .from("markets")
+        .select("code")
+        .in("code", codes);
+      
+      const existingCodesSet = new Set(existingMarkets?.map(m => m.code) || []);
+      setExistingCodes(existingCodesSet);
+      
+      // Mark markets as duplicate or new
+      const processedMarkets = marketsToCheck.map(market => {
+        const isDuplicate = existingCodesSet.has(market.code.trim());
+        return {
+          ...market,
+          isDuplicate,
+          errorMessage: isDuplicate ? "ئەم ماڕکێتە پێشتر هەیە" : market.errorMessage,
+        };
+      });
+      
+      setMarkets(processedMarkets);
+    } catch (error) {
+      console.error("Error checking existing markets:", error);
+      setMarkets(initialMarkets);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  // Filter markets
   const newMarkets = markets.filter((m) => m.isComplete && !(m as any).isDuplicate);
   const duplicateMarkets = markets.filter((m) => (m as any).isDuplicate);
   const incompleteMarkets = markets.filter((m) => !m.isComplete && !(m as any).isDuplicate);
@@ -83,6 +119,15 @@ export function MarketImportResultDialog({
         updated.hasError = !isComplete;
         updated.errorMessage = isComplete ? undefined : "ناو و کۆد پێویستن";
 
+        // Check if the new code is a duplicate
+        if (field === "code") {
+          const isDuplicate = existingCodes.has(value.trim());
+          (updated as any).isDuplicate = isDuplicate;
+          if (isDuplicate) {
+            updated.errorMessage = "ئەم ماڕکێتە پێشتر هەیە";
+          }
+        }
+
         return updated;
       })
     );
@@ -97,50 +142,39 @@ export function MarketImportResultDialog({
     setIsImporting(true);
 
     try {
-      // Prepare all markets for insert
-      const marketsToInsert = newMarkets.map(market => ({
-        code: market.code.trim(),
-        name: market.name.trim(),
-        trader_category: market.trader_category?.trim() || null,
-        phone: market.phone?.trim() || null,
-        address: market.address?.trim() || null,
-        city: market.city?.trim() || null,
-        zone: market.zone?.trim() || null,
-      }));
-
-      // Insert in chunks to avoid timeout and handle duplicates gracefully
-      const chunkSize = 100;
       let successCount = 0;
-      let skipCount = 0;
+      let errorCount = 0;
 
-      for (let i = 0; i < marketsToInsert.length; i += chunkSize) {
-        const chunk = marketsToInsert.slice(i, i + chunkSize);
-        
-        // Use upsert with onConflict to skip duplicates
-        const { data, error } = await supabase
-          .from("markets")
-          .upsert(chunk, { 
-            onConflict: 'code',
-            ignoreDuplicates: true 
-          })
-          .select();
+      for (const market of newMarkets) {
+        try {
+          const { error } = await supabase.from("markets").insert({
+            code: market.code.trim(),
+            name: market.name.trim(),
+            trader_category: market.trader_category?.trim() || null,
+            phone: market.phone?.trim() || null,
+            address: market.address?.trim() || null,
+            city: market.city?.trim() || null,
+            zone: market.zone?.trim() || null,
+          });
 
-        if (error) {
-          console.error("Chunk insert error:", error);
-          skipCount += chunk.length;
-        } else {
-          successCount += data?.length || 0;
+          if (error) throw error;
+          successCount++;
+        } catch (error) {
+          console.error("Error importing market:", error);
+          errorCount++;
         }
       }
 
       if (successCount > 0) {
         toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
       }
-      
-      if (duplicateMarkets.length > 0 || skipCount > 0) {
-        toast.info(`${duplicateMarkets.length + skipCount} ماڕکێت پێشتر هەبوون و زیادنەکران`);
+      if (errorCount > 0) {
+        toast.error(`${errorCount} ماڕکێت زیادنەکران`);
       }
-      
+      if (duplicateMarkets.length > 0) {
+        toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
+      }
+
       onImportComplete();
       onOpenChange(false);
     } catch (error) {
@@ -248,7 +282,13 @@ export function MarketImportResultDialog({
 
         <div className="space-y-4">
           {/* Summary */}
-          <div className="flex flex-wrap gap-4 text-sm">
+          {isChecking ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              پشکنینی ماڕکێتە دووبارەکان...
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Badge variant="default" className="bg-success">
                   {newMarkets.length}
@@ -263,9 +303,10 @@ export function MarketImportResultDialog({
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-            <span>ناتەواو</span>
-          </div>
-        </div>
+                <span>ناتەواو</span>
+              </div>
+            </div>
+          )}
 
           <Tabs defaultValue="all">
             <TabsList>
@@ -377,7 +418,7 @@ export function MarketImportResultDialog({
             </Button>
             <Button
               onClick={handleImportAll}
-              disabled={isImporting || newMarkets.length === 0}
+              disabled={isImporting || isChecking || newMarkets.length === 0}
               className="gap-2"
             >
               {isImporting && <Loader2 className="w-4 h-4 animate-spin" />}
