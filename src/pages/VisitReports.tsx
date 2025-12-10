@@ -515,8 +515,8 @@ export default function VisitReports() {
           </div>
         )}
 
-        {/* Assigned Markets View - When delivery person is selected AND showAllMarkets is false */}
-        {deliveryPersonFilter !== "all" && !showAllMarkets && (
+        {/* Assigned Markets View - Automatically shows when delivery person is selected */}
+        {deliveryPersonFilter !== "all" && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
