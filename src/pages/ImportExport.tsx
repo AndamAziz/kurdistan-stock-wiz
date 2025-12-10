@@ -235,16 +235,18 @@ export default function ImportExport() {
           return null;
         }
 
-        // Validate required fields
-        const isComplete =
-          item.name?.trim() !== "" &&
-          item.barcode?.trim() !== "" &&
-          item.quantity >= 0;
+        // Validate required fields and collect error fields
+        const errorFields: string[] = [];
+        if (!item.name?.trim()) errorFields.push("ناو");
+        if (!item.barcode?.trim()) errorFields.push("باڕکۆد");
+
+        const isComplete = errorFields.length === 0 && item.quantity >= 0;
 
         item.isComplete = isComplete;
         item.hasError = !isComplete;
-        if (!isComplete) {
-          item.errorMessage = "ناو و باڕکۆد پێویستن";
+        item.errorFields = errorFields;
+        if (errorFields.length > 0) {
+          item.errorMessage = `کێشە لە: ${errorFields.join("، ")}`;
         }
 
         return item;

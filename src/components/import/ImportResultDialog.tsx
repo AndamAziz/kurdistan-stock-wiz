@@ -58,6 +58,7 @@ export interface ImportedItem {
   remind_date: string | null;
   hasError: boolean;
   errorMessage?: string;
+  errorFields?: string[];
   isComplete: boolean;
 }
 
@@ -92,6 +93,13 @@ export function ImportResultDialog({
   const completeItems = items.filter((item) => item.isComplete && !item.hasError);
   const incompleteItems = items.filter((item) => !item.isComplete || item.hasError);
 
+  const getItemErrors = (item: ImportedItem): string[] => {
+    const errors: string[] = [];
+    if (!item.name?.trim()) errors.push("ناو");
+    if (!item.barcode?.trim()) errors.push("باڕکۆد");
+    return errors;
+  };
+
   const handleUpdateItem = (id: string, field: keyof ImportedItem, value: any) => {
     setItems((prev) =>
       prev.map((item) => {
@@ -99,17 +107,18 @@ export function ImportResultDialog({
 
         const updated = { ...item, [field]: value };
 
-        // Check if item is complete
-        const isComplete =
-          updated.name?.trim() !== "" &&
-          updated.barcode?.trim() !== "" &&
-          updated.quantity >= 0;
+        // Check which fields have errors
+        const errorFields = getItemErrors(updated);
+        const isComplete = errorFields.length === 0 && updated.quantity >= 0;
 
         return {
           ...updated,
           isComplete,
           hasError: !isComplete,
-          errorMessage: !isComplete ? "زانیاری پێویست تەواو نییە" : undefined,
+          errorFields,
+          errorMessage: errorFields.length > 0 
+            ? `کێشە لە: ${errorFields.join("، ")}` 
+            : undefined,
         };
       })
     );
@@ -356,76 +365,113 @@ export function ImportResultDialog({
     );
   };
 
-  const renderItemRow = (item: ImportedItem) => (
-    <TableRow key={item.id} className={item.hasError ? "bg-destructive/5" : ""}>
-      <TableCell className="font-medium">
-        {editingId === item.id ? (
-          <Input
-            value={item.name}
-            onChange={(e) => handleUpdateItem(item.id, "name", e.target.value)}
-            className="h-8"
-          />
-        ) : (
-          item.name || <span className="text-destructive">-</span>
-        )}
-      </TableCell>
-      <TableCell>
-        {editingId === item.id ? (
-          <Input
-            value={item.barcode}
-            onChange={(e) => handleUpdateItem(item.id, "barcode", e.target.value)}
-            className="h-8"
-          />
-        ) : (
-          item.barcode || <span className="text-destructive">-</span>
-        )}
-      </TableCell>
-      <TableCell>{renderEditableCell(item, "brand", "select")}</TableCell>
-      <TableCell>{renderEditableCell(item, "category", "select")}</TableCell>
-      <TableCell>{renderEditableCell(item, "quantity", "number")}</TableCell>
-      <TableCell>{renderEditableCell(item, "box_price", "number")}</TableCell>
-      <TableCell>{renderEditableCell(item, "piece_price", "number")}</TableCell>
-      <TableCell>{renderEditableCell(item, "price_per_kg", "number")}</TableCell>
-      <TableCell>{renderEditableCell(item, "min_stock", "number")}</TableCell>
-      <TableCell>
-        {item.hasError ? (
-          <Badge variant="destructive" className="gap-1">
-            <AlertCircle className="h-3 w-3" />
-            کێشە
-          </Badge>
-        ) : (
-          <Badge variant="secondary" className="gap-1 bg-success/10 text-success">
-            <CheckCircle2 className="h-3 w-3" />
-            ئامادە
-          </Badge>
-        )}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={() => setEditingId(editingId === item.id ? null : item.id)}
-          >
-            {editingId === item.id ? (
-              <Save className="h-4 w-4" />
-            ) : (
-              <Edit2 className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-            onClick={() => handleDeleteItem(item.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
+  const renderItemRow = (item: ImportedItem) => {
+    const isEditing = editingId === item.id;
+    const errorFields = item.errorFields || getItemErrors(item);
+    
+    return (
+      <TableRow 
+        key={item.id} 
+        className={`${item.hasError ? "bg-destructive/5" : ""} ${isEditing ? "bg-muted/50" : ""}`}
+      >
+        <TableCell className="font-medium">
+          {isEditing ? (
+            <div className="space-y-1">
+              <Input
+                value={item.name}
+                onChange={(e) => handleUpdateItem(item.id, "name", e.target.value)}
+                className={`h-8 ${errorFields.includes("ناو") ? "border-destructive" : ""}`}
+                placeholder="ناوی بەرهەم"
+              />
+              {errorFields.includes("ناو") && (
+                <span className="text-xs text-destructive">پێویستە</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {item.name || <span className="text-destructive">بەتاڵە</span>}
+              {errorFields.includes("ناو") && !isEditing && (
+                <span className="text-xs text-destructive">⚠ پێویستە</span>
+              )}
+            </div>
+          )}
+        </TableCell>
+        <TableCell>
+          {isEditing ? (
+            <div className="space-y-1">
+              <Input
+                value={item.barcode}
+                onChange={(e) => handleUpdateItem(item.id, "barcode", e.target.value)}
+                className={`h-8 ${errorFields.includes("باڕکۆد") ? "border-destructive" : ""}`}
+                placeholder="باڕکۆد"
+              />
+              {errorFields.includes("باڕکۆد") && (
+                <span className="text-xs text-destructive">پێویستە</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              {item.barcode || <span className="text-destructive">بەتاڵە</span>}
+              {errorFields.includes("باڕکۆد") && !isEditing && (
+                <span className="text-xs text-destructive">⚠ پێویستە</span>
+              )}
+            </div>
+          )}
+        </TableCell>
+        <TableCell>{renderEditableCell(item, "brand", "select")}</TableCell>
+        <TableCell>{renderEditableCell(item, "category", "select")}</TableCell>
+        <TableCell>{renderEditableCell(item, "quantity", "number")}</TableCell>
+        <TableCell>{renderEditableCell(item, "box_price", "number")}</TableCell>
+        <TableCell>{renderEditableCell(item, "piece_price", "number")}</TableCell>
+        <TableCell>{renderEditableCell(item, "price_per_kg", "number")}</TableCell>
+        <TableCell>{renderEditableCell(item, "min_stock", "number")}</TableCell>
+        <TableCell>
+          {item.hasError ? (
+            <div className="space-y-1">
+              <Badge variant="destructive" className="gap-1 whitespace-nowrap">
+                <AlertCircle className="h-3 w-3" />
+                کێشە
+              </Badge>
+              {errorFields.length > 0 && (
+                <p className="text-[10px] text-destructive font-medium">
+                  {errorFields.join("، ")}
+                </p>
+              )}
+            </div>
+          ) : (
+            <Badge variant="secondary" className="gap-1 bg-success/10 text-success whitespace-nowrap">
+              <CheckCircle2 className="h-3 w-3" />
+              ئامادە
+            </Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant={isEditing ? "default" : item.hasError ? "outline" : "ghost"}
+              className={`h-7 w-7 p-0 ${item.hasError && !isEditing ? "border-destructive text-destructive" : ""}`}
+              onClick={() => setEditingId(isEditing ? null : item.id)}
+            >
+              {isEditing ? (
+                <Save className="h-4 w-4" />
+              ) : (
+                <Edit2 className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              onClick={() => handleDeleteItem(item.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
