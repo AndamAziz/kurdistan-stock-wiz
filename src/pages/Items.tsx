@@ -362,10 +362,10 @@ export default function Items() {
             <Button 
               size="sm"
               className="gap-1.5 h-8 sm:h-9 text-xs rounded-lg shadow-sm hover:shadow transition-all px-3 sm:px-4"
-              onClick={() => setAddItemOpen(true)}
+              onClick={() => window.location.href = '/stock-in'}
             >
               <Plus className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">زیادکردن</span>
+              زیادکردن
             </Button>
           </div>
         </div>
