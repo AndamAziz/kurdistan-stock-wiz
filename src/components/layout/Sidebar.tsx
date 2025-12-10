@@ -5,6 +5,8 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import bakuryLogo from "@/assets/bakury-logo-new.jpg";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePendingVisitsCount } from "@/hooks/usePendingVisits";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
@@ -70,10 +72,17 @@ interface SidebarProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+interface NavItemWithBadge {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: number;
+}
+
 interface NavGroupProps {
   title: string;
   icon: React.ElementType;
-  items: { name: string; href: string; icon: React.ElementType }[];
+  items: NavItemWithBadge[];
   onNavClick?: () => void;
   defaultOpen?: boolean;
 }
@@ -123,7 +132,15 @@ function NavGroup({ title, icon: GroupIcon, items, onNavClick, defaultOpen = fal
               activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-md pr-4"
             >
               <item.icon className="h-4 w-4" strokeWidth={2} />
-              <span>{item.name}</span>
+              <span className="flex-1">{item.name}</span>
+              {item.badge !== undefined && item.badge > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="h-5 min-w-5 px-1.5 text-[10px] font-bold animate-pulse"
+                >
+                  {item.badge > 99 ? '99+' : item.badge}
+                </Badge>
+              )}
             </NavLink>
           ))}
         </div>
@@ -136,6 +153,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, signOut } = useAuth();
   const { isAdmin, isMandwb, currentUserRoles, isLoadingCurrentUserRoles } = useUserRoles();
   const location = useLocation();
+  const { data: pendingVisitsCount = 0 } = usePendingVisitsCount();
+
+  // Admin navigation with dynamic badge
+  const adminNavigationWithBadge: NavItemWithBadge[] = [
+    { name: 'بەکارهێنەران', href: '/user-roles', icon: Users },
+    { name: 'مەندوبەکان', href: '/delivery-persons', icon: Truck },
+    { name: 'ڕاپۆرتی سەردان', href: '/visit-reports', icon: ClipboardList, badge: pendingVisitsCount },
+  ];
 
   // Check if user is mandwb only (not admin or storekeeper)
   const isOnlyMandwb = isMandwb && 
@@ -272,8 +297,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               <NavGroup 
                 title="بەڕێوەبەر" 
                 icon={Shield} 
-                items={adminNavigation} 
+                items={adminNavigationWithBadge} 
                 onNavClick={onNavClick}
+                defaultOpen={pendingVisitsCount > 0}
               />
             )}
           </>
