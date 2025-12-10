@@ -30,6 +30,13 @@ import {
 } from "@/hooks/useDeliveryPersons";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { VisitItemsList } from "@/components/mandwb/VisitItemsList";
+
+interface VisitItem {
+  itemId: string;
+  quantity: number;
+  issueType: "expired" | "expiring";
+}
 
 export default function MandwbDashboard() {
   const { data: currentPerson, isLoading: isLoadingPerson } = useCurrentDeliveryPerson();
@@ -42,10 +49,6 @@ export default function MandwbDashboard() {
 
   const { activeTab, setActiveTab, isVisitMode, visitMarket, startVisit, endVisit } = useMandwbTab();
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Visit mode state - simplified to just two numbers
-  const [expiredCount, setExpiredCount] = useState(0);
-  const [expiringCount, setExpiringCount] = useState(0);
 
   // Get reminder days from settings
   const reminderDays = settings?.reminderDays || 30;
@@ -97,16 +100,17 @@ export default function MandwbDashboard() {
   };
 
   const handleStartVisit = (market: { id: string; name: string; code: string }) => {
-    setExpiredCount(0);
-    setExpiringCount(0);
     startVisit(market);
   };
 
-  const handleSubmitVisit = async () => {
+  const handleSubmitVisit = async (visitItems: VisitItem[]) => {
     if (!currentPerson?.id || !visitMarket?.id) return;
     
-    // Determine status based on counts
-    const hasIssues = expiredCount > 0 || expiringCount > 0;
+    // Determine status based on items
+    const hasIssues = visitItems.length > 0;
+    const expiredCount = visitItems.filter(v => v.issueType === "expired").reduce((sum, v) => sum + v.quantity, 0);
+    const expiringCount = visitItems.filter(v => v.issueType === "expiring").reduce((sum, v) => sum + v.quantity, 0);
+    
     const notes = hasIssues 
       ? `بەسەرچوو: ${expiredCount}، نزیک بەسەرچوون: ${expiringCount}`
       : `ماڕکێت سەلامەتە - هیچ کێشەیەک نییە`;
@@ -116,7 +120,19 @@ export default function MandwbDashboard() {
       market_id: visitMarket.id,
       notes,
     }, {
-      onSuccess: () => {
+      onSuccess: async (visit) => {
+        // Add visit items if there are any
+        if (hasIssues && visit?.id) {
+          for (const item of visitItems) {
+            await addVisitItem.mutateAsync({
+              visit_id: visit.id,
+              item_id: item.itemId,
+              quantity: item.quantity,
+              issue_type: item.issueType,
+            });
+          }
+        }
+        
         toast.success(
           hasIssues 
             ? `ڕاپۆرت نێردرا: ${expiredCount} بەسەرچوو، ${expiringCount} نزیک بەسەرچوون`
@@ -124,8 +140,6 @@ export default function MandwbDashboard() {
         );
         refetchVisits();
         endVisit();
-        setExpiredCount(0);
-        setExpiringCount(0);
       },
       onError: () => {
         toast.error("هەڵەیەک ڕوویدا لە ناردنی ڕاپۆرت");
@@ -157,98 +171,54 @@ export default function MandwbDashboard() {
     );
   }
 
+  // When in visit mode, show the VisitItemsList component
+  if (isVisitMode && visitMarket) {
+    return (
+      <Layout>
+        <VisitItemsList
+          items={items}
+          reminderDays={reminderDays}
+          marketName={visitMarket.name}
+          marketCode={visitMarket.code}
+          onSubmit={handleSubmitVisit}
+          onCancel={endVisit}
+          isSubmitting={createVisit.isPending}
+        />
+      </Layout>
+    );
+  }
+
   return (
-    <Layout
-      expiredCount={expiredCount}
-      expiringCount={expiringCount}
-      onExpiredChange={setExpiredCount}
-      onExpiringChange={setExpiringCount}
-      onSubmitVisit={handleSubmitVisit}
-      isSubmitting={createVisit.isPending}
-    >
+    <Layout>
       <div className="space-y-4">
-        {/* Header - show visit mode header when in visit */}
-        {isVisitMode && visitMarket ? (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                  <Store className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-lg font-bold">سەردانی {visitMarket.name}</h1>
-                  <p className="text-sm text-muted-foreground">
-                    کۆد: {visitMarket.code}
-                  </p>
-                </div>
-                <Badge variant="outline" className="text-primary border-primary/30">
-                  سەردان
-                </Badge>
-              </div>
-              
-              {/* Summary */}
-              <div className="mt-4 flex items-center justify-around text-center border-t pt-4">
-                <div>
-                  <p className="text-xl font-bold text-destructive">{expiredCount}</p>
-                  <p className="text-xs text-muted-foreground">بەسەرچوو</p>
-                </div>
-                <div className="h-8 w-px bg-border" />
-                <div>
-                  <p className="text-xl font-bold text-warning">{expiringCount}</p>
-                  <p className="text-xs text-muted-foreground">نزیک بەسەرچوون</p>
-                </div>
-                <div className="h-8 w-px bg-border" />
-                <div>
-                  {expiredCount === 0 && expiringCount === 0 ? (
-                    <>
-                      <ShieldCheck className="h-6 w-6 text-green-500 mx-auto" />
-                      <p className="text-xs text-green-600 font-medium">سەلامەت</p>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-6 w-6 text-destructive mx-auto" />
-                      <p className="text-xs text-destructive font-medium">کێشەدار</p>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <p className="text-xs text-center text-muted-foreground mt-3">
-                لە خوارەوە کلیک لە ناوی ماڕکێت بکە بۆ داخڵکردنی ژمارەکان
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <MapPin className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">بەخێربێیت، {currentPerson.name}</h1>
-              <p className="text-sm text-muted-foreground">
-                چاودێری بەسەرچوون لە ماڕکێتەکان
-              </p>
-            </div>
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <MapPin className="h-6 w-6 text-primary" />
           </div>
-        )}
+          <div>
+            <h1 className="text-xl font-bold">بەخێربێیت، {currentPerson.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              چاودێری بەسەرچوون لە ماڕکێتەکان
+            </p>
+          </div>
+        </div>
 
-        {/* Don't show tabs when in visit mode */}
-        {!isVisitMode && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="dashboard" className="gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                داشبۆرد
-              </TabsTrigger>
-              <TabsTrigger value="markets" className="gap-2">
-                <Store className="h-4 w-4" />
-                ماڕکێتەکان ({assignedMarkets.length})
-              </TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dashboard" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              داشبۆرد
+            </TabsTrigger>
+            <TabsTrigger value="markets" className="gap-2">
+              <Store className="h-4 w-4" />
+              ماڕکێتەکان ({assignedMarkets.length})
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Dashboard Tab */}
-            <TabsContent value="dashboard" className="space-y-4 mt-4">
-              {/* Alert Stats */}
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="space-y-4 mt-4">
+            {/* Alert Stats */}
               <div className="grid gap-3 grid-cols-2">
                 <Card className="bg-destructive/10 border-destructive/20">
                   <CardContent className="pt-4 pb-3">
@@ -470,9 +440,8 @@ export default function MandwbDashboard() {
                   ))}
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

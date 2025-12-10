@@ -1,0 +1,316 @@
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertTriangle,
+  Clock,
+  Search,
+  ShieldCheck,
+  Send,
+  X,
+  Package,
+} from "lucide-react";
+import { differenceInDays } from "date-fns";
+
+interface Item {
+  id: string;
+  name: string;
+  barcode: string;
+  exp_date: string | null;
+  image_url?: string | null;
+}
+
+interface VisitItem {
+  itemId: string;
+  quantity: number;
+  issueType: "expired" | "expiring";
+}
+
+interface VisitItemsListProps {
+  items: Item[];
+  reminderDays: number;
+  marketName: string;
+  marketCode: string;
+  onSubmit: (visitItems: VisitItem[]) => void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+export function VisitItemsList({
+  items,
+  reminderDays,
+  marketName,
+  marketCode,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: VisitItemsListProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+
+  // Categorize items into expired and expiring
+  const { expiredItems, expiringItems } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expired: (Item & { daysAgo: number })[] = [];
+    const expiring: (Item & { daysLeft: number })[] = [];
+
+    items.forEach((item) => {
+      if (!item.exp_date) return;
+      const expDate = new Date(item.exp_date);
+      const daysUntilExpiry = differenceInDays(expDate, today);
+
+      if (daysUntilExpiry < 0) {
+        expired.push({ ...item, daysAgo: Math.abs(daysUntilExpiry) });
+      } else if (daysUntilExpiry <= reminderDays) {
+        expiring.push({ ...item, daysLeft: daysUntilExpiry });
+      }
+    });
+
+    // Sort: most urgent first
+    expired.sort((a, b) => b.daysAgo - a.daysAgo);
+    expiring.sort((a, b) => a.daysLeft - b.daysLeft);
+
+    return { expiredItems: expired, expiringItems: expiring };
+  }, [items, reminderDays]);
+
+  // Filter items based on search
+  const filteredExpired = expiredItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.barcode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredExpiring = expiringItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.barcode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleQuantityChange = (itemId: string, value: string) => {
+    const quantity = parseInt(value) || 0;
+    setItemQuantities((prev) => ({
+      ...prev,
+      [itemId]: quantity,
+    }));
+  };
+
+  const handleSubmit = () => {
+    const visitItems: VisitItem[] = [];
+
+    // Collect expired items with quantities
+    expiredItems.forEach((item) => {
+      const qty = itemQuantities[item.id] || 0;
+      if (qty > 0) {
+        visitItems.push({
+          itemId: item.id,
+          quantity: qty,
+          issueType: "expired",
+        });
+      }
+    });
+
+    // Collect expiring items with quantities
+    expiringItems.forEach((item) => {
+      const qty = itemQuantities[item.id] || 0;
+      if (qty > 0) {
+        visitItems.push({
+          itemId: item.id,
+          quantity: qty,
+          issueType: "expiring",
+        });
+      }
+    });
+
+    onSubmit(visitItems);
+  };
+
+  // Count items with entered quantities
+  const totalItemsReported = Object.values(itemQuantities).filter((q) => q > 0).length;
+  const totalQuantity = Object.values(itemQuantities).reduce((sum, q) => sum + q, 0);
+  const hasNoIssues = expiredItems.length === 0 && expiringItems.length === 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Market Header */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">سەردانی {marketName}</h1>
+                <p className="text-sm text-muted-foreground">کۆد: {marketCode}</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onCancel}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* If no items with expiry issues */}
+      {hasNoIssues ? (
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <ShieldCheck className="h-12 w-12 text-green-500" />
+              <div>
+                <p className="font-semibold text-green-600 text-lg">
+                  هیچ مادە کێشەدارێک نییە!
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  هەموو مادەکان سەلامەتن - دەتوانیت ڕاپۆرتی سەلامەت بنێریت
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="گەڕان بە ناو یان بارکۆد..."
+              className="pr-10"
+            />
+          </div>
+
+          {/* Info */}
+          <div className="text-sm text-muted-foreground text-center bg-muted/30 rounded-lg p-3">
+            <p>
+              بۆ هەر مادەیەک کە لە ماڕکێت بەسەرچووە یان نزیکە بەسەرچوون،
+              <br />
+              <strong>ژمارەی مادەکان</strong> بنووسە. ئەگەر 0 بێت واتە نییە.
+            </p>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-380px)] pr-1">
+            <div className="space-y-4">
+              {/* Expired Items Section */}
+              {filteredExpired.length > 0 && (
+                <Card className="border-destructive/30 bg-destructive/5">
+                  <CardHeader className="pb-2 pt-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      مادە بەسەرچووەکان ({filteredExpired.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pb-3 space-y-2">
+                    {filteredExpired.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border border-destructive/20"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{item.barcode}</span>
+                            <Badge variant="destructive" className="text-[10px] px-1.5">
+                              {item.daysAgo} ڕۆژ تێپەڕیوە
+                            </Badge>
+                          </div>
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={itemQuantities[item.id] || ""}
+                          onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                          className="w-20 h-10 text-center text-lg font-bold"
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Expiring Items Section */}
+              {filteredExpiring.length > 0 && (
+                <Card className="border-warning/30 bg-warning/5">
+                  <CardHeader className="pb-2 pt-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-warning">
+                      <Clock className="h-4 w-4" />
+                      مادە نزیک بەسەرچوون ({filteredExpiring.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pb-3 space-y-2">
+                    {filteredExpiring.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-background/80 border border-warning/20"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{item.barcode}</span>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 text-warning border-warning/30"
+                            >
+                              {item.daysLeft === 0 ? "ئەمڕۆ" : `${item.daysLeft} ڕۆژ ماوە`}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={itemQuantities[item.id] || ""}
+                          onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                          className="w-20 h-10 text-center text-lg font-bold"
+                        />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </ScrollArea>
+        </>
+      )}
+
+      {/* Bottom Submit Area */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 safe-area-bottom shadow-[0_-4px_20px_-4px_hsl(var(--foreground)/0.1)]">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={onCancel} className="flex-1">
+            <X className="h-4 w-4 ml-2" />
+            هەڵوەشاندنەوە
+          </Button>
+
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 gap-2"
+          >
+            <Send className="h-4 w-4" />
+            {isSubmitting ? (
+              "ناردن..."
+            ) : hasNoIssues || totalQuantity === 0 ? (
+              "ماڕکێت سەلامەتە"
+            ) : (
+              `ناردنی ڕاپۆرت (${totalQuantity})`
+            )}
+          </Button>
+        </div>
+
+        {/* Summary */}
+        {totalItemsReported > 0 && (
+          <div className="mt-2 text-center text-xs text-muted-foreground">
+            {totalItemsReported} مادە تۆمارکرا • کۆی ژمارە: {totalQuantity}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

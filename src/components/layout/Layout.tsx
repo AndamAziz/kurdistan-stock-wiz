@@ -17,12 +17,6 @@ import { useMandwbTab } from "@/hooks/useMandwbTab";
 
 interface LayoutProps {
   children: ReactNode;
-  expiredCount?: number;
-  expiringCount?: number;
-  onExpiredChange?: (value: number) => void;
-  onExpiringChange?: (value: number) => void;
-  onSubmitVisit?: () => void;
-  isSubmitting?: boolean;
 }
 
 const moreMenuItems = [
@@ -34,15 +28,7 @@ const moreMenuItems = [
   { name: 'ڕاپۆرتی ستۆک', href: '/stock-adjust', icon: BarChart3 },
 ];
 
-export function Layout({ 
-  children, 
-  expiredCount,
-  expiringCount,
-  onExpiredChange,
-  onExpiringChange,
-  onSubmitVisit,
-  isSubmitting,
-}: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const { isAdmin } = useUserRoles();
   const { activeTab: mandwbActiveTab, setActiveTab: setMandwbActiveTab } = useMandwbTab();
@@ -64,12 +50,6 @@ export function Layout({
         onMenuClick={() => setMoreMenuOpen(true)} 
         mandwbActiveTab={mandwbActiveTab}
         onMandwbTabChange={setMandwbActiveTab}
-        expiredCount={expiredCount}
-        expiringCount={expiringCount}
-        onExpiredChange={onExpiredChange}
-        onExpiringChange={onExpiringChange}
-        onSubmitVisit={onSubmitVisit}
-        isSubmitting={isSubmitting}
       />
 
       {/* More Menu Sheet */}
