@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useItems, useBrands, useCategories } from "@/hooks/useItems";
 import { useMarkets } from "@/hooks/useMarkets";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
   ImportResultDialog,
@@ -281,8 +282,13 @@ export default function ImportExport() {
         return;
       }
 
-      // Get existing market codes from the already loaded markets data
-      const existingCodes = new Set(markets.map(m => m.code));
+      // Fetch ALL existing market codes directly from database (not limited by hook's 1000 limit)
+      const { data: existingMarketCodes } = await supabase
+        .from("markets")
+        .select("code");
+      
+      const existingCodes = new Set(existingMarketCodes?.map(m => m.code) || []);
+      console.log("Existing codes in DB:", existingCodes.size);
       
       // Track codes we've seen in this Excel file (to detect internal duplicates)
       const seenCodesInExcel = new Set<string>();
