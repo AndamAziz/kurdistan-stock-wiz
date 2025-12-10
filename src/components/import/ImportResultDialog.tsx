@@ -374,7 +374,7 @@ export function ImportResultDialog({
     }
   };
 
-  // Import ALL items - add new ones and update duplicates
+  // Import ALL items - Smart upsert: add new ones and update existing ones automatically
   const handleImportAll = async () => {
     const allItemsToProcess = [...newItems, ...duplicateItems];
     if (allItemsToProcess.length === 0) {
@@ -436,8 +436,15 @@ export function ImportResultDialog({
           // Auto-generate barcode if missing
           const itemBarcode = item.barcode?.trim() || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
-          if (item.isDuplicate && item.barcode?.trim()) {
-            // Update existing item by barcode
+          // Check if item exists in database by barcode
+          const { data: existingItem } = await supabase
+            .from("items")
+            .select("id")
+            .eq("barcode", itemBarcode)
+            .maybeSingle();
+
+          if (existingItem) {
+            // Update existing item
             const { error: updateError } = await supabase
               .from("items")
               .update({
@@ -454,7 +461,7 @@ export function ImportResultDialog({
                 exp_date: item.exp_date || null,
                 remind_date: item.remind_date || null,
               })
-              .eq("barcode", item.barcode.trim());
+              .eq("id", existingItem.id);
 
             if (updateError) {
               console.error("Update error for item:", item.name, updateError);
@@ -464,7 +471,7 @@ export function ImportResultDialog({
               updatedCount++;
             }
           } else {
-            // Insert new item (including items without barcode - auto-generated)
+            // Insert new item
             const { error: insertError } = await supabase.from("items").insert({
               name: item.name.trim(),
               barcode: itemBarcode,
@@ -483,9 +490,9 @@ export function ImportResultDialog({
             });
 
             if (insertError) {
-              console.error("Insert error for item:", item.name, item.barcode, insertError);
+              console.error("Insert error for item:", item.name, itemBarcode, insertError);
               errorCount++;
-              failedItems.push(`${item.name} (${item.barcode})`);
+              failedItems.push(`${item.name} (${itemBarcode})`);
             } else {
               addedCount++;
             }
@@ -502,7 +509,7 @@ export function ImportResultDialog({
       }
       if (errorCount > 0) {
         console.error("Failed items:", failedItems);
-        toast.error(`${errorCount} مادە نەتوانرا بگۆڕدرێت: ${failedItems.slice(0, 3).join("، ")}${failedItems.length > 3 ? "..." : ""}`);
+        toast.error(`${errorCount} مادە نەتوانرا بگۆڕدرێت`);
       }
 
       onImportComplete();
