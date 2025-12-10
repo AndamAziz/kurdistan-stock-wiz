@@ -295,36 +295,39 @@ export default function VisitReports() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <ClipboardList className="h-6 w-6 text-primary" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-primary/10">
+              <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">ڕاپۆرتی سەردانەکان</h1>
-              <p className="text-sm text-muted-foreground">
-                بینینی ڕاپۆرتەکانی مەندوبەکان و چارەسەرکردنی کێشەکان
+              <h1 className="text-lg sm:text-2xl font-bold">ڕاپۆرتی سەردانەکان</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                بینینی ڕاپۆرتەکانی مەندوبەکان
               </p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="گەڕان بە ناوی مەندوب، ماڕکێت..."
-                className="pr-10"
-              />
-            </div>
+        <div className="space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="گەڕان بە ناوی مەندوب، ماڕکێت..."
+              className="pr-10 h-9 sm:h-10 text-sm"
+            />
+          </div>
+          
+          {/* Filter Row */}
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-4">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm">
                 <SelectValue placeholder="دۆخ" />
               </SelectTrigger>
               <SelectContent>
@@ -334,15 +337,12 @@ export default function VisitReports() {
                 <SelectItem value="resolved">چارەسەرکرا</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Delivery Person Filter */}
+
             <Select value={deliveryPersonFilter} onValueChange={setDeliveryPersonFilter}>
-              <SelectTrigger className="w-full sm:w-56">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="هەموو مەندوبەکان" />
+              <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm sm:w-56">
+                <div className="flex items-center gap-1.5">
+                  <Truck className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="truncate"><SelectValue placeholder="مەندوب" /></span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -355,16 +355,15 @@ export default function VisitReports() {
               </SelectContent>
             </Select>
 
-            {/* Market Filter */}
             <Select value={marketFilter} onValueChange={setMarketFilter}>
-              <SelectTrigger className="w-full sm:w-56">
-                <div className="flex items-center gap-2">
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="هەموو ماڕکێتەکان" />
+              <SelectTrigger className="h-9 sm:h-10 text-xs sm:text-sm sm:w-56">
+                <div className="flex items-center gap-1.5">
+                  <Store className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                  <span className="truncate"><SelectValue placeholder="ماڕکێت" /></span>
                 </div>
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                <SelectItem value="all">هەموو ماڕکێتەکان ({markets.length})</SelectItem>
+                <SelectItem value="all">هەموو ({markets.length})</SelectItem>
                 {markets.map(market => (
                   <SelectItem key={market.id} value={market.id}>
                     {market.name} ({market.code})
@@ -373,94 +372,95 @@ export default function VisitReports() {
               </SelectContent>
             </Select>
 
-            {hasActiveFilters && (
+            {hasActiveFilters ? (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={clearFilters}
-                className="flex items-center gap-2"
+                className="h-9 sm:h-10 text-xs sm:text-sm gap-1"
               >
-                <X className="h-4 w-4" />
-                سڕینەوەی فلتەرەکان
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">سڕینەوەی فلتەر</span>
+              </Button>
+            ) : (
+              <Button 
+                variant={showAllMarkets ? "default" : "outline"}
+                size="sm" 
+                onClick={() => setShowAllMarkets(!showAllMarkets)}
+                className="h-9 sm:h-10 text-xs sm:text-sm gap-1"
+              >
+                <Store className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">
+                  {showAllMarkets 
+                    ? "شاردنەوە" 
+                    : deliveryPersonFilter === "all"
+                      ? `ماڕکێت (${markets.length})`
+                      : `ماڕکێت (${assignedMarkets.length})`
+                  }
+                </span>
               </Button>
             )}
-
-            {/* Show All Markets Button - Shows different content based on delivery person selection */}
-            <Button 
-              variant={showAllMarkets ? "default" : "outline"}
-              size="sm" 
-              onClick={() => setShowAllMarkets(!showAllMarkets)}
-              className="flex items-center gap-2"
-            >
-              <Store className="h-4 w-4" />
-              {showAllMarkets 
-                ? "شاردنەوەی ماڕکێتەکان" 
-                : deliveryPersonFilter === "all"
-                  ? `هەموو ماڕکێتەکان (${markets.length})`
-                  : `ماڕکێتەکان (${assignedMarkets.length})`
-              }
-            </Button>
           </div>
         </div>
 
         {/* Stats - Different based on filter */}
         {deliveryPersonFilter !== "all" ? (
           // Stats for selected delivery person
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+          <div className="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-4">
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Store className="h-5 w-5 text-primary" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Store className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{assignedMarkets.length}</p>
-                    <p className="text-xs text-muted-foreground">کۆی ماڕکێتەکان</p>
+                    <p className="text-lg sm:text-2xl font-bold">{assignedMarkets.length}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">کۆی ماڕکێت</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/10">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {assignedMarketsWithVisitStatus.filter(m => m.todayVisit).length}
                     </p>
-                    <p className="text-xs text-muted-foreground">سەردانکرا ئەمڕۆ</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">سەردانکرا</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {assignedMarketsWithVisitStatus.filter(m => !m.todayVisit).length}
                     </p>
-                    <p className="text-xs text-muted-foreground">ماوە بۆ سەردان</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">ماوە</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <Package className="h-5 w-5 text-warning" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {assignedMarketsWithVisitStatus.reduce((sum, m) => sum + m.pendingVisits.length, 0)}
                     </p>
-                    <p className="text-xs text-muted-foreground">ڕاپۆرتی چاوەڕوان</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">چاوەڕوان</p>
                   </div>
                 </div>
               </CardContent>
@@ -468,48 +468,48 @@ export default function VisitReports() {
           </div>
         ) : (
           // Global stats
-          <div className="grid gap-4 grid-cols-3">
+          <div className="grid gap-2 sm:gap-4 grid-cols-3">
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <AlertTriangle className="h-5 w-5 text-warning" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {visits.filter(v => v.status === "pending").length}
                     </p>
-                    <p className="text-xs text-muted-foreground">چاوەڕوان</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">چاوەڕوان</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                    <Eye className="h-5 w-5 text-blue-500" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {visits.filter(v => v.status === "reviewed").length}
                     </p>
-                    <p className="text-xs text-muted-foreground">بینراوە</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">بینراوە</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+              <CardContent className="p-3 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/10">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-lg sm:text-2xl font-bold">
                       {visits.filter(v => v.status === "resolved").length}
                     </p>
-                    <p className="text-xs text-muted-foreground">چارەسەرکرا</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">چارەسەرکرا</p>
                   </div>
                 </div>
               </CardContent>
@@ -732,81 +732,117 @@ export default function VisitReports() {
           </Card>
         )}
 
-        {/* Visits Table */}
+        {/* Visits List */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
+          <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
+            <CardTitle className="text-sm sm:text-lg flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5" />
               {deliveryPersonFilter !== "all" ? "ڕاپۆرتەکانی سەردان" : "هەموو سەردانەکان"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-2 sm:p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <div className="animate-spin h-6 w-6 sm:h-8 sm:w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : filteredVisits.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-6 sm:py-8 text-xs sm:text-sm text-muted-foreground">
                 هیچ سەردانێک نییە
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>بەروار</TableHead>
-                      <TableHead>مەندوب</TableHead>
-                      <TableHead>ماڕکێت</TableHead>
-                      <TableHead>تێبینی</TableHead>
-                      <TableHead>دۆخ</TableHead>
-                      <TableHead>کردار</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredVisits.map((visit) => (
-                      <TableRow key={visit.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {format(new Date(visit.visit_date), 'yyyy/MM/dd')}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {visit.delivery_person?.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">{visit.market?.name}</p>
-                              <p className="text-xs text-muted-foreground">{visit.market?.code}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {visit.notes || "-"}
-                          </p>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(visit.status)}</TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDetails(visit.id)}
-                          >
-                            <Eye className="h-4 w-4 ml-1" />
-                            بینین
-                          </Button>
-                        </TableCell>
+              <>
+                {/* Mobile Card View */}
+                <div className="sm:hidden space-y-2">
+                  {filteredVisits.map((visit) => (
+                    <div 
+                      key={visit.id} 
+                      className="border rounded-lg p-3 space-y-2 bg-card"
+                      onClick={() => handleViewDetails(visit.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs">{format(new Date(visit.visit_date), 'MM/dd')}</span>
+                        </div>
+                        {getStatusBadge(visit.status)}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Store className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs font-medium truncate max-w-[120px]">{visit.market?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground truncate max-w-[80px]">{visit.delivery_person?.name}</span>
+                        </div>
+                      </div>
+                      {visit.notes && (
+                        <p className="text-[10px] text-muted-foreground truncate">{visit.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">بەروار</TableHead>
+                        <TableHead className="text-xs">مەندوب</TableHead>
+                        <TableHead className="text-xs">ماڕکێت</TableHead>
+                        <TableHead className="text-xs">تێبینی</TableHead>
+                        <TableHead className="text-xs">دۆخ</TableHead>
+                        <TableHead className="text-xs">کردار</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredVisits.map((visit) => (
+                        <TableRow key={visit.id}>
+                          <TableCell className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                              {format(new Date(visit.visit_date), 'yyyy/MM/dd')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <User className="h-3.5 w-3.5 text-muted-foreground" />
+                              {visit.delivery_person?.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">{visit.market?.name}</p>
+                                <p className="text-[10px] text-muted-foreground">{visit.market?.code}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <p className="text-muted-foreground truncate max-w-[150px]">
+                              {visit.notes || "-"}
+                            </p>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(visit.status)}</TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetails(visit.id)}
+                              className="h-7 text-xs"
+                            >
+                              <Eye className="h-3 w-3 ml-1" />
+                              بینین
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -814,82 +850,82 @@ export default function VisitReports() {
 
       {/* Visit Details Dialog */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5" />
               زانیاری سەردان
             </DialogTitle>
           </DialogHeader>
           
           {selectedVisit && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Visit Info */}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">مەندوب</p>
-                  <p className="font-medium">{selectedVisit.delivery_person?.name}</p>
+              <div className="grid gap-3 sm:gap-4 grid-cols-2">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">مەندوب</p>
+                  <p className="text-xs sm:text-sm font-medium">{selectedVisit.delivery_person?.name}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">ماڕکێت</p>
-                  <p className="font-medium">{selectedVisit.market?.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedVisit.market?.code}</p>
+                <div className="space-y-0.5 sm:space-y-1">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">ماڕکێت</p>
+                  <p className="text-xs sm:text-sm font-medium">{selectedVisit.market?.name}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{selectedVisit.market?.code}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">بەروار</p>
-                  <p className="font-medium">
+                <div className="space-y-0.5 sm:space-y-1">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">بەروار</p>
+                  <p className="text-xs sm:text-sm font-medium">
                     {format(new Date(selectedVisit.visit_date), 'yyyy/MM/dd - HH:mm')}
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">دۆخ</p>
+                <div className="space-y-0.5 sm:space-y-1">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">دۆخ</p>
                   {getStatusBadge(selectedVisit.status)}
                 </div>
               </div>
 
               {selectedVisit.notes && (
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">تێبینی مەندوب</p>
-                  <p className="p-3 rounded-lg bg-muted/30">{selectedVisit.notes}</p>
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">تێبینی مەندوب</p>
+                  <p className="p-2 sm:p-3 rounded-lg bg-muted/30 text-xs sm:text-sm">{selectedVisit.notes}</p>
                 </div>
               )}
 
               {/* Visit Items */}
-              <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Package className="h-4 w-4" />
+              <div className="space-y-2 sm:space-y-3">
+                <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-2">
+                  <Package className="h-3 w-3 sm:h-4 sm:w-4" />
                   مادە ڕاپۆرتکراوەکان
                 </h3>
                 
                 {visitItems.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
+                  <p className="text-center text-xs sm:text-sm text-muted-foreground py-4">
                     هیچ مادەیەک ڕاپۆرت نەکراوە
                   </p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {visitItems.map((item) => (
                       <Card key={item.id}>
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="space-y-2 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">{item.item?.name}</p>
+                        <CardContent className="p-3 sm:pt-4">
+                          <div className="flex items-start justify-between gap-2 sm:gap-4">
+                            <div className="space-y-1 sm:space-y-2 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-xs sm:text-sm font-medium">{item.item?.name}</p>
                                 {getIssueTypeBadge(item.issue_type)}
                               </div>
-                              <div className="flex gap-4 text-sm text-muted-foreground">
+                              <div className="flex gap-2 sm:gap-4 text-[10px] sm:text-sm text-muted-foreground flex-wrap">
                                 <span>بارکۆد: {item.item?.barcode}</span>
                                 <span>ژمارە: {item.quantity}</span>
                               </div>
                               {item.action_taken && (
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                                  <Badge variant="outline" className="bg-green-500/10 text-green-500 text-[10px] sm:text-xs">
                                     {item.action_taken === "removed" ? "لابرا" :
                                      item.action_taken === "renewed" ? "نوێکرایەوە" : item.action_taken}
                                   </Badge>
                                 </div>
                               )}
                               {item.admin_notes && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-[10px] sm:text-sm text-muted-foreground">
                                   تێبینی: {item.admin_notes}
                                 </p>
                               )}
@@ -900,6 +936,7 @@ export default function VisitReports() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => setSelectedItemId(item.id)}
+                                className="h-7 sm:h-8 text-[10px] sm:text-xs"
                               >
                                 چارەسەر
                               </Button>
@@ -908,11 +945,11 @@ export default function VisitReports() {
                           
                           {/* Action Form */}
                           {selectedItemId === item.id && (
-                            <div className="mt-4 pt-4 border-t space-y-3">
-                              <div className="space-y-2">
-                                <Label>کردار</Label>
+                            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t space-y-2 sm:space-y-3">
+                              <div className="space-y-1 sm:space-y-2">
+                                <Label className="text-xs sm:text-sm">کردار</Label>
                                 <Select value={actionTaken} onValueChange={setActionTaken}>
-                                  <SelectTrigger>
+                                  <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
                                     <SelectValue placeholder="کردارێک هەڵبژێرە" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -922,13 +959,14 @@ export default function VisitReports() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div className="space-y-2">
-                                <Label>تێبینی</Label>
+                              <div className="space-y-1 sm:space-y-2">
+                                <Label className="text-xs sm:text-sm">تێبینی</Label>
                                 <Textarea
                                   value={adminNotes}
                                   onChange={(e) => setAdminNotes(e.target.value)}
                                   placeholder="تێبینی..."
                                   rows={2}
+                                  className="text-xs sm:text-sm"
                                 />
                               </div>
                               <div className="flex gap-2">
@@ -936,6 +974,7 @@ export default function VisitReports() {
                                   size="sm"
                                   onClick={handleUpdateItem}
                                   disabled={!actionTaken || updateVisitItem.isPending}
+                                  className="h-7 sm:h-8 text-[10px] sm:text-xs"
                                 >
                                   تۆمارکردن
                                 </Button>
@@ -947,6 +986,7 @@ export default function VisitReports() {
                                     setActionTaken("");
                                     setAdminNotes("");
                                   }}
+                                  className="h-7 sm:h-8 text-[10px] sm:text-xs"
                                 >
                                   پاشگەزبوونەوە
                                 </Button>
@@ -961,23 +1001,27 @@ export default function VisitReports() {
               </div>
 
               {/* Status Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex gap-2 pt-3 sm:pt-4 border-t flex-wrap">
                 {selectedVisit.status === "pending" && (
                   <Button
                     variant="secondary"
+                    size="sm"
                     onClick={() => handleUpdateStatus("reviewed")}
                     disabled={updateVisitStatus.isPending}
+                    className="h-8 sm:h-9 text-xs sm:text-sm"
                   >
-                    <Eye className="h-4 w-4 ml-1" />
-                    نیشانکردن وەک بینراو
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                    بینراو
                   </Button>
                 )}
                 {selectedVisit.status !== "resolved" && (
                   <Button
+                    size="sm"
                     onClick={() => handleUpdateStatus("resolved")}
                     disabled={updateVisitStatus.isPending}
+                    className="h-8 sm:h-9 text-xs sm:text-sm"
                   >
-                    <CheckCircle className="h-4 w-4 ml-1" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                     چارەسەرکرا
                   </Button>
                 )}
