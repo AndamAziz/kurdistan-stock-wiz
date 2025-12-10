@@ -49,9 +49,10 @@ import {
   useUpdateVisitStatus,
   useUpdateVisitItem,
   useDeliveryPersons,
+  useAssignedMarkets,
 } from "@/hooks/useDeliveryPersons";
 import { useMarkets } from "@/hooks/useMarkets";
-import { format } from "date-fns";
+import { format, isToday, startOfDay, subDays } from "date-fns";
 
 export default function VisitReports() {
   const { isAdmin } = useUserRoles();
@@ -61,6 +62,7 @@ export default function VisitReports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"visits" | "markets">("visits");
   
   const { data: visits = [], isLoading } = useMarketVisits(
     null, 
@@ -69,6 +71,9 @@ export default function VisitReports() {
   const { data: visitItems = [] } = useVisitItems(selectedVisitId ?? undefined);
   const { data: deliveryPersons = [] } = useDeliveryPersons();
   const { data: markets = [] } = useMarkets();
+  const { data: assignedMarkets = [] } = useAssignedMarkets(
+    deliveryPersonFilter !== "all" ? deliveryPersonFilter : undefined
+  );
   const updateVisitStatus = useUpdateVisitStatus();
   const updateVisitItem = useUpdateVisitItem();
 
@@ -76,16 +81,10 @@ export default function VisitReports() {
   const [adminNotes, setAdminNotes] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  // Get unique delivery persons and markets from visits
+  // Get unique delivery persons from all delivery persons list (not just from visits)
   const uniqueDeliveryPersons = useMemo(() => {
-    const persons = new Map<string, string>();
-    visits.forEach(v => {
-      if (v.delivery_person?.id && v.delivery_person?.name) {
-        persons.set(v.delivery_person.id, v.delivery_person.name);
-      }
-    });
-    return Array.from(persons.entries()).map(([id, name]) => ({ id, name }));
-  }, [visits]);
+    return deliveryPersons.map(dp => ({ id: dp.id, name: dp.name }));
+  }, [deliveryPersons]);
 
   const uniqueMarkets = useMemo(() => {
     const mkts = new Map<string, { name: string; code: string }>();
@@ -96,6 +95,46 @@ export default function VisitReports() {
     });
     return Array.from(mkts.entries()).map(([id, data]) => ({ id, ...data }));
   }, [visits]);
+
+  // Get market visit status for assigned markets
+  const assignedMarketsWithVisitStatus = useMemo(() => {
+    if (deliveryPersonFilter === "all") return [];
+    
+    return assignedMarkets.map(assignment => {
+      const marketId = assignment.market?.id;
+      
+      // Get all visits for this market by this delivery person
+      const marketVisits = visits.filter(v => 
+        v.market_id === marketId && 
+        v.delivery_person_id === deliveryPersonFilter
+      );
+      
+      // Get today's visit
+      const todayVisit = marketVisits.find(v => isToday(new Date(v.visit_date)));
+      
+      // Get last 7 days visits
+      const last7DaysVisits = marketVisits.filter(v => {
+        const visitDate = new Date(v.visit_date);
+        const sevenDaysAgo = subDays(new Date(), 7);
+        return visitDate >= sevenDaysAgo;
+      });
+      
+      // Get the most recent visit
+      const lastVisit = marketVisits.length > 0 ? marketVisits[0] : null;
+      
+      // Count pending visits
+      const pendingVisits = marketVisits.filter(v => v.status === "pending");
+      
+      return {
+        ...assignment,
+        todayVisit,
+        lastVisit,
+        last7DaysVisits,
+        pendingVisits,
+        totalVisits: marketVisits.length,
+      };
+    });
+  }, [assignedMarkets, visits, deliveryPersonFilter]);
 
   const filteredVisits = useMemo(() => {
     return visits.filter(visit => {
@@ -291,57 +330,229 @@ export default function VisitReports() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 grid-cols-3">
+        {/* Stats - Different based on filter */}
+        {deliveryPersonFilter !== "all" ? (
+          // Stats for selected delivery person
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Store className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{assignedMarkets.length}</p>
+                    <p className="text-xs text-muted-foreground">کۆی ماڕکێتەکان</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {assignedMarketsWithVisitStatus.filter(m => m.todayVisit).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">سەردانکرا ئەمڕۆ</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {assignedMarketsWithVisitStatus.filter(m => !m.todayVisit).length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">ماوە بۆ سەردان</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <Package className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {assignedMarketsWithVisitStatus.reduce((sum, m) => sum + m.pendingVisits.length, 0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">ڕاپۆرتی چاوەڕوان</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          // Global stats
+          <div className="grid gap-4 grid-cols-3">
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <AlertTriangle className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {visits.filter(v => v.status === "pending").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">چاوەڕوان</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                    <Eye className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {visits.filter(v => v.status === "reviewed").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">بینراوە</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {visits.filter(v => v.status === "resolved").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">چارەسەرکرا</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Assigned Markets View - When delivery person is selected */}
+        {deliveryPersonFilter !== "all" && (
           <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {visits.filter(v => v.status === "pending").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">چاوەڕوان</p>
-                </div>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                ماڕکێتەکانی {uniqueDeliveryPersons.find(p => p.id === deliveryPersonFilter)?.name}
+                <Badge variant="secondary" className="mr-2">{assignedMarkets.length} ماڕکێت</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ماڕکێت</TableHead>
+                      <TableHead>شار</TableHead>
+                      <TableHead>دۆخی سەردان</TableHead>
+                      <TableHead>دوایین سەردان</TableHead>
+                      <TableHead>ڕاپۆرتەکان</TableHead>
+                      <TableHead>کردار</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assignedMarketsWithVisitStatus.map((assignment) => (
+                      <TableRow key={assignment.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Store className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{assignment.market?.name}</p>
+                              <p className="text-xs text-muted-foreground">کۆد: {assignment.market?.code}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{assignment.market?.city || "-"}</span>
+                        </TableCell>
+                        <TableCell>
+                          {assignment.todayVisit ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                              <CheckCircle className="h-3 w-3 ml-1" />
+                              سەردانکرا ئەمڕۆ
+                            </Badge>
+                          ) : assignment.lastVisit ? (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              دوایین: {format(new Date(assignment.lastVisit.visit_date), 'MM/dd')}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-orange-500 border-orange-500/30">
+                              سەردان نەکراوە
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {assignment.lastVisit ? (
+                            <div className="text-sm">
+                              <p>{format(new Date(assignment.lastVisit.visit_date), 'yyyy/MM/dd')}</p>
+                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                {assignment.lastVisit.notes}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {assignment.pendingVisits.length > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {assignment.pendingVisits.length} چاوەڕوان
+                              </Badge>
+                            )}
+                            {assignment.totalVisits > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {assignment.totalVisits} کۆی سەردان
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {assignment.pendingVisits.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetails(assignment.pendingVisits[0].id)}
+                            >
+                              <Eye className="h-4 w-4 ml-1" />
+                              بینین
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <Eye className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {visits.filter(v => v.status === "reviewed").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">بینراوە</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {visits.filter(v => v.status === "resolved").length}
-                  </p>
-                  <p className="text-xs text-muted-foreground">چارەسەرکرا</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
 
         {/* Visits Table */}
         <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              {deliveryPersonFilter !== "all" ? "ڕاپۆرتەکانی سەردان" : "هەموو سەردانەکان"}
+            </CardTitle>
+          </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -359,6 +570,7 @@ export default function VisitReports() {
                       <TableHead>بەروار</TableHead>
                       <TableHead>مەندوب</TableHead>
                       <TableHead>ماڕکێت</TableHead>
+                      <TableHead>تێبینی</TableHead>
                       <TableHead>دۆخ</TableHead>
                       <TableHead>کردار</TableHead>
                     </TableRow>
@@ -386,6 +598,11 @@ export default function VisitReports() {
                               <p className="text-xs text-muted-foreground">{visit.market?.code}</p>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                            {visit.notes || "-"}
+                          </p>
                         </TableCell>
                         <TableCell>{getStatusBadge(visit.status)}</TableCell>
                         <TableCell>
