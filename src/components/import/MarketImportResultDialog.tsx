@@ -287,6 +287,11 @@ export function MarketImportResultDialog({
                 <p className="text-2xl font-bold text-destructive">{incompleteMarkets.length}</p>
               </div>
               <p className="text-sm text-muted-foreground">پێویستی چاککردن</p>
+              {incompleteMarkets.length > 0 && (
+                <p className="text-xs text-destructive mt-1">
+                  ناو یان کۆد بەتاڵە
+                </p>
+              )}
             </div>
           </div>
 
