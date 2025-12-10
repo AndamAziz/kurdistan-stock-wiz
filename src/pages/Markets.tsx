@@ -86,8 +86,8 @@ export default function Markets() {
     const query = searchQuery.trim();
     if (!query) return true;
     
-    // Filter only by code (case-insensitive, starts with or exact match)
-    return market.code.toLowerCase().startsWith(query.toLowerCase());
+    // Filter only by exact code match (case-insensitive)
+    return market.code.toLowerCase() === query.toLowerCase();
   });
 
   const resetForm = () => {
