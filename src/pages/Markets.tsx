@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ import {
   MapPin,
   Building,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMarkets, useAddMarket, useUpdateMarket, useDeleteMarket, useDeleteAllMarkets, Market } from "@/hooks/useMarkets";
@@ -190,6 +192,13 @@ export default function Markets() {
   // Get unique categories and zones for stats
   const categories = [...new Set(markets.map((m) => m.trader_category).filter(Boolean))];
   const zones = [...new Set(markets.map((m) => m.zone).filter(Boolean))];
+  
+  // Count incomplete markets
+  const incompleteCount = useMemo(() => {
+    return markets.filter((m) => 
+      !m.phone?.trim() || !m.address?.trim() || !m.city?.trim() || !m.zone?.trim() || !m.trader_category?.trim()
+    ).length;
+  }, [markets]);
 
   return (
     <Layout>
@@ -310,7 +319,7 @@ export default function Markets() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-slide-up">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 animate-slide-up">
           <div className="rounded-xl border border-border bg-card p-4 shadow-card">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-primary/10 p-2">
@@ -357,6 +366,20 @@ export default function Markets() {
               </div>
             </div>
           </div>
+          {/* Incomplete Markets Card - Clickable */}
+          <Link to="/incomplete-markets">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 shadow-card hover:bg-destructive/10 transition-colors cursor-pointer h-full">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-destructive/10 p-2">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-destructive">{incompleteCount}</p>
+                  <p className="text-sm text-muted-foreground">نەتەواو</p>
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Search */}
