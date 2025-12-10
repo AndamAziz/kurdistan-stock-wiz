@@ -19,6 +19,7 @@ import ImportExport from "./pages/ImportExport";
 import Settings from "./pages/Settings";
 import UserRoles from "./pages/UserRoles";
 import Markets from "./pages/Markets";
+import IncompleteMarkets from "./pages/IncompleteMarkets";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
               <Route path="/markets" element={<ProtectedRoute><Markets /></ProtectedRoute>} />
+              <Route path="/incomplete-markets" element={<ProtectedRoute><IncompleteMarkets /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

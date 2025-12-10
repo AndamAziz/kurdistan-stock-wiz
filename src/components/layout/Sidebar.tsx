@@ -53,6 +53,7 @@ const settingsNavigation = [
   { name: 'کەتەگۆریەکان', href: '/categories', icon: Tags },
   { name: 'براندەکان', href: '/brands', icon: Building2 },
   { name: 'ماڕکێتەکان', href: '/markets', icon: Store },
+  { name: 'نەتەواوەکان', href: '/incomplete-markets', icon: AlertTriangle },
   { name: 'ڕێکخستنەکان', href: '/settings', icon: Settings },
 ];
 
