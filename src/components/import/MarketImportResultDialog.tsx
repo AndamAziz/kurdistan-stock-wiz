@@ -52,16 +52,54 @@ export function MarketImportResultDialog({
   const [markets, setMarkets] = useState<ImportedMarket[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [existingCodes, setExistingCodes] = useState<Set<string>>(new Set());
+  const [isChecking, setIsChecking] = useState(false);
 
-  // Update state when dialog opens with new data
+  // Check for existing markets when dialog opens
   useEffect(() => {
     if (open && initialMarkets.length > 0) {
-      setMarkets(initialMarkets);
+      checkExistingMarkets(initialMarkets);
     }
   }, [open, initialMarkets]);
 
-  const completeMarkets = markets.filter((m) => m.isComplete);
-  const incompleteMarkets = markets.filter((m) => !m.isComplete);
+  const checkExistingMarkets = async (marketsToCheck: ImportedMarket[]) => {
+    setIsChecking(true);
+    try {
+      // Get all codes from the imported markets
+      const codes = marketsToCheck.map(m => m.code.trim()).filter(Boolean);
+      
+      // Fetch existing markets with matching codes
+      const { data: existingMarkets } = await supabase
+        .from("markets")
+        .select("code")
+        .in("code", codes);
+      
+      const existingCodesSet = new Set(existingMarkets?.map(m => m.code) || []);
+      setExistingCodes(existingCodesSet);
+      
+      // Mark markets as duplicate or new
+      const processedMarkets = marketsToCheck.map(market => {
+        const isDuplicate = existingCodesSet.has(market.code.trim());
+        return {
+          ...market,
+          isDuplicate,
+          errorMessage: isDuplicate ? "ئەم ماڕکێتە پێشتر هەیە" : market.errorMessage,
+        };
+      });
+      
+      setMarkets(processedMarkets);
+    } catch (error) {
+      console.error("Error checking existing markets:", error);
+      setMarkets(initialMarkets);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  // Filter markets
+  const newMarkets = markets.filter((m) => m.isComplete && !(m as any).isDuplicate);
+  const duplicateMarkets = markets.filter((m) => (m as any).isDuplicate);
+  const incompleteMarkets = markets.filter((m) => !m.isComplete && !(m as any).isDuplicate);
 
   const handleUpdateMarket = (
     id: string,
@@ -81,14 +119,23 @@ export function MarketImportResultDialog({
         updated.hasError = !isComplete;
         updated.errorMessage = isComplete ? undefined : "ناو و کۆد پێویستن";
 
+        // Check if the new code is a duplicate
+        if (field === "code") {
+          const isDuplicate = existingCodes.has(value.trim());
+          (updated as any).isDuplicate = isDuplicate;
+          if (isDuplicate) {
+            updated.errorMessage = "ئەم ماڕکێتە پێشتر هەیە";
+          }
+        }
+
         return updated;
       })
     );
   };
 
   const handleImportAll = async () => {
-    if (completeMarkets.length === 0) {
-      toast.error("هیچ ماڕکێتێکی تەواو نییە بۆ import کردن");
+    if (newMarkets.length === 0) {
+      toast.error("هیچ ماڕکێتێکی نوێ نییە بۆ import کردن");
       return;
     }
 
@@ -98,20 +145,17 @@ export function MarketImportResultDialog({
       let successCount = 0;
       let errorCount = 0;
 
-      for (const market of completeMarkets) {
+      for (const market of newMarkets) {
         try {
-          const { error } = await supabase.from("markets").upsert(
-            {
-              code: market.code.trim(),
-              name: market.name.trim(),
-              trader_category: market.trader_category?.trim() || null,
-              phone: market.phone?.trim() || null,
-              address: market.address?.trim() || null,
-              city: market.city?.trim() || null,
-              zone: market.zone?.trim() || null,
-            },
-            { onConflict: "code" }
-          );
+          const { error } = await supabase.from("markets").insert({
+            code: market.code.trim(),
+            name: market.name.trim(),
+            trader_category: market.trader_category?.trim() || null,
+            phone: market.phone?.trim() || null,
+            address: market.address?.trim() || null,
+            city: market.city?.trim() || null,
+            zone: market.zone?.trim() || null,
+          });
 
           if (error) throw error;
           successCount++;
@@ -122,10 +166,13 @@ export function MarketImportResultDialog({
       }
 
       if (successCount > 0) {
-        toast.success(`${successCount} ماڕکێت بە سەرکەوتوویی زیادکران`);
+        toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} ماڕکێت زیادنەکران`);
+      }
+      if (duplicateMarkets.length > 0) {
+        toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
       }
 
       onImportComplete();
@@ -162,59 +209,69 @@ export function MarketImportResultDialog({
     );
   };
 
-  const renderMarketRow = (market: ImportedMarket) => (
-    <TableRow key={market.id}>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "code")}
-      </TableCell>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "name")}
-      </TableCell>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "trader_category")}
-      </TableCell>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "phone")}
-      </TableCell>
-      <TableCell className="text-xs max-w-[150px] truncate">
-        {renderEditableCell(market, "address")}
-      </TableCell>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "city")}
-      </TableCell>
-      <TableCell className="text-xs">
-        {renderEditableCell(market, "zone")}
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          {market.isComplete ? (
-            <Badge variant="default" className="bg-success text-xs">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              تەواو
-            </Badge>
-          ) : (
-            <Badge variant="destructive" className="text-xs">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              کەموکوڕی
-            </Badge>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              setEditingId(editingId === market.id ? null : market.id)
-            }
-          >
-            {editingId === market.id ? (
-              <Save className="w-4 h-4" />
+  const renderMarketRow = (market: ImportedMarket) => {
+    const isDuplicate = (market as any).isDuplicate;
+    
+    return (
+      <TableRow key={market.id} className={isDuplicate ? "opacity-60" : ""}>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "code")}
+        </TableCell>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "name")}
+        </TableCell>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "trader_category")}
+        </TableCell>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "phone")}
+        </TableCell>
+        <TableCell className="text-xs max-w-[150px] truncate">
+          {renderEditableCell(market, "address")}
+        </TableCell>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "city")}
+        </TableCell>
+        <TableCell className="text-xs">
+          {renderEditableCell(market, "zone")}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            {isDuplicate ? (
+              <Badge variant="secondary" className="text-xs">
+                دووبارە
+              </Badge>
+            ) : market.isComplete ? (
+              <Badge variant="default" className="bg-success text-xs">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                نوێ
+              </Badge>
             ) : (
-              <Edit className="w-4 h-4" />
+              <Badge variant="destructive" className="text-xs">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                کەموکوڕی
+              </Badge>
             )}
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
+            {!isDuplicate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setEditingId(editingId === market.id ? null : market.id)
+                }
+              >
+                {editingId === market.id ? (
+                  <Save className="w-4 h-4" />
+                ) : (
+                  <Edit className="w-4 h-4" />
+                )}
+              </Button>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -225,24 +282,40 @@ export function MarketImportResultDialog({
 
         <div className="space-y-4">
           {/* Summary */}
-          <div className="flex gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-success">
-                {completeMarkets.length}
-              </Badge>
-              <span>ماڕکێتی تەواو</span>
+          {isChecking ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              پشکنینی ماڕکێتە دووبارەکان...
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-              <span>ماڕکێتی ناتەواو</span>
+          ) : (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-success">
+                  {newMarkets.length}
+                </Badge>
+                <span>ماڕکێتی نوێ</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {duplicateMarkets.length}
+                </Badge>
+                <span>دووبارە (زیاد ناکرێن)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive">{incompleteMarkets.length}</Badge>
+                <span>ناتەواو</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <Tabs defaultValue="all">
             <TabsList>
               <TabsTrigger value="all">هەموو ({markets.length})</TabsTrigger>
-              <TabsTrigger value="complete">
-                تەواو ({completeMarkets.length})
+              <TabsTrigger value="new">
+                نوێ ({newMarkets.length})
+              </TabsTrigger>
+              <TabsTrigger value="duplicate">
+                دووبارە ({duplicateMarkets.length})
               </TabsTrigger>
               <TabsTrigger value="incomplete">
                 ناتەواو ({incompleteMarkets.length})
@@ -271,7 +344,7 @@ export function MarketImportResultDialog({
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="complete">
+            <TabsContent value="new">
               <ScrollArea className="h-[400px] border rounded-md">
                 <Table>
                   <TableHeader>
@@ -287,7 +360,29 @@ export function MarketImportResultDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {completeMarkets.map((market) => renderMarketRow(market))}
+                    {newMarkets.map((market) => renderMarketRow(market))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="duplicate">
+              <ScrollArea className="h-[400px] border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">کۆد</TableHead>
+                      <TableHead className="text-xs">ناو</TableHead>
+                      <TableHead className="text-xs">جۆر</TableHead>
+                      <TableHead className="text-xs">مۆبایل</TableHead>
+                      <TableHead className="text-xs">ناونیشان</TableHead>
+                      <TableHead className="text-xs">شار</TableHead>
+                      <TableHead className="text-xs">ناوچە</TableHead>
+                      <TableHead className="text-xs">بارودۆخ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {duplicateMarkets.map((market) => renderMarketRow(market))}
                   </TableBody>
                 </Table>
               </ScrollArea>
@@ -323,11 +418,11 @@ export function MarketImportResultDialog({
             </Button>
             <Button
               onClick={handleImportAll}
-              disabled={isImporting || completeMarkets.length === 0}
+              disabled={isImporting || isChecking || newMarkets.length === 0}
               className="gap-2"
             >
               {isImporting && <Loader2 className="w-4 h-4 animate-spin" />}
-              Import کردنی ماڕکێتەکان ({completeMarkets.length})
+              Import کردنی ماڕکێتە نوێیەکان ({newMarkets.length})
             </Button>
           </div>
         </div>
