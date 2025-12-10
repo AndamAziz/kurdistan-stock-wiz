@@ -127,11 +127,11 @@ export function ImportResultDialog({
     checkDuplicates();
   }, [open, importedItems]);
 
-  // Include ALL items (even with errors) for importing - we'll auto-fix missing fields
-  const allValidItems = items.filter((item) => item.name?.trim()); // Only require name
-  const incompleteItems = items.filter((item) => !item.name?.trim());
-  const newItems = allValidItems.filter((item) => !item.isDuplicate);
-  const duplicateItems = allValidItems.filter((item) => item.isDuplicate);
+  // Include ALL items for importing - auto-fix missing fields during import
+  const allValidItems = items; // All items are valid for import
+  const incompleteItems = items.filter((item) => !item.name?.trim() || !item.barcode?.trim());
+  const newItems = items.filter((item) => !item.isDuplicate);
+  const duplicateItems = items.filter((item) => item.isDuplicate);
 
   const getItemErrors = (item: ImportedItem): string[] => {
     const errors: string[] = [];
@@ -376,9 +376,10 @@ export function ImportResultDialog({
 
   // Import ALL items - Smart upsert: add new ones and update existing ones automatically
   const handleImportAll = async () => {
-    const allItemsToProcess = [...newItems, ...duplicateItems];
+    // Use ALL items - including those with missing fields (we'll auto-fix them)
+    const allItemsToProcess = items;
     if (allItemsToProcess.length === 0) {
-      toast.info("هیچ مادەیەکی دروست نییە بۆ هێنان");
+      toast.info("هیچ مادەیەک نییە بۆ هێنان");
       return;
     }
 
@@ -433,6 +434,9 @@ export function ImportResultDialog({
             }
           }
 
+          // Auto-generate name if missing
+          const itemName = item.name?.trim() || `مادە-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+          
           // Auto-generate barcode if missing
           const itemBarcode = item.barcode?.trim() || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
@@ -448,10 +452,10 @@ export function ImportResultDialog({
             const { error: updateError } = await supabase
               .from("items")
               .update({
-                name: item.name.trim(),
+                name: itemName,
                 brand_id: brandId,
                 category_id: categoryId,
-                current_quantity: item.quantity,
+                current_quantity: item.quantity || 0,
                 min_stock: item.min_stock || 10,
                 unit: item.unit || "دانە",
                 box_price: item.box_price || 0,
@@ -473,12 +477,12 @@ export function ImportResultDialog({
           } else {
             // Insert new item
             const { error: insertError } = await supabase.from("items").insert({
-              name: item.name.trim(),
+              name: itemName,
               barcode: itemBarcode,
               brand_id: brandId,
               category_id: categoryId,
-              current_quantity: item.quantity,
-              total_in: item.quantity,
+              current_quantity: item.quantity || 0,
+              total_in: item.quantity || 0,
               min_stock: item.min_stock || 10,
               unit: item.unit || "دانە",
               box_price: item.box_price || 0,
