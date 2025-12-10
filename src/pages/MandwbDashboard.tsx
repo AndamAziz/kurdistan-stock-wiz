@@ -231,6 +231,43 @@ export default function MandwbDashboard() {
           </div>
         </div>
 
+        {/* Unvisited Markets Alert */}
+        {remainingToday.length > 0 && (
+          <Card className="border-orange-500/30 bg-orange-500/5">
+            <CardContent className="py-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                <div className="space-y-2 flex-1">
+                  <p className="text-sm font-medium text-orange-600">
+                    {remainingToday.length} ماڕکێت سەردانی نەکراون ئەمڕۆ!
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {remainingToday.slice(0, 5).map((m) => (
+                      <Badge key={m.id} variant="outline" className="text-xs border-orange-500/30 text-orange-600">
+                        {m.market?.name}
+                      </Badge>
+                    ))}
+                    {remainingToday.length > 5 && (
+                      <Badge variant="outline" className="text-xs border-orange-500/30 text-orange-600">
+                        +{remainingToday.length - 5} تر
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 text-orange-600 border-orange-500/30 hover:bg-orange-500/10"
+                    onClick={() => setActiveTab("markets")}
+                  >
+                    <Store className="h-4 w-4 ml-1" />
+                    بچۆ بەشی ماڕکێتەکان
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard" className="gap-2">
