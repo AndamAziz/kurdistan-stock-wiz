@@ -127,10 +127,11 @@ export function ImportResultDialog({
     checkDuplicates();
   }, [open, importedItems]);
 
-  const completeItems = items.filter((item) => item.isComplete && !item.hasError);
-  const incompleteItems = items.filter((item) => !item.isComplete || item.hasError);
-  const newItems = completeItems.filter((item) => !item.isDuplicate);
-  const duplicateItems = completeItems.filter((item) => item.isDuplicate);
+  // Include ALL items (even with errors) for importing - we'll auto-fix missing fields
+  const allValidItems = items.filter((item) => item.name?.trim()); // Only require name
+  const incompleteItems = items.filter((item) => !item.name?.trim());
+  const newItems = allValidItems.filter((item) => !item.isDuplicate);
+  const duplicateItems = allValidItems.filter((item) => item.isDuplicate);
 
   const getItemErrors = (item: ImportedItem): string[] => {
     const errors: string[] = [];
@@ -432,7 +433,10 @@ export function ImportResultDialog({
             }
           }
 
-          if (item.isDuplicate) {
+          // Auto-generate barcode if missing
+          const itemBarcode = item.barcode?.trim() || `AUTO-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
+          if (item.isDuplicate && item.barcode?.trim()) {
             // Update existing item by barcode
             const { error: updateError } = await supabase
               .from("items")
@@ -460,10 +464,10 @@ export function ImportResultDialog({
               updatedCount++;
             }
           } else {
-            // Insert new item
+            // Insert new item (including items without barcode - auto-generated)
             const { error: insertError } = await supabase.from("items").insert({
               name: item.name.trim(),
-              barcode: item.barcode.trim(),
+              barcode: itemBarcode,
               brand_id: brandId,
               category_id: categoryId,
               current_quantity: item.quantity,
