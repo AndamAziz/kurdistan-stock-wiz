@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,10 @@ import {
   BellRing,
   BellOff,
   Clock,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
@@ -33,6 +37,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationSettings, intervalOptions, NotificationInterval } from "@/hooks/useNotificationSettings";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/lib/haptics";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -40,9 +45,51 @@ export default function Settings() {
   const { permission, isSupported, requestPermission, checkAndNotify } = usePushNotifications();
   const { settings, updateSettings } = useNotificationSettings();
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   const handleSave = () => {
     hapticFeedback.success();
     toast.success('ڕێکخستنەکان پاشەکەوتکران');
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('تکایە هەموو خانەکان پڕبکەوە');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('وشەی نهێنی نوێ دەبێت لانیکەم ٦ پیت بێت');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('وشەی نهێنی نوێ جیاوازە لە دووبارەکردنەوەی');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast.error(error.message || 'هەڵە لە گۆڕینی وشەی نهێنی');
+      } else {
+        toast.success('وشەی نهێنی گۆڕدرا');
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        hapticFeedback.success();
+      }
+    } catch (err) {
+      toast.error('هەڵەیەک ڕوویدا');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
@@ -391,8 +438,101 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* System Settings */}
+        {/* Password Change Section */}
         <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '125ms' }}>
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <div className="rounded-md sm:rounded-lg bg-primary/10 p-1.5 sm:p-2">
+              <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <h2 className="text-base sm:text-lg font-semibold text-card-foreground">گۆڕینی وشەی نهێنی</h2>
+          </div>
+          
+          <div className="space-y-3 sm:space-y-4">
+            {/* Current Password */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm">وشەی نهێنی ئێستا</Label>
+              <div className="relative">
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10 pl-10 h-9 sm:h-10 text-sm"
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  tabIndex={-1}
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm">وشەی نهێنی نوێ</Label>
+              <div className="relative">
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10 pl-10 h-9 sm:h-10 text-sm"
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm New Password */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm">دووبارەکردنەوەی وشەی نهێنی نوێ</Label>
+              <div className="relative">
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10 pl-10 h-9 sm:h-10 text-sm"
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleChangePassword} 
+              disabled={isChangingPassword}
+              className="w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm gap-2"
+            >
+              {isChangingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+              گۆڕینی وشەی نهێنی
+            </Button>
+          </div>
+        </div>
+
+        {/* System Settings */}
+        <div className="rounded-lg sm:rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card animate-slide-up" style={{ animationDelay: '150ms' }}>
           <div className="flex items-center gap-3 mb-4 sm:mb-6">
             <div className="rounded-md sm:rounded-lg bg-success/10 p-1.5 sm:p-2">
               <Database className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
