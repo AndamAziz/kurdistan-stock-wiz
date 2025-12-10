@@ -41,6 +41,8 @@ import {
   Truck,
   Filter,
   X,
+  MessageCircle,
+  Bell,
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import {
@@ -603,16 +605,39 @@ export default function VisitReports() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {assignment.pendingVisits.length > 0 && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewDetails(assignment.pendingVisits[0].id)}
-                            >
-                              <Eye className="h-4 w-4 ml-1" />
-                              بینین
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {assignment.pendingVisits.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewDetails(assignment.pendingVisits[0].id)}
+                              >
+                                <Eye className="h-4 w-4 ml-1" />
+                                بینین
+                              </Button>
+                            )}
+                            {!assignment.todayVisit && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                                onClick={() => {
+                                  const deliveryPerson = deliveryPersons.find(p => p.id === deliveryPersonFilter);
+                                  if (deliveryPerson?.phone) {
+                                    const message = encodeURIComponent(
+                                      `سڵاو ${deliveryPerson.name}،\n\nتکایە سەردانی ماڕکێتی "${assignment.market?.name}" (کۆد: ${assignment.market?.code}) بکە.\n\nسوپاس 🙏`
+                                    );
+                                    window.open(`https://wa.me/${deliveryPerson.phone.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+                                  } else {
+                                    alert('ژمارەی مۆبایلی مەندوب بەردەست نییە');
+                                  }
+                                }}
+                              >
+                                <MessageCircle className="h-4 w-4 ml-1" />
+                                ناردن
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
