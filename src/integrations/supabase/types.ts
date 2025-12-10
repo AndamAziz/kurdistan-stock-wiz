@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_persons: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invoice_items: {
         Row: {
           boxes: number | null
@@ -265,6 +295,87 @@ export type Database = {
           },
         ]
       }
+      market_assignments: {
+        Row: {
+          assigned_at: string
+          delivery_person_id: string
+          id: string
+          market_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          delivery_person_id: string
+          id?: string
+          market_id: string
+        }
+        Update: {
+          assigned_at?: string
+          delivery_person_id?: string
+          id?: string
+          market_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_assignments_delivery_person_id_fkey"
+            columns: ["delivery_person_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_assignments_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_visits: {
+        Row: {
+          created_at: string
+          delivery_person_id: string
+          id: string
+          market_id: string
+          notes: string | null
+          status: string
+          visit_date: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_person_id: string
+          id?: string
+          market_id: string
+          notes?: string | null
+          status?: string
+          visit_date?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_person_id?: string
+          id?: string
+          market_id?: string
+          notes?: string | null
+          status?: string
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_visits_delivery_person_id_fkey"
+            columns: ["delivery_person_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_visits_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       markets: {
         Row: {
           address: string | null
@@ -415,6 +526,57 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_items: {
+        Row: {
+          action_taken: string | null
+          admin_notes: string | null
+          created_at: string
+          id: string
+          issue_type: string
+          item_id: string
+          quantity: number
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          action_taken?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          issue_type: string
+          item_id: string
+          quantity?: number
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          action_taken?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          issue_type?: string
+          item_id?: string
+          quantity?: number
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_items_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "market_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -429,7 +591,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "storekeeper" | "viewer"
+      app_role: "admin" | "storekeeper" | "viewer" | "mandwb"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -557,7 +719,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "storekeeper", "viewer"],
+      app_role: ["admin", "storekeeper", "viewer", "mandwb"],
     },
   },
 } as const

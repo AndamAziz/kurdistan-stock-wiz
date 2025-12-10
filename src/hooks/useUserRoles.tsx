@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-export type AppRole = 'admin' | 'storekeeper' | 'viewer';
+export type AppRole = 'admin' | 'storekeeper' | 'viewer' | 'mandwb';
 
 interface UserRole {
   id: string;
@@ -42,6 +42,7 @@ export function useUserRoles() {
   const isAdmin = currentUserRoles.includes('admin');
   const isStorekeeper = currentUserRoles.includes('storekeeper');
   const isViewer = currentUserRoles.includes('viewer');
+  const isMandwb = currentUserRoles.includes('mandwb');
 
   // Fetch all users with their roles (admin only - RLS enforces this)
   const { data: usersWithRoles = [], isLoading: isLoadingUsers, refetch: refetchUsers } = useQuery({
@@ -137,6 +138,7 @@ export function useUserRoles() {
     isAdmin,
     isStorekeeper,
     isViewer,
+    isMandwb,
     isLoadingCurrentUserRoles,
     usersWithRoles,
     isLoadingUsers,
