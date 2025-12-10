@@ -51,6 +51,7 @@ import {
   useUpdateVisitItem,
   useDeliveryPersons,
   useAssignedMarkets,
+  useAllMarketAssignments,
 } from "@/hooks/useDeliveryPersons";
 import { useMarkets } from "@/hooks/useMarkets";
 import { format, isToday, startOfDay, subDays } from "date-fns";
@@ -71,10 +72,11 @@ export default function VisitReports() {
   );
   const { data: visitItems = [] } = useVisitItems(selectedVisitId ?? undefined);
   const { data: deliveryPersons = [] } = useDeliveryPersons();
-  const { data: markets = [] } = useMarkets();
+  const { data: markets = [], isLoading: isLoadingMarkets } = useMarkets();
   const { data: assignedMarkets = [] } = useAssignedMarkets(
     deliveryPersonFilter !== "all" ? deliveryPersonFilter : undefined
   );
+  const { data: allMarketAssignments = [] } = useAllMarketAssignments();
   
   // Get all visit IDs for the selected delivery person's assigned markets
   const allVisitIdsForDeliveryPerson = useMemo(() => {
@@ -92,6 +94,7 @@ export default function VisitReports() {
   const [actionTaken, setActionTaken] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [showAllMarkets, setShowAllMarkets] = useState(false);
 
   // Get unique delivery persons from all delivery persons list (not just from visits)
   const uniqueDeliveryPersons = useMemo(() => {
@@ -107,6 +110,25 @@ export default function VisitReports() {
     });
     return Array.from(mkts.entries()).map(([id, data]) => ({ id, ...data }));
   }, [visits]);
+
+  // Create a map of market_id to assigned delivery person
+  const marketToDeliveryPersonMap = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>();
+    allMarketAssignments.forEach(assignment => {
+      if (assignment.market_id && assignment.delivery_person) {
+        map.set(assignment.market_id, assignment.delivery_person);
+      }
+    });
+    return map;
+  }, [allMarketAssignments]);
+
+  // All markets with their assigned delivery person
+  const allMarketsWithAssignment = useMemo(() => {
+    return markets.map(market => ({
+      ...market,
+      assignedDeliveryPerson: marketToDeliveryPersonMap.get(market.id) || null,
+    }));
+  }, [markets, marketToDeliveryPersonMap]);
 
   // Get market visit status for assigned markets with reported items data
   const assignedMarketsWithVisitStatus = useMemo(() => {
@@ -360,6 +382,19 @@ export default function VisitReports() {
                 سڕینەوەی فلتەرەکان
               </Button>
             )}
+
+            {/* Show All Markets Button - Only when no delivery person is selected */}
+            {deliveryPersonFilter === "all" && (
+              <Button 
+                variant={showAllMarkets ? "default" : "outline"}
+                size="sm" 
+                onClick={() => setShowAllMarkets(!showAllMarkets)}
+                className="flex items-center gap-2"
+              >
+                <Store className="h-4 w-4" />
+                {showAllMarkets ? "شاردنەوەی ماڕکێتەکان" : `هەموو ماڕکێتەکان (${markets.length})`}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -581,6 +616,81 @@ export default function VisitReports() {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* All Markets View - When no delivery person is selected and button is clicked */}
+        {deliveryPersonFilter === "all" && showAllMarkets && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Store className="h-5 w-5" />
+                هەموو ماڕکێتەکان
+                <Badge variant="secondary" className="mr-2">{markets.length} ماڕکێت</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoadingMarkets ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background">
+                      <TableRow>
+                        <TableHead>کۆد</TableHead>
+                        <TableHead>ماڕکێت</TableHead>
+                        <TableHead>شار</TableHead>
+                        <TableHead>ناوچە</TableHead>
+                        <TableHead>مەندوبی بەرپرس</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allMarketsWithAssignment
+                        .filter(market => 
+                          searchTerm === "" ||
+                          market.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          market.assignedDeliveryPerson?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((market) => (
+                          <TableRow key={market.id}>
+                            <TableCell>
+                              <span className="text-sm font-mono">{market.code}</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Store className="h-4 w-4 text-muted-foreground" />
+                                <p className="font-medium">{market.name}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm">{market.city || "-"}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm">{market.zone || "-"}</span>
+                            </TableCell>
+                            <TableCell>
+                              {market.assignedDeliveryPerson ? (
+                                <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                                  <Truck className="h-3 w-3" />
+                                  {market.assignedDeliveryPerson.name}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  بەرپرسی نییە
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
