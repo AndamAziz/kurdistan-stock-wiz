@@ -567,6 +567,7 @@ export default function Items() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
+                      <TableHead className="text-center font-semibold w-12 text-base py-4">#</TableHead>
                       <TableHead className="text-center font-semibold w-20 text-base py-4">وێنە</TableHead>
                       <TableHead className="text-right font-semibold text-base py-4">باڕکۆد</TableHead>
                       <TableHead className="text-right font-semibold text-base py-4">ناوی بەرهەم</TableHead>
@@ -580,7 +581,7 @@ export default function Items() {
                   <TableBody>
                     {filteredItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="h-40 text-center text-muted-foreground text-base">
+                        <TableCell colSpan={9} className="h-40 text-center text-muted-foreground text-base">
                           هیچ مادەیەک نەدۆزرایەوە
                         </TableCell>
                       </TableRow>
@@ -595,6 +596,10 @@ export default function Items() {
                             className="animate-fade-in hover:bg-muted/30 transition-colors"
                             style={{ animationDelay: `${index * 30}ms` }}
                           >
+                            {/* Row Number */}
+                            <TableCell className="text-center py-4">
+                              <span className="font-bold text-muted-foreground">{index + 1}</span>
+                            </TableCell>
                             {/* Item Image */}
                             <TableCell className="text-center py-4">
                               {item.image_url ? (
