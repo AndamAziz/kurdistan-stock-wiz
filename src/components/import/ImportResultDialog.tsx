@@ -60,6 +60,8 @@ export interface ImportedItem {
   errorMessage?: string;
   errorFields?: string[];
   isComplete: boolean;
+  isDuplicate?: boolean;
+  existingItemId?: string;
 }
 
 interface ImportResultDialogProps {
@@ -78,20 +80,57 @@ export function ImportResultDialog({
   const [items, setItems] = useState<ImportedItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
 
-  // Update state when dialog opens with new data
+  // Check for duplicates when dialog opens
   useEffect(() => {
-    if (open && importedItems.length > 0) {
-      setItems(importedItems);
-    }
+    const checkDuplicates = async () => {
+      if (!open || importedItems.length === 0) return;
+      
+      setIsCheckingDuplicates(true);
+      
+      try {
+        // Get all barcodes from imported items
+        const barcodes = importedItems.map(item => item.barcode.trim()).filter(Boolean);
+        
+        // Query existing items with these barcodes
+        const { data: existingItems } = await supabase
+          .from("items")
+          .select("id, barcode")
+          .in("barcode", barcodes);
+        
+        const existingBarcodeMap = new Map(
+          existingItems?.map(item => [item.barcode, item.id]) || []
+        );
+        
+        // Mark duplicates
+        const itemsWithDuplicates = importedItems.map(item => ({
+          ...item,
+          isDuplicate: existingBarcodeMap.has(item.barcode.trim()),
+          existingItemId: existingBarcodeMap.get(item.barcode.trim()),
+        }));
+        
+        setItems(itemsWithDuplicates);
+      } catch (error) {
+        console.error("Error checking duplicates:", error);
+        setItems(importedItems);
+      } finally {
+        setIsCheckingDuplicates(false);
+      }
+    };
+    
+    checkDuplicates();
   }, [open, importedItems]);
 
   const completeItems = items.filter((item) => item.isComplete && !item.hasError);
   const incompleteItems = items.filter((item) => !item.isComplete || item.hasError);
+  const newItems = completeItems.filter((item) => !item.isDuplicate);
+  const duplicateItems = completeItems.filter((item) => item.isDuplicate);
 
   const getItemErrors = (item: ImportedItem): string[] => {
     const errors: string[] = [];
@@ -128,25 +167,28 @@ export function ImportResultDialog({
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleImportAll = async () => {
-    const itemsToImport = completeItems;
+  // Import only NEW items (not duplicates)
+  const handleImportNew = async () => {
+    const itemsToImport = newItems;
     if (itemsToImport.length === 0) {
-      toast.error("هیچ مادەیەکی تەواو نییە بۆ هێنان");
+      toast.info("هیچ مادەیەکی نوێ نییە بۆ هێنان");
       return;
     }
 
     setIsImporting(true);
+    setImportProgress({ current: 0, total: itemsToImport.length });
 
     try {
-      // Get brand and category mappings
       const brandMap = new Map(brands.map((b) => [b.name.toLowerCase(), b.id]));
       const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
 
       let addedCount = 0;
-      let updatedCount = 0;
       let errorCount = 0;
 
-      for (const item of itemsToImport) {
+      for (let i = 0; i < itemsToImport.length; i++) {
+        const item = itemsToImport[i];
+        setImportProgress({ current: i + 1, total: itemsToImport.length });
+        
         try {
           // Find or create brand
           let brandId: string | null = null;
@@ -182,81 +224,36 @@ export function ImportResultDialog({
             }
           }
 
-          // Check if item already exists by barcode
-          const { data: existingItem } = await supabase
-            .from("items")
-            .select("id")
-            .eq("barcode", item.barcode.trim())
-            .maybeSingle();
+          // Insert new item
+          const { error: insertError } = await supabase.from("items").insert({
+            name: item.name.trim(),
+            barcode: item.barcode.trim(),
+            brand_id: brandId,
+            category_id: categoryId,
+            current_quantity: item.quantity,
+            total_in: item.quantity,
+            min_stock: item.min_stock || 10,
+            unit: item.unit || "دانە",
+            box_price: item.box_price || 0,
+            piece_price: item.piece_price || 0,
+            price_per_kg: item.price_per_kg || 0,
+            mfg_date: item.mfg_date || null,
+            exp_date: item.exp_date || null,
+            remind_date: item.remind_date || null,
+          });
 
-          if (existingItem) {
-            // Update existing item
-            const { error: updateError } = await supabase
-              .from("items")
-              .update({
-                name: item.name.trim(),
-                brand_id: brandId,
-                category_id: categoryId,
-                current_quantity: item.quantity,
-                min_stock: item.min_stock || 10,
-                unit: item.unit || "دانە",
-                box_price: item.box_price || 0,
-                piece_price: item.piece_price || 0,
-                price_per_kg: item.price_per_kg || 0,
-                mfg_date: item.mfg_date || null,
-                exp_date: item.exp_date || null,
-                remind_date: item.remind_date || null,
-              })
-              .eq("id", existingItem.id);
-
-            if (updateError) {
-              errorCount++;
-            } else {
-              updatedCount++;
-            }
+          if (insertError) {
+            errorCount++;
           } else {
-            // Insert new item
-            const { error: insertError } = await supabase.from("items").insert({
-              name: item.name.trim(),
-              barcode: item.barcode.trim(),
-              brand_id: brandId,
-              category_id: categoryId,
-              current_quantity: item.quantity,
-              total_in: item.quantity,
-              min_stock: item.min_stock || 10,
-              unit: item.unit || "دانە",
-              box_price: item.box_price || 0,
-              piece_price: item.piece_price || 0,
-              price_per_kg: item.price_per_kg || 0,
-              mfg_date: item.mfg_date || null,
-              exp_date: item.exp_date || null,
-              remind_date: item.remind_date || null,
-            });
-
-            if (insertError) {
-              errorCount++;
-            } else {
-              addedCount++;
-            }
+            addedCount++;
           }
         } catch {
           errorCount++;
         }
       }
 
-      // Show appropriate messages
-      const messages: string[] = [];
       if (addedCount > 0) {
-        messages.push(`${addedCount} مادەی نوێ زیادکرا`);
-      }
-      if (updatedCount > 0) {
-        messages.push(`${updatedCount} مادە نوێکرایەوە`);
-      }
-      
-      if (messages.length > 0) {
-        toast.success(messages.join(" و "), {
-          icon: addedCount > 0 && updatedCount > 0 ? <RefreshCw className="h-4 w-4" /> : undefined,
-        });
+        toast.success(`${addedCount} مادەی نوێ زیادکرا`);
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} مادە نەتوانرا هێندرێت`);
@@ -269,6 +266,7 @@ export function ImportResultDialog({
       toast.error("هەڵە لە هێنانی مادەکان");
     } finally {
       setIsImporting(false);
+      setImportProgress({ current: 0, total: 0 });
     }
   };
 
@@ -372,76 +370,74 @@ export function ImportResultDialog({
     return (
       <TableRow 
         key={item.id} 
-        className={`${item.hasError ? "bg-destructive/5" : ""} ${isEditing ? "bg-muted/50" : ""}`}
+        className={`${item.hasError ? "bg-destructive/5" : item.isDuplicate ? "bg-warning/5" : ""} ${isEditing ? "bg-muted/50" : ""}`}
       >
-        <TableCell className="font-medium">
+        <TableCell className="font-medium text-xs">
           {isEditing ? (
             <div className="space-y-1">
               <Input
                 value={item.name}
                 onChange={(e) => handleUpdateItem(item.id, "name", e.target.value)}
-                className={`h-8 ${errorFields.includes("ناو") ? "border-destructive" : ""}`}
+                className={`h-7 text-xs ${errorFields.includes("ناو") ? "border-destructive" : ""}`}
                 placeholder="ناوی بەرهەم"
               />
               {errorFields.includes("ناو") && (
-                <span className="text-xs text-destructive">پێویستە</span>
+                <span className="text-[10px] text-destructive">پێویستە</span>
               )}
             </div>
           ) : (
             <div className="flex flex-col">
-              {item.name || <span className="text-destructive">بەتاڵە</span>}
+              <span className="truncate max-w-[120px]">{item.name || <span className="text-destructive">بەتاڵە</span>}</span>
               {errorFields.includes("ناو") && !isEditing && (
-                <span className="text-xs text-destructive">⚠ پێویستە</span>
+                <span className="text-[10px] text-destructive">⚠ پێویستە</span>
               )}
             </div>
           )}
         </TableCell>
-        <TableCell>
+        <TableCell className="text-xs">
           {isEditing ? (
             <div className="space-y-1">
               <Input
                 value={item.barcode}
                 onChange={(e) => handleUpdateItem(item.id, "barcode", e.target.value)}
-                className={`h-8 ${errorFields.includes("باڕکۆد") ? "border-destructive" : ""}`}
+                className={`h-7 text-xs ${errorFields.includes("باڕکۆد") ? "border-destructive" : ""}`}
                 placeholder="باڕکۆد"
               />
               {errorFields.includes("باڕکۆد") && (
-                <span className="text-xs text-destructive">پێویستە</span>
+                <span className="text-[10px] text-destructive">پێویستە</span>
               )}
             </div>
           ) : (
             <div className="flex flex-col">
-              {item.barcode || <span className="text-destructive">بەتاڵە</span>}
+              <span className="truncate max-w-[100px]">{item.barcode || <span className="text-destructive">بەتاڵە</span>}</span>
               {errorFields.includes("باڕکۆد") && !isEditing && (
-                <span className="text-xs text-destructive">⚠ پێویستە</span>
+                <span className="text-[10px] text-destructive">⚠ پێویستە</span>
               )}
             </div>
           )}
         </TableCell>
-        <TableCell>{renderEditableCell(item, "brand", "select")}</TableCell>
-        <TableCell>{renderEditableCell(item, "category", "select")}</TableCell>
-        <TableCell>{renderEditableCell(item, "quantity", "number")}</TableCell>
-        <TableCell>{renderEditableCell(item, "box_price", "number")}</TableCell>
-        <TableCell>{renderEditableCell(item, "piece_price", "number")}</TableCell>
-        <TableCell>{renderEditableCell(item, "price_per_kg", "number")}</TableCell>
-        <TableCell>{renderEditableCell(item, "min_stock", "number")}</TableCell>
+        <TableCell className="text-xs">{renderEditableCell(item, "brand", "select")}</TableCell>
+        <TableCell className="text-xs">{renderEditableCell(item, "category", "select")}</TableCell>
+        <TableCell className="text-xs">{renderEditableCell(item, "quantity", "number")}</TableCell>
+        <TableCell className="text-xs hidden lg:table-cell">{renderEditableCell(item, "box_price", "number")}</TableCell>
+        <TableCell className="text-xs hidden lg:table-cell">{renderEditableCell(item, "piece_price", "number")}</TableCell>
+        <TableCell className="text-xs hidden xl:table-cell">{renderEditableCell(item, "price_per_kg", "number")}</TableCell>
+        <TableCell className="text-xs hidden xl:table-cell">{renderEditableCell(item, "min_stock", "number")}</TableCell>
         <TableCell>
           {item.hasError ? (
-            <div className="space-y-1">
-              <Badge variant="destructive" className="gap-1 whitespace-nowrap">
-                <AlertCircle className="h-3 w-3" />
-                کێشە
-              </Badge>
-              {errorFields.length > 0 && (
-                <p className="text-[10px] text-destructive font-medium">
-                  {errorFields.join("، ")}
-                </p>
-              )}
-            </div>
+            <Badge variant="destructive" className="gap-1 text-[10px] whitespace-nowrap">
+              <AlertCircle className="h-3 w-3" />
+              هەڵە
+            </Badge>
+          ) : item.isDuplicate ? (
+            <Badge className="gap-1 text-[10px] whitespace-nowrap bg-warning text-warning-foreground">
+              <RefreshCw className="h-3 w-3" />
+              دووبارە
+            </Badge>
           ) : (
-            <Badge variant="secondary" className="gap-1 bg-success/10 text-success whitespace-nowrap">
+            <Badge className="gap-1 text-[10px] whitespace-nowrap bg-success text-success-foreground">
               <CheckCircle2 className="h-3 w-3" />
-              ئامادە
+              نوێ
             </Badge>
           )}
         </TableCell>
@@ -450,22 +446,22 @@ export function ImportResultDialog({
             <Button
               size="sm"
               variant={isEditing ? "default" : item.hasError ? "outline" : "ghost"}
-              className={`h-7 w-7 p-0 ${item.hasError && !isEditing ? "border-destructive text-destructive" : ""}`}
+              className={`h-6 w-6 p-0 ${item.hasError && !isEditing ? "border-destructive text-destructive" : ""}`}
               onClick={() => setEditingId(isEditing ? null : item.id)}
             >
               {isEditing ? (
-                <Save className="h-4 w-4" />
+                <Save className="h-3 w-3" />
               ) : (
-                <Edit2 className="h-4 w-4" />
+                <Edit2 className="h-3 w-3" />
               )}
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
               onClick={() => handleDeleteItem(item.id)}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3 w-3" />
             </Button>
           </div>
         </TableCell>
@@ -475,109 +471,215 @@ export function ImportResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[95vh] p-0" dir="rtl">
-        <DialogHeader className="p-4 pb-2 border-b">
-          <DialogTitle className="flex items-center justify-between">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-[1200px] max-h-[90vh] p-0 overflow-hidden" dir="rtl">
+        <DialogHeader className="p-3 sm:p-4 pb-2 border-b">
+          <DialogTitle className="flex items-center justify-between text-base sm:text-lg">
             <span>ئەنجامی هێنان - {items.length} مادە</span>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChange(false)}>
+              <X className="h-4 w-4" />
             </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="p-4">
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-            <div className="rounded-lg bg-muted/50 p-4 text-center">
-              <p className="text-2xl font-bold text-foreground">{items.length}</p>
-              <p className="text-sm text-muted-foreground">کۆی مادەکان</p>
+        <div className="p-3 sm:p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+          {/* Loading State */}
+          {isCheckingDuplicates && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+              <p className="text-muted-foreground">چاوەڕوان بە... پشکنینی مادە دووبارەکان</p>
             </div>
-            <div className="rounded-lg bg-success/10 p-4 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <Plus className="h-5 w-5 text-success" />
-                <p className="text-2xl font-bold text-success">{completeItems.length}</p>
+          )}
+
+          {/* Import Progress */}
+          {isImporting && (
+            <div className="mb-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-center gap-3 mb-2">
+                <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                <span className="font-medium">هێنانی مادەکان...</span>
               </div>
-              <p className="text-sm text-muted-foreground">ئامادە بۆ هێنان</p>
-            </div>
-            <div className="rounded-lg bg-destructive/10 p-4 text-center">
-              <div className="flex items-center justify-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                <p className="text-2xl font-bold text-destructive">{incompleteItems.length}</p>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
+                  style={{ width: `${importProgress.total > 0 ? (importProgress.current / importProgress.total) * 100 : 0}%` }}
+                />
               </div>
-              <p className="text-sm text-muted-foreground">پێویستی چاککردن</p>
-              {incompleteItems.length > 0 && (
-                <p className="text-xs text-destructive mt-1">
-                  ناو یان باڕکۆد بەتاڵە
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                {importProgress.current} / {importProgress.total}
+              </p>
             </div>
-          </div>
+          )}
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="all">هەموو ({items.length})</TabsTrigger>
-              <TabsTrigger value="complete">
-                ئامادە ({completeItems.length})
-              </TabsTrigger>
-              <TabsTrigger value="incomplete">
-                پێویستی چاککردن ({incompleteItems.length})
-              </TabsTrigger>
-            </TabsList>
+          {!isCheckingDuplicates && (
+            <>
+              {/* Stats - Responsive Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+                <div className="rounded-lg bg-muted/50 p-2 sm:p-3 text-center">
+                  <p className="text-lg sm:text-xl font-bold text-foreground">{items.length}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">کۆی مادەکان</p>
+                </div>
+                <div className="rounded-lg bg-success/10 p-2 sm:p-3 text-center border border-success/20">
+                  <div className="flex items-center justify-center gap-1">
+                    <Plus className="h-4 w-4 text-success" />
+                    <p className="text-lg sm:text-xl font-bold text-success">{newItems.length}</p>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">مادەی نوێ</p>
+                </div>
+                <div className="rounded-lg bg-warning/10 p-2 sm:p-3 text-center border border-warning/20">
+                  <div className="flex items-center justify-center gap-1">
+                    <RefreshCw className="h-4 w-4 text-warning" />
+                    <p className="text-lg sm:text-xl font-bold text-warning">{duplicateItems.length}</p>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">دووبارە (پێشتر هەیە)</p>
+                </div>
+                <div className="rounded-lg bg-destructive/10 p-2 sm:p-3 text-center border border-destructive/20">
+                  <div className="flex items-center justify-center gap-1">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <p className="text-lg sm:text-xl font-bold text-destructive">{incompleteItems.length}</p>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">پێویستی چاککردن</p>
+                </div>
+              </div>
 
-            <ScrollArea className="h-[50vh] rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
-                  <TableRow>
-                    <TableHead>ناوی بەرهەم</TableHead>
-                    <TableHead>باڕکۆد</TableHead>
-                    <TableHead>براند</TableHead>
-                    <TableHead>کەتەگۆری</TableHead>
-                    <TableHead>بڕ</TableHead>
-                    <TableHead>نرخی بۆکس</TableHead>
-                    <TableHead>نرخی دانە</TableHead>
-                    <TableHead>نرخی کیلۆ</TableHead>
-                    <TableHead>کەمترین ستۆک</TableHead>
-                    <TableHead>بارودۆخ</TableHead>
-                    <TableHead>کردار</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeTab === "all" && items.map(renderItemRow)}
-                  {activeTab === "complete" && completeItems.map(renderItemRow)}
-                  {activeTab === "incomplete" && incompleteItems.map(renderItemRow)}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </Tabs>
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-4 mb-3 h-auto">
+                  <TabsTrigger value="all" className="text-[10px] sm:text-xs px-1 py-2">
+                    هەموو ({items.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="new" className="text-[10px] sm:text-xs px-1 py-2 text-success">
+                    نوێ ({newItems.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="duplicate" className="text-[10px] sm:text-xs px-1 py-2 text-warning">
+                    دووبارە ({duplicateItems.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="incomplete" className="text-[10px] sm:text-xs px-1 py-2 text-destructive">
+                    هەڵە ({incompleteItems.length})
+                  </TabsTrigger>
+                </TabsList>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t">
-            <p className="text-sm text-muted-foreground">
-              {completeItems.length} مادە ئامادەن بۆ هێنان
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                پاشگەزبوونەوە
-              </Button>
-              <Button
-                onClick={handleImportAll}
-                disabled={completeItems.length === 0 || isImporting}
-                className="gap-2"
-              >
-                {isImporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    چاوەڕوان بە...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" />
-                    هێنانی {completeItems.length} مادە
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+                {/* Mobile Cards View */}
+                <div className="block sm:hidden">
+                  <ScrollArea className="h-[40vh] rounded-md border p-2">
+                    <div className="space-y-2">
+                      {(activeTab === "all" ? items : 
+                        activeTab === "new" ? newItems :
+                        activeTab === "duplicate" ? duplicateItems : 
+                        incompleteItems).map((item) => (
+                        <div 
+                          key={item.id} 
+                          className={`p-3 rounded-lg border ${
+                            item.hasError ? "bg-destructive/5 border-destructive/30" :
+                            item.isDuplicate ? "bg-warning/5 border-warning/30" :
+                            "bg-success/5 border-success/30"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{item.name || "بەتاڵە"}</p>
+                              <p className="text-xs text-muted-foreground">{item.barcode || "بەتاڵە"}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {item.brand && <Badge variant="outline" className="text-[10px] h-5">{item.brand}</Badge>}
+                                {item.category && <Badge variant="outline" className="text-[10px] h-5">{item.category}</Badge>}
+                                <Badge variant="secondary" className="text-[10px] h-5">بڕ: {item.quantity}</Badge>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {item.hasError ? (
+                                <Badge variant="destructive" className="text-[10px]">هەڵە</Badge>
+                              ) : item.isDuplicate ? (
+                                <Badge className="text-[10px] bg-warning text-warning-foreground">دووبارە</Badge>
+                              ) : (
+                                <Badge className="text-[10px] bg-success text-success-foreground">نوێ</Badge>
+                              )}
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => setEditingId(editingId === item.id ? null : item.id)}
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-destructive"
+                                  onClick={() => handleDeleteItem(item.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block">
+                  <ScrollArea className="h-[45vh] rounded-md border">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
+                          <TableHead className="text-xs">ناوی بەرهەم</TableHead>
+                          <TableHead className="text-xs">باڕکۆد</TableHead>
+                          <TableHead className="text-xs">براند</TableHead>
+                          <TableHead className="text-xs">کەتەگۆری</TableHead>
+                          <TableHead className="text-xs">بڕ</TableHead>
+                          <TableHead className="text-xs hidden lg:table-cell">نرخی بۆکس</TableHead>
+                          <TableHead className="text-xs hidden lg:table-cell">نرخی دانە</TableHead>
+                          <TableHead className="text-xs hidden xl:table-cell">نرخی کیلۆ</TableHead>
+                          <TableHead className="text-xs hidden xl:table-cell">کەمترین ستۆک</TableHead>
+                          <TableHead className="text-xs">بارودۆخ</TableHead>
+                          <TableHead className="text-xs">کردار</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {activeTab === "all" && items.map(renderItemRow)}
+                        {activeTab === "new" && newItems.map(renderItemRow)}
+                        {activeTab === "duplicate" && duplicateItems.map(renderItemRow)}
+                        {activeTab === "incomplete" && incompleteItems.map(renderItemRow)}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </div>
+              </Tabs>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-4 pt-4 border-t">
+                <div className="text-center sm:text-right">
+                  <p className="text-sm text-muted-foreground">
+                    {newItems.length > 0 && <span className="text-success font-medium">{newItems.length} مادەی نوێ</span>}
+                    {newItems.length > 0 && duplicateItems.length > 0 && " · "}
+                    {duplicateItems.length > 0 && <span className="text-warning font-medium">{duplicateItems.length} دووبارە (زیادناکرێن)</span>}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                    پاشگەزبوونەوە
+                  </Button>
+                  <Button
+                    onClick={handleImportNew}
+                    disabled={newItems.length === 0 || isImporting}
+                    className="gap-2 flex-1 sm:flex-none"
+                  >
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="hidden sm:inline">چاوەڕوان بە...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        هێنانی {newItems.length} مادەی نوێ
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
