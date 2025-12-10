@@ -134,8 +134,13 @@ function NavGroup({ title, icon: GroupIcon, items, onNavClick, defaultOpen = fal
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRoles();
+  const { isAdmin, isMandwb, currentUserRoles, isLoadingCurrentUserRoles } = useUserRoles();
   const location = useLocation();
+
+  // Check if user is mandwb only (not admin or storekeeper)
+  const isOnlyMandwb = isMandwb && 
+    !currentUserRoles.includes('admin') && 
+    !currentUserRoles.includes('storekeeper');
 
   const handleSignOut = async () => {
     await signOut();
@@ -166,12 +171,11 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 lg:px-4 py-4 lg:py-6 overflow-y-auto scrollbar-thin">
-        {/* Main Items - No dropdown */}
-        <div className="mb-4">
-          {mainNavigation.map((item) => (
+        {isOnlyMandwb ? (
+          // Mandwb-only navigation
+          <>
             <NavLink
-              key={item.name}
-              to={item.href}
+              to="/mandwb"
               onClick={onNavClick}
               className={cn(
                 "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
@@ -181,49 +185,135 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             >
               <div className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
-                location.pathname === item.href 
+                location.pathname === "/mandwb" 
                   ? "bg-white/20 shadow-inner" 
                   : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
               )}>
-                <item.icon className="h-4 w-4" strokeWidth={2.5} />
+                <LayoutDashboard className="h-4 w-4" strokeWidth={2.5} />
               </div>
-              <span>{item.name}</span>
+              <span>داشبۆردی من</span>
             </NavLink>
-          ))}
-        </div>
+            <NavLink
+              to="/items"
+              onClick={onNavClick}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
+                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
+              )}
+              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
+            >
+              <div className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                location.pathname === "/items" 
+                  ? "bg-white/20 shadow-inner" 
+                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+              )}>
+                <Package className="h-4 w-4" strokeWidth={2.5} />
+              </div>
+              <span>مادەکان</span>
+            </NavLink>
+            <NavLink
+              to="/expiry"
+              onClick={onNavClick}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
+                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
+              )}
+              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
+            >
+              <div className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                location.pathname === "/expiry" 
+                  ? "bg-white/20 shadow-inner" 
+                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+              )}>
+                <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
+              </div>
+              <span>بەسەرچوون</span>
+            </NavLink>
+            <NavLink
+              to="/settings"
+              onClick={onNavClick}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
+                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
+              )}
+              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
+            >
+              <div className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                location.pathname === "/settings" 
+                  ? "bg-white/20 shadow-inner" 
+                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+              )}>
+                <Settings className="h-4 w-4" strokeWidth={2.5} />
+              </div>
+              <span>ڕێکخستنەکان</span>
+            </NavLink>
+          </>
+        ) : (
+          // Regular navigation for admin/storekeeper/viewer
+          <>
+            {/* Main Items - No dropdown */}
+            <div className="mb-4">
+              {mainNavigation.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  onClick={onNavClick}
+                  className={cn(
+                    "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
+                    "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
+                  )}
+                  activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
+                >
+                  <div className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
+                    location.pathname === item.href 
+                      ? "bg-white/20 shadow-inner" 
+                      : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
+                  )}>
+                    <item.icon className="h-4 w-4" strokeWidth={2.5} />
+                  </div>
+                  <span>{item.name}</span>
+                </NavLink>
+              ))}
+            </div>
 
-        {/* Stock Operations Dropdown */}
-        <NavGroup 
-          title="جوڵەی ستۆک" 
-          icon={Boxes} 
-          items={stockNavigation} 
-          onNavClick={onNavClick}
-        />
+            {/* Stock Operations Dropdown */}
+            <NavGroup 
+              title="جوڵەی ستۆک" 
+              icon={Boxes} 
+              items={stockNavigation} 
+              onNavClick={onNavClick}
+            />
 
-        {/* Reports Dropdown */}
-        <NavGroup 
-          title="ڕاپۆرتەکان" 
-          icon={FileText} 
-          items={reportNavigation} 
-          onNavClick={onNavClick}
-        />
+            {/* Reports Dropdown */}
+            <NavGroup 
+              title="ڕاپۆرتەکان" 
+              icon={FileText} 
+              items={reportNavigation} 
+              onNavClick={onNavClick}
+            />
 
-        {/* Settings Dropdown */}
-        <NavGroup 
-          title="ڕێکخستن" 
-          icon={Wrench} 
-          items={settingsNavigation} 
-          onNavClick={onNavClick}
-        />
+            {/* Settings Dropdown */}
+            <NavGroup 
+              title="ڕێکخستن" 
+              icon={Wrench} 
+              items={settingsNavigation} 
+              onNavClick={onNavClick}
+            />
 
-        {/* Admin Dropdown */}
-        {isAdmin && (
-          <NavGroup 
-            title="بەڕێوەبەر" 
-            icon={Shield} 
-            items={adminNavigation} 
-            onNavClick={onNavClick}
-          />
+            {/* Admin Dropdown */}
+            {isAdmin && (
+              <NavGroup 
+                title="بەڕێوەبەر" 
+                icon={Shield} 
+                items={adminNavigation} 
+                onNavClick={onNavClick}
+              />
+            )}
+          </>
         )}
       </nav>
 
