@@ -521,11 +521,38 @@ export default function VisitReports() {
         {deliveryPersonFilter !== "all" && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Store className="h-5 w-5" />
-                ماڕکێتەکانی {uniqueDeliveryPersons.find(p => p.id === deliveryPersonFilter)?.name}
-                <Badge variant="secondary" className="mr-2">{assignedMarkets.length} ماڕکێت</Badge>
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  ماڕکێتەکانی {uniqueDeliveryPersons.find(p => p.id === deliveryPersonFilter)?.name}
+                  <Badge variant="secondary" className="mr-2">{assignedMarkets.length} ماڕکێت</Badge>
+                </CardTitle>
+                {assignedMarketsWithVisitStatus.filter(m => !m.todayVisit).length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                    onClick={() => {
+                      const deliveryPerson = deliveryPersons.find(p => p.id === deliveryPersonFilter);
+                      const unvisitedMarkets = assignedMarketsWithVisitStatus.filter(m => !m.todayVisit);
+                      if (deliveryPerson?.phone && unvisitedMarkets.length > 0) {
+                        const marketsList = unvisitedMarkets
+                          .map((m, i) => `${i + 1}. ${m.market?.name} (${m.market?.code})`)
+                          .join('\n');
+                        const message = encodeURIComponent(
+                          `سڵاو ${deliveryPerson.name}،\n\nتکایە سەردانی ئەم ماڕکێتانە بکە:\n\n${marketsList}\n\nسوپاس 🙏`
+                        );
+                        window.open(`https://wa.me/${deliveryPerson.phone.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+                      } else if (!deliveryPerson?.phone) {
+                        alert('ژمارەی مۆبایلی مەندوب بەردەست نییە');
+                      }
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 ml-1" />
+                    ناردن بۆ هەموو ({assignedMarketsWithVisitStatus.filter(m => !m.todayVisit).length})
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
