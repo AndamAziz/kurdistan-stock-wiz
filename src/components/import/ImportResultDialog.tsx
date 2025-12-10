@@ -373,6 +373,137 @@ export function ImportResultDialog({
     }
   };
 
+  // Import ALL items - add new ones and update duplicates
+  const handleImportAll = async () => {
+    const allItemsToProcess = [...newItems, ...duplicateItems];
+    if (allItemsToProcess.length === 0) {
+      toast.info("هیچ مادەیەکی دروست نییە بۆ هێنان");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress({ current: 0, total: allItemsToProcess.length });
+
+    try {
+      const brandMap = new Map(brands.map((b) => [b.name.toLowerCase(), b.id]));
+      const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
+
+      let addedCount = 0;
+      let updatedCount = 0;
+      let errorCount = 0;
+
+      for (let i = 0; i < allItemsToProcess.length; i++) {
+        const item = allItemsToProcess[i];
+        setImportProgress({ current: i + 1, total: allItemsToProcess.length });
+        
+        try {
+          // Find or create brand
+          let brandId: string | null = null;
+          if (item.brand) {
+            brandId = brandMap.get(item.brand.toLowerCase()) || null;
+            if (!brandId && item.brand.trim()) {
+              const { data: newBrand } = await supabase
+                .from("brands")
+                .insert({ name: item.brand.trim() })
+                .select()
+                .single();
+              if (newBrand) {
+                brandId = newBrand.id;
+                brandMap.set(item.brand.toLowerCase(), newBrand.id);
+              }
+            }
+          }
+
+          // Find or create category
+          let categoryId: string | null = null;
+          if (item.category) {
+            categoryId = categoryMap.get(item.category.toLowerCase()) || null;
+            if (!categoryId && item.category.trim()) {
+              const { data: newCategory } = await supabase
+                .from("categories")
+                .insert({ name: item.category.trim() })
+                .select()
+                .single();
+              if (newCategory) {
+                categoryId = newCategory.id;
+                categoryMap.set(item.category.toLowerCase(), newCategory.id);
+              }
+            }
+          }
+
+          if (item.isDuplicate) {
+            // Update existing item by barcode
+            const { error: updateError } = await supabase
+              .from("items")
+              .update({
+                name: item.name.trim(),
+                brand_id: brandId,
+                category_id: categoryId,
+                current_quantity: item.quantity,
+                min_stock: item.min_stock || 10,
+                unit: item.unit || "دانە",
+                box_price: item.box_price || 0,
+                piece_price: item.piece_price || 0,
+                price_per_kg: item.price_per_kg || 0,
+                mfg_date: item.mfg_date || null,
+                exp_date: item.exp_date || null,
+                remind_date: item.remind_date || null,
+              })
+              .eq("barcode", item.barcode.trim());
+
+            if (updateError) {
+              errorCount++;
+            } else {
+              updatedCount++;
+            }
+          } else {
+            // Insert new item
+            const { error: insertError } = await supabase.from("items").insert({
+              name: item.name.trim(),
+              barcode: item.barcode.trim(),
+              brand_id: brandId,
+              category_id: categoryId,
+              current_quantity: item.quantity,
+              total_in: item.quantity,
+              min_stock: item.min_stock || 10,
+              unit: item.unit || "دانە",
+              box_price: item.box_price || 0,
+              piece_price: item.piece_price || 0,
+              price_per_kg: item.price_per_kg || 0,
+              mfg_date: item.mfg_date || null,
+              exp_date: item.exp_date || null,
+              remind_date: item.remind_date || null,
+            });
+
+            if (insertError) {
+              errorCount++;
+            } else {
+              addedCount++;
+            }
+          }
+        } catch {
+          errorCount++;
+        }
+      }
+
+      if (addedCount > 0 || updatedCount > 0) {
+        toast.success(`${addedCount} مادەی نوێ زیادکرا، ${updatedCount} مادە نوێکرایەوە`);
+      }
+      if (errorCount > 0) {
+        toast.error(`${errorCount} مادە نەتوانرا بگۆڕدرێت`);
+      }
+
+      onImportComplete();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Import all error:", error);
+      toast.error("هەڵە لە هێنانی مادەکان");
+    } finally {
+      setIsImporting(false);
+      setImportProgress({ current: 0, total: 0 });
+    }
+  };
+
   const renderEditableCell = (
     item: ImportedItem,
     field: keyof ImportedItem,
@@ -762,11 +893,13 @@ export function ImportResultDialog({
                   <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
                     پاشگەزبوونەوە
                   </Button>
-                  {newItems.length > 0 && (
+                  
+                  {/* Import All Button - Primary Action */}
+                  {(newItems.length > 0 || duplicateItems.length > 0) && (
                     <Button
-                      onClick={handleImportNew}
+                      onClick={handleImportAll}
                       disabled={isImporting}
-                      className="gap-2 flex-1 sm:flex-none bg-success hover:bg-success/90"
+                      className="gap-2 flex-1 sm:flex-none"
                     >
                       {isImporting ? (
                         <>
@@ -775,8 +908,28 @@ export function ImportResultDialog({
                         </>
                       ) : (
                         <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          هێنانی هەموو ({newItems.length + duplicateItems.length})
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {newItems.length > 0 && (
+                    <Button
+                      onClick={handleImportNew}
+                      disabled={isImporting}
+                      variant="outline"
+                      className="gap-2 flex-1 sm:flex-none border-success text-success hover:bg-success/10"
+                    >
+                      {isImporting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </>
+                      ) : (
+                        <>
                           <Plus className="h-4 w-4" />
-                          زیادکردنی {newItems.length} مادەی نوێ
+                          تەنها نوێکان ({newItems.length})
                         </>
                       )}
                     </Button>
@@ -791,12 +944,11 @@ export function ImportResultDialog({
                       {isImporting ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="hidden sm:inline">چاوەڕوان بە...</span>
                         </>
                       ) : (
                         <>
                           <RefreshCw className="h-4 w-4" />
-                          نوێکردنەوەی {duplicateItems.length} مادەی دووبارە
+                          تەنها دووبارەکان ({duplicateItems.length})
                         </>
                       )}
                     </Button>
