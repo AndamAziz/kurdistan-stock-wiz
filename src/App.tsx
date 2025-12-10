@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { RoleRestrictedRoute } from "@/components/RoleRestrictedRoute";
 import { NotificationChecker } from "@/components/NotificationChecker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -27,6 +28,9 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Roles that can access inventory management pages (not mandwb)
+const inventoryRoles = ['admin', 'storekeeper', 'viewer'] as const;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -39,20 +43,107 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
-              <Route path="/stock-in" element={<ProtectedRoute><StockIn /></ProtectedRoute>} />
-              <Route path="/stock-adjust" element={<ProtectedRoute><StockAdjust /></ProtectedRoute>} />
-              <Route path="/expiry" element={<ProtectedRoute><Expiry /></ProtectedRoute>} />
-              <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-              <Route path="/brands" element={<ProtectedRoute><Brands /></ProtectedRoute>} />
-              <Route path="/import-export" element={<ProtectedRoute><ImportExport /></ProtectedRoute>} />
+              
+              {/* Inventory pages - NOT accessible by mandwb */}
+              <Route path="/items" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <Items />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/stock-in" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <StockIn />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/stock-adjust" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <StockAdjust />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/expiry" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <Expiry />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/categories" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <Categories />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/brands" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <Brands />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/import-export" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <ImportExport />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/markets" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <Markets />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/incomplete-markets" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={[...inventoryRoles]}>
+                    <IncompleteMarkets />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              
+              {/* Settings - accessible by all */}
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
-              <Route path="/markets" element={<ProtectedRoute><Markets /></ProtectedRoute>} />
-              <Route path="/incomplete-markets" element={<ProtectedRoute><IncompleteMarkets /></ProtectedRoute>} />
-              <Route path="/delivery-persons" element={<ProtectedRoute><DeliveryPersons /></ProtectedRoute>} />
-              <Route path="/mandwb" element={<ProtectedRoute><MandwbDashboard /></ProtectedRoute>} />
-              <Route path="/visit-reports" element={<ProtectedRoute><VisitReports /></ProtectedRoute>} />
+              
+              {/* Admin only pages */}
+              <Route path="/user-roles" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={['admin']}>
+                    <UserRoles />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/delivery-persons" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={['admin']}>
+                    <DeliveryPersons />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/visit-reports" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={['admin']}>
+                    <VisitReports />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              
+              {/* Mandwb dashboard - accessible by mandwb role */}
+              <Route path="/mandwb" element={
+                <ProtectedRoute>
+                  <RoleRestrictedRoute allowedRoles={['mandwb', 'admin']} redirectTo="/">
+                    <MandwbDashboard />
+                  </RoleRestrictedRoute>
+                </ProtectedRoute>
+              } />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
