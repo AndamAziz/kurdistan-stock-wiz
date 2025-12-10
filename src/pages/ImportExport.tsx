@@ -97,29 +97,42 @@ export default function ImportExport() {
 
   // Column name mappings for markets
   const marketColumnMappings: Record<string, keyof ImportedMarket> = {
+    // Sir# / Code mappings
+    "Sir#": "code",
+    "sir#": "code",
+    "SIR#": "code",
+    "sir": "code",
+    "Sir": "code",
+    "SIR": "code",
     "key": "code",
     "code": "code",
     "کۆد": "code",
     "Code": "code",
+    // Name mappings
     "name": "name",
     "Name": "name",
     "ناو": "name",
+    // Trader category mappings
     "traderCategory": "trader_category",
     "TraderCategory": "trader_category",
     "trader_category": "trader_category",
     "جۆر": "trader_category",
     "جۆری بازرگان": "trader_category",
+    // Phone mappings
     "phone": "phone",
     "Phone": "phone",
     "مۆبایل": "phone",
     "تەلەفۆن": "phone",
     "ژمارە": "phone",
+    // Address mappings
     "address": "address",
     "Address": "address",
     "ناونیشان": "address",
+    // City mappings
     "city": "city",
     "City": "city",
     "شار": "city",
+    // Zone mappings
     "zone": "zone",
     "Zone": "zone",
     "ناوچە": "zone",
@@ -327,26 +340,39 @@ export default function ImportExport() {
 
         // Map columns
         Object.keys(row).forEach((key) => {
-          const mappedKey = marketColumnMappings[key.trim()];
+          const trimmedKey = key.trim();
+          const mappedKey = marketColumnMappings[trimmedKey];
           if (mappedKey) {
             const value = row[key];
             (market as any)[mappedKey] = value?.toString().trim() || "";
           }
         });
 
-        // Use key as code if code is not set
-        if (!market.code && row.key !== undefined) {
-          market.code = row.key.toString();
+        // Try to get code from various possible column names if not already set
+        if (!market.code) {
+          // Check for Sir# variations
+          const sirKeys = ["Sir#", "sir#", "SIR#", "sir", "Sir", "SIR", "key"];
+          for (const sirKey of sirKeys) {
+            if (row[sirKey] !== undefined && row[sirKey] !== null && row[sirKey] !== "") {
+              market.code = row[sirKey].toString().trim();
+              break;
+            }
+          }
         }
 
-        // Validate required fields
-        const isComplete =
-          market.name?.trim() !== "" && market.code?.trim() !== "";
+        // Mark that code will be auto-generated if still missing
+        const hasCode = market.code?.trim() !== "";
+
+        // Validate - only name is truly required, code can be auto-generated
+        const isComplete = market.name?.trim() !== "";
 
         market.isComplete = isComplete;
         market.hasError = !isComplete;
         if (!isComplete) {
-          market.errorMessage = "ناو و کۆد پێویستن";
+          market.errorMessage = "ناو پێویستە";
+        } else if (!hasCode) {
+          // Not an error, but mark that code will be auto-generated
+          market.errorMessage = "کۆد ئۆتۆماتیکی دروست دەکرێت";
         }
 
         return market;
