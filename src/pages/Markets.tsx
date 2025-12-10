@@ -83,18 +83,11 @@ export default function Markets() {
   };
 
   const filteredMarkets = markets.filter((market) => {
-    const query = searchQuery.toLowerCase().trim();
+    const query = searchQuery.trim();
     if (!query) return true;
     
-    return (
-      market.name.toLowerCase().includes(query) ||
-      market.code.toLowerCase().includes(query) ||
-      (market.phone && market.phone.includes(query)) ||
-      (market.city && market.city.toLowerCase().includes(query)) ||
-      (market.zone && market.zone.toLowerCase().includes(query)) ||
-      (market.trader_category && market.trader_category.toLowerCase().includes(query)) ||
-      (market.address && market.address.toLowerCase().includes(query))
-    );
+    // Filter only by code (case-insensitive, starts with or exact match)
+    return market.code.toLowerCase().startsWith(query.toLowerCase());
   });
 
   const resetForm = () => {
@@ -387,7 +380,7 @@ export default function Markets() {
           <div className="relative">
             <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="گەڕان بە ناو، کۆد، مۆبایل، شار یان ناوچە..."
+              placeholder="گەڕان بە کۆدی ماڕکێت..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
