@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,10 @@ import {
   Calendar,
   User,
   MapPin,
+  Store,
+  Truck,
+  Filter,
+  X,
 } from "lucide-react";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import {
@@ -44,12 +48,16 @@ import {
   useVisitItems,
   useUpdateVisitStatus,
   useUpdateVisitItem,
+  useDeliveryPersons,
 } from "@/hooks/useDeliveryPersons";
+import { useMarkets } from "@/hooks/useMarkets";
 import { format } from "date-fns";
 
 export default function VisitReports() {
   const { isAdmin } = useUserRoles();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deliveryPersonFilter, setDeliveryPersonFilter] = useState<string>("all");
+  const [marketFilter, setMarketFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -59,6 +67,8 @@ export default function VisitReports() {
     statusFilter === "all" ? undefined : statusFilter
   );
   const { data: visitItems = [] } = useVisitItems(selectedVisitId ?? undefined);
+  const { data: deliveryPersons = [] } = useDeliveryPersons();
+  const { data: markets = [] } = useMarkets();
   const updateVisitStatus = useUpdateVisitStatus();
   const updateVisitItem = useUpdateVisitItem();
 
@@ -66,11 +76,57 @@ export default function VisitReports() {
   const [adminNotes, setAdminNotes] = useState("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
-  const filteredVisits = visits.filter(visit =>
-    visit.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    visit.market?.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    visit.delivery_person?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get unique delivery persons and markets from visits
+  const uniqueDeliveryPersons = useMemo(() => {
+    const persons = new Map<string, string>();
+    visits.forEach(v => {
+      if (v.delivery_person?.id && v.delivery_person?.name) {
+        persons.set(v.delivery_person.id, v.delivery_person.name);
+      }
+    });
+    return Array.from(persons.entries()).map(([id, name]) => ({ id, name }));
+  }, [visits]);
+
+  const uniqueMarkets = useMemo(() => {
+    const mkts = new Map<string, { name: string; code: string }>();
+    visits.forEach(v => {
+      if (v.market?.id && v.market?.name) {
+        mkts.set(v.market.id, { name: v.market.name, code: v.market.code });
+      }
+    });
+    return Array.from(mkts.entries()).map(([id, data]) => ({ id, ...data }));
+  }, [visits]);
+
+  const filteredVisits = useMemo(() => {
+    return visits.filter(visit => {
+      // Search filter
+      const matchesSearch = 
+        visit.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        visit.market?.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        visit.delivery_person?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Delivery person filter
+      const matchesDeliveryPerson = 
+        deliveryPersonFilter === "all" || 
+        visit.delivery_person?.id === deliveryPersonFilter;
+      
+      // Market filter
+      const matchesMarket = 
+        marketFilter === "all" || 
+        visit.market?.id === marketFilter;
+      
+      return matchesSearch && matchesDeliveryPerson && matchesMarket;
+    });
+  }, [visits, searchTerm, deliveryPersonFilter, marketFilter]);
+
+  const hasActiveFilters = deliveryPersonFilter !== "all" || marketFilter !== "all" || statusFilter !== "all";
+
+  const clearFilters = () => {
+    setDeliveryPersonFilter("all");
+    setMarketFilter("all");
+    setStatusFilter("all");
+    setSearchTerm("");
+  };
 
   const handleViewDetails = (visitId: string) => {
     setSelectedVisitId(visitId);
@@ -160,27 +216,79 @@ export default function VisitReports() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="گەڕان بە ناوی مەندوب، ماڕکێت..."
-              className="pr-10"
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="گەڕان بە ناوی مەندوب، ماڕکێت..."
+                className="pr-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="دۆخ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">هەموو دۆخەکان</SelectItem>
+                <SelectItem value="pending">چاوەڕوان</SelectItem>
+                <SelectItem value="reviewed">بینراوە</SelectItem>
+                <SelectItem value="resolved">چارەسەرکرا</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="دۆخ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">هەموو</SelectItem>
-              <SelectItem value="pending">چاوەڕوان</SelectItem>
-              <SelectItem value="reviewed">بینراوە</SelectItem>
-              <SelectItem value="resolved">چارەسەرکرا</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Delivery Person Filter */}
+            <Select value={deliveryPersonFilter} onValueChange={setDeliveryPersonFilter}>
+              <SelectTrigger className="w-full sm:w-56">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="هەموو مەندوبەکان" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">هەموو مەندوبەکان</SelectItem>
+                {uniqueDeliveryPersons.map(person => (
+                  <SelectItem key={person.id} value={person.id}>
+                    {person.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Market Filter */}
+            <Select value={marketFilter} onValueChange={setMarketFilter}>
+              <SelectTrigger className="w-full sm:w-56">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="هەموو ماڕکێتەکان" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">هەموو ماڕکێتەکان</SelectItem>
+                {uniqueMarkets.map(market => (
+                  <SelectItem key={market.id} value={market.id}>
+                    {market.name} ({market.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearFilters}
+                className="flex items-center gap-2"
+              >
+                <X className="h-4 w-4" />
+                سڕینەوەی فلتەرەکان
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats */}
