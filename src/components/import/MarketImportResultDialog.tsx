@@ -120,6 +120,33 @@ export function MarketImportResultDialog({
     return changes;
   };
 
+  // Helper to fetch all markets without 1000 limit
+  const fetchAllExistingMarkets = async (): Promise<ExistingMarket[]> => {
+    const allMarkets: ExistingMarket[] = [];
+    const batchSize = 1000;
+    let start = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("markets")
+        .select("id, code, name, trader_category, phone, address, city, zone")
+        .range(start, start + batchSize - 1);
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        allMarkets.push(...(data as ExistingMarket[]));
+        start += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allMarkets;
+  };
+
   // Check for duplicates and changes when dialog opens
   useEffect(() => {
     const checkDuplicates = async () => {
@@ -128,10 +155,8 @@ export function MarketImportResultDialog({
       setIsCheckingDuplicates(true);
 
       try {
-        // Query all existing markets with full data
-        const { data: existingMarkets } = await supabase
-          .from("markets")
-          .select("id, code, name, trader_category, phone, address, city, zone");
+        // Query ALL existing markets with full data (no 1000 limit)
+        const existingMarkets = await fetchAllExistingMarkets();
 
         // Create maps for both code and name matching
         const existingCodeMap = new Map<string, ExistingMarket>(
@@ -256,24 +281,32 @@ export function MarketImportResultDialog({
       let errorCount = 0;
       const failedMarkets: string[] = [];
 
-      // Get the max Sir# for auto-generating codes
-      const { data: maxCodeData } = await supabase
-        .from("markets")
-        .select("code")
-        .order("code", { ascending: false })
-        .limit(100);
-
-      // Find highest numeric code to continue from
+      // Get the max Sir# for auto-generating codes - fetch ALL codes
       let nextSirNumber = 1;
-      if (maxCodeData) {
-        for (const m of maxCodeData) {
-          const numMatch = m.code?.match(/^(\d+)$/);
-          if (numMatch) {
-            const num = parseInt(numMatch[1], 10);
-            if (num >= nextSirNumber) {
-              nextSirNumber = num + 1;
+      const codeBatchSize = 1000;
+      let codeStart = 0;
+      let hasMoreCodes = true;
+
+      while (hasMoreCodes) {
+        const { data: codesData } = await supabase
+          .from("markets")
+          .select("code")
+          .range(codeStart, codeStart + codeBatchSize - 1);
+
+        if (codesData && codesData.length > 0) {
+          for (const m of codesData) {
+            const numMatch = m.code?.match(/^(\d+)$/);
+            if (numMatch) {
+              const num = parseInt(numMatch[1], 10);
+              if (num >= nextSirNumber) {
+                nextSirNumber = num + 1;
+              }
             }
           }
+          codeStart += codeBatchSize;
+          hasMoreCodes = codesData.length === codeBatchSize;
+        } else {
+          hasMoreCodes = false;
         }
       }
 
