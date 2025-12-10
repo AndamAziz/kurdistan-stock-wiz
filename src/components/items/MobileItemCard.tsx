@@ -55,10 +55,15 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
 
   return (
     <div 
-      className="rounded-xl border border-border bg-card p-4 shadow-sm animate-fade-in active:scale-[0.98] transition-transform"
+      className="rounded-xl border border-border bg-card p-3 shadow-sm animate-fade-in active:scale-[0.98] transition-transform"
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
+        {/* Row Number */}
+        <div className="flex items-center justify-center h-16 w-8 shrink-0">
+          <span className="text-lg font-bold text-muted-foreground">{index + 1}</span>
+        </div>
+        
         {/* Item Image or Icon */}
         {item.image_url ? (
           <button
@@ -79,11 +84,11 @@ export function MobileItemCard({ item, onView, index = 0 }: MobileItemCardProps)
         )}
         
         {/* Content */}
-        <div className="flex-1 min-w-0 space-y-2.5">
+        <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-base text-foreground truncate leading-tight">{item.name}</h3>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.barcode}</p>
+                <h3 className="font-semibold text-sm text-foreground truncate leading-tight">{item.name}</h3>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{item.barcode}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <Button
