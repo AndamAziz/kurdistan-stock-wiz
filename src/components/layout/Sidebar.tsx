@@ -193,44 +193,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               </div>
               <span>داشبۆردی من</span>
             </NavLink>
-            <NavLink
-              to="/items"
-              onClick={onNavClick}
-              className={cn(
-                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
-                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
-              )}
-              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
-            >
-              <div className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
-                location.pathname === "/items" 
-                  ? "bg-white/20 shadow-inner" 
-                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
-              )}>
-                <Package className="h-4 w-4" strokeWidth={2.5} />
-              </div>
-              <span>مادەکان</span>
-            </NavLink>
-            <NavLink
-              to="/expiry"
-              onClick={onNavClick}
-              className={cn(
-                "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm lg:text-base font-medium transition-all duration-200 mb-2",
-                "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border border-transparent hover:border-sidebar-accent"
-              )}
-              activeClassName="bg-gradient-to-r from-sidebar-primary to-sidebar-primary/80 text-sidebar-primary-foreground shadow-lg border-sidebar-primary/30"
-            >
-              <div className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300",
-                location.pathname === "/expiry" 
-                  ? "bg-white/20 shadow-inner" 
-                  : "bg-sidebar-accent/50 group-hover:bg-sidebar-accent"
-              )}>
-                <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
-              </div>
-              <span>بەسەرچوون</span>
-            </NavLink>
+            {/* Mandwb should NOT see items or expiry pages - only their dashboard */}
             <NavLink
               to="/settings"
               onClick={onNavClick}

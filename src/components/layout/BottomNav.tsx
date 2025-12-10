@@ -22,7 +22,6 @@ const regularNavItems = [
 const mandwbNavItems = [
   { name: 'داشبۆرد', href: '/mandwb', icon: LayoutDashboard },
   { name: 'ماڕکێتەکان', href: '/mandwb', icon: MapPin, scrollTo: 'markets' },
-  { name: 'مادەکان', href: '/items', icon: Package },
   { name: 'ڕێکخستن', href: '/settings', icon: Settings },
 ];
 
