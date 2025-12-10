@@ -97,7 +97,7 @@ export function MarketImportResultDialog({
     setIsImporting(true);
 
     try {
-      // Prepare all markets for batch insert
+      // Prepare all markets for insert
       const marketsToInsert = newMarkets.map(market => ({
         code: market.code.trim(),
         name: market.name.trim(),
@@ -108,26 +108,41 @@ export function MarketImportResultDialog({
         zone: market.zone?.trim() || null,
       }));
 
-      // Batch insert all at once
-      const { error, data } = await supabase
-        .from("markets")
-        .insert(marketsToInsert)
-        .select();
+      // Insert in chunks to avoid timeout and handle duplicates gracefully
+      const chunkSize = 100;
+      let successCount = 0;
+      let skipCount = 0;
 
-      if (error) {
-        console.error("Batch insert error:", error);
-        toast.error("هەڵە لە زیادکردنی ماڕکێتەکان");
-      } else {
-        const successCount = data?.length || 0;
-        toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
+      for (let i = 0; i < marketsToInsert.length; i += chunkSize) {
+        const chunk = marketsToInsert.slice(i, i + chunkSize);
         
-        if (duplicateMarkets.length > 0) {
-          toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
+        // Use upsert with onConflict to skip duplicates
+        const { data, error } = await supabase
+          .from("markets")
+          .upsert(chunk, { 
+            onConflict: 'code',
+            ignoreDuplicates: true 
+          })
+          .select();
+
+        if (error) {
+          console.error("Chunk insert error:", error);
+          skipCount += chunk.length;
+        } else {
+          successCount += data?.length || 0;
         }
-        
-        onImportComplete();
-        onOpenChange(false);
       }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
+      }
+      
+      if (duplicateMarkets.length > 0 || skipCount > 0) {
+        toast.info(`${duplicateMarkets.length + skipCount} ماڕکێت پێشتر هەبوون و زیادنەکران`);
+      }
+      
+      onImportComplete();
+      onOpenChange(false);
     } catch (error) {
       console.error("Import error:", error);
       toast.error("هەڵە لە import کردن");
