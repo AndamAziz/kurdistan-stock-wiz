@@ -37,6 +37,7 @@ import {
 import { useBrands, useCategories, useAddItem } from "@/hooks/useItems";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export interface ImportedItem {
   id: string;
@@ -222,9 +223,11 @@ export function ImportResultDialog({
 
       if (successCount > 0) {
         toast.success(`${successCount} مادە بە سەرکەوتوویی هێندرا`);
+        playSuccessSound();
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} مادە نەتوانرا هێندرێت`);
+        playErrorSound();
       }
 
       onImportComplete();
