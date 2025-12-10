@@ -343,6 +343,23 @@ export function useDeleteAllItems() {
 
   return useMutation({
     mutationFn: async () => {
+      // First delete all invoice_items that reference items
+      const { error: invoiceItemsError } = await supabase
+        .from('invoice_items')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (invoiceItemsError) throw invoiceItemsError;
+
+      // Then delete all stock_movements
+      const { error: stockError } = await supabase
+        .from('stock_movements')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (stockError) throw stockError;
+
+      // Finally delete all items
       const { error } = await supabase
         .from('items')
         .delete()
@@ -352,6 +369,7 @@ export function useDeleteAllItems() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
       toast.success('هەموو مادەکان سڕانەوە');
     },
     onError: () => {
