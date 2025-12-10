@@ -37,7 +37,6 @@ import {
 import { useBrands, useCategories, useAddItem } from "@/hooks/useItems";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export interface ImportedItem {
   id: string;
@@ -76,8 +75,6 @@ export function ImportResultDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-  const [importProgress, setImportProgress] = useState(0);
-  const [currentImportItem, setCurrentImportItem] = useState("");
 
   const { data: brands = [] } = useBrands();
   const { data: categories = [] } = useCategories();
@@ -116,7 +113,6 @@ export function ImportResultDialog({
     }
 
     setIsImporting(true);
-    setImportProgress(0);
 
     try {
       // Get brand and category mappings
@@ -125,12 +121,8 @@ export function ImportResultDialog({
 
       let successCount = 0;
       let errorCount = 0;
-      const total = itemsToImport.length;
 
-      for (let i = 0; i < itemsToImport.length; i++) {
-        const item = itemsToImport[i];
-        setCurrentImportItem(item.name);
-        setImportProgress(Math.round(((i + 1) / total) * 100));
+      for (const item of itemsToImport) {
         try {
           // Find or create brand
           let brandId: string | null = null;
@@ -223,11 +215,9 @@ export function ImportResultDialog({
 
       if (successCount > 0) {
         toast.success(`${successCount} مادە بە سەرکەوتوویی هێندرا`);
-        playSuccessSound();
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} مادە نەتوانرا هێندرێت`);
-        playErrorSound();
       }
 
       onImportComplete();
@@ -405,32 +395,6 @@ export function ImportResultDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {isImporting ? (
-          <div className="flex flex-col items-center justify-center py-16 px-8 space-y-6">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">{importProgress}%</span>
-              </div>
-            </div>
-            
-            <div className="w-full max-w-md space-y-3">
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${importProgress}%` }}
-                />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-lg font-medium text-foreground">چاوەڕوان بە...</p>
-                <p className="text-sm text-muted-foreground truncate max-w-xs mx-auto">
-                  {currentImportItem && `هێنانی: ${currentImportItem}`}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
         <div className="p-4">
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -512,7 +476,6 @@ export function ImportResultDialog({
             </div>
           </div>
         </div>
-        )}
       </DialogContent>
     </Dialog>
   );

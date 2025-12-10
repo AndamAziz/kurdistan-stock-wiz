@@ -21,7 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, AlertCircle, Edit, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { playSuccessSound, playErrorSound } from "@/lib/sounds";
 
 export interface ImportedMarket {
   id: string;
@@ -55,8 +54,6 @@ export function MarketImportResultDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [existingCodes, setExistingCodes] = useState<Set<string>>(new Set());
   const [isChecking, setIsChecking] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
-  const [currentImportMarket, setCurrentImportMarket] = useState("");
 
   // Check for existing markets when dialog opens
   useEffect(() => {
@@ -143,18 +140,12 @@ export function MarketImportResultDialog({
     }
 
     setIsImporting(true);
-    setImportProgress(0);
 
     try {
       let successCount = 0;
       let errorCount = 0;
-      const total = newMarkets.length;
 
-      for (let i = 0; i < newMarkets.length; i++) {
-        const market = newMarkets[i];
-        setCurrentImportMarket(market.name);
-        setImportProgress(Math.round(((i + 1) / total) * 100));
-        
+      for (const market of newMarkets) {
         try {
           const { error } = await supabase.from("markets").insert({
             code: market.code.trim(),
@@ -176,11 +167,9 @@ export function MarketImportResultDialog({
 
       if (successCount > 0) {
         toast.success(`${successCount} ماڕکێتی نوێ زیادکران`);
-        playSuccessSound();
       }
       if (errorCount > 0) {
         toast.error(`${errorCount} ماڕکێت زیادنەکران`);
-        playErrorSound();
       }
       if (duplicateMarkets.length > 0) {
         toast.info(`${duplicateMarkets.length} ماڕکێت پێشتر هەبوون و زیادنەکران`);
@@ -291,63 +280,33 @@ export function MarketImportResultDialog({
           <DialogTitle>ئەنجامی خوێندنەوەی ماڕکێتەکان</DialogTitle>
         </DialogHeader>
 
-        {isChecking ? (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-lg font-medium text-foreground">چاوەڕوان بە...</p>
-              <p className="text-sm text-muted-foreground">پشکنینی ماڕکێتە دووبارەکان...</p>
-            </div>
-          </div>
-        ) : isImporting ? (
-          <div className="flex flex-col items-center justify-center py-16 px-8 space-y-6">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">{importProgress}%</span>
-              </div>
-            </div>
-            
-            <div className="w-full max-w-md space-y-3">
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${importProgress}%` }}
-                />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-lg font-medium text-foreground">import کردن...</p>
-                <p className="text-sm text-muted-foreground truncate max-w-xs mx-auto">
-                  {currentImportMarket && `هێنانی: ${currentImportMarket}`}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
         <div className="space-y-4">
           {/* Summary */}
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="bg-success">
-                {newMarkets.length}
-              </Badge>
-              <span>ماڕکێتی نوێ</span>
+          {isChecking ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              پشکنینی ماڕکێتە دووبارەکان...
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {duplicateMarkets.length}
-              </Badge>
-              <span>دووبارە (زیاد ناکرێن)</span>
+          ) : (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="bg-success">
+                  {newMarkets.length}
+                </Badge>
+                <span>ماڕکێتی نوێ</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {duplicateMarkets.length}
+                </Badge>
+                <span>دووبارە (زیاد ناکرێن)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive">{incompleteMarkets.length}</Badge>
+                <span>ناتەواو</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive">{incompleteMarkets.length}</Badge>
-              <span>ناتەواو</span>
-            </div>
-          </div>
+          )}
 
           <Tabs defaultValue="all">
             <TabsList>
@@ -467,7 +426,6 @@ export function MarketImportResultDialog({
             </Button>
           </div>
         </div>
-        )}
       </DialogContent>
     </Dialog>
   );

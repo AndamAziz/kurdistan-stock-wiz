@@ -41,32 +41,20 @@ export default function ImportExport() {
   const { data: categories = [] } = useCategories();
   const { data: markets = [], refetch: refetchMarkets } = useMarkets();
 
-  // Column name mappings for items (Kurdish/Arabic -> English)
+  // Column name mappings for items (Kurdish -> English)
   const columnMappings: Record<string, keyof ImportedItem> = {
-    // Name mappings
     "ناوی مادە": "name",
     "ناو": "name",
     "name": "name",
-    "Name": "name",
-    // Barcode mappings
     "باڕکۆد": "barcode",
-    "باركود": "barcode",
     "barcode": "barcode",
-    "Barcode": "barcode",
-    // Brand mappings
     "براند": "brand",
     "brand": "brand",
-    "Brand": "brand",
-    // Category mappings
     "کەتەگۆری": "category",
     "category": "category",
-    "Category": "category",
-    // Quantity mappings
     "ستۆک": "quantity",
     "بڕ": "quantity",
     "quantity": "quantity",
-    "Quantity": "quantity",
-    // Price mappings
     "نرخی بۆکس (د.ع)": "box_price",
     "نرخی بۆکس": "box_price",
     "box_price": "box_price",
@@ -76,22 +64,15 @@ export default function ImportExport() {
     "نرخی کیلۆ (د.ع)": "price_per_kg",
     "نرخی کیلۆ": "price_per_kg",
     "price_per_kg": "price_per_kg",
-    // Unit mappings
     "یەکە": "unit",
     "unit": "unit",
-    "Unit": "unit",
-    // Min stock mappings
     "کەمترین ستۆک": "min_stock",
     "min_stock": "min_stock",
-    // Date mappings
     "بەرواری بەرهەمهێنان": "mfg_date",
-    "بةروارى انتاج": "mfg_date",
     "mfg_date": "mfg_date",
     "بەرواری بەسەرچوون": "exp_date",
-    "بةروارى بةسةرجون": "exp_date",
     "exp_date": "exp_date",
     "بەرواری بیرخستنەوە": "remind_date",
-    "بةروارى بير خستنةوة": "remind_date",
     "remind_date": "remind_date",
   };
 
@@ -131,20 +112,11 @@ export default function ImportExport() {
 
     // If it's already a string in date format
     if (typeof value === "string") {
-      // Try parsing yyyy-mm-dd or yyyy/mm/dd format
-      const isoDateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/;
-      if (isoDateRegex.test(value)) {
+      // Try parsing common formats
+      const dateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/;
+      if (dateRegex.test(value)) {
         return value.replace(/\//g, "-");
       }
-      
-      // Try parsing dd/mm/yyyy or dd-mm-yyyy format
-      const dmyRegex = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
-      const dmyMatch = value.match(dmyRegex);
-      if (dmyMatch) {
-        const [, day, month, year] = dmyMatch;
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
-      
       return null;
     }
 
@@ -333,13 +305,9 @@ export default function ImportExport() {
           }
         });
 
-        // Use key as code if code is not set (fallback)
-        if (!market.code) {
-          if (row.key !== undefined) {
-            market.code = row.key.toString();
-          } else if (row.code !== undefined) {
-            market.code = row.code.toString();
-          }
+        // Use key as code if code is not set
+        if (!market.code && row.key !== undefined) {
+          market.code = row.key.toString();
         }
 
         // Validate required fields
