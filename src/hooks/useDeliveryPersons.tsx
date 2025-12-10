@@ -255,7 +255,6 @@ export function useCreateVisit() {
       delivery_person_id: string; 
       market_id: string; 
       notes?: string;
-      status?: string;
     }) => {
       const { data: visit, error } = await supabase
         .from('market_visits')
