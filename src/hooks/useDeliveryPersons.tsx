@@ -175,6 +175,29 @@ export function useVisitItems(visitId: string | undefined) {
   });
 }
 
+// Hook for visit items by multiple visit IDs
+export function useVisitItemsByVisitIds(visitIds: string[]) {
+  return useQuery({
+    queryKey: ['visit-items-multi', visitIds],
+    queryFn: async () => {
+      if (!visitIds.length) return [];
+      
+      const { data, error } = await supabase
+        .from('visit_items')
+        .select(`
+          *,
+          item:items(id, name, barcode, exp_date),
+          visit:market_visits(id, market_id, visit_date, status)
+        `)
+        .in('visit_id', visitIds);
+      
+      if (error) throw error;
+      return data as (VisitItem & { visit?: { id: string; market_id: string; visit_date: string; status: string } })[];
+    },
+    enabled: visitIds.length > 0,
+  });
+}
+
 // Mutation hooks
 export function useAddDeliveryPerson() {
   const queryClient = useQueryClient();
