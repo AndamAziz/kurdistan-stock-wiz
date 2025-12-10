@@ -313,82 +313,97 @@ export function MarketImportResultDialog({
         }
       }
 
-      // Process in batches for speed
-      const batchSize = 10;
-      for (let i = 0; i < marketsToImport.length; i += batchSize) {
-        const batch = marketsToImport.slice(i, i + batchSize);
-        
-        await Promise.all(
-          batch.map(async (market, batchIndex) => {
-            const globalIndex = i + batchIndex;
-            setImportProgress({
-              current: globalIndex + 1,
-              total: marketsToImport.length,
-            });
+      // Process sequentially to avoid race conditions with auto-generated codes
+      for (let i = 0; i < marketsToImport.length; i++) {
+        const market = marketsToImport[i];
+        setImportProgress({
+          current: i + 1,
+          total: marketsToImport.length,
+        });
 
-            try {
-              // Auto-generate name if missing
-              const marketName =
-                market.name?.trim() || `ماڕکێت-${Date.now()}-${globalIndex}`;
+        try {
+          // Auto-generate name if missing
+          const marketName =
+            market.name?.trim() || `ماڕکێت-${Date.now()}-${i}`;
 
-              if (market.existingMarketId && market.hasChanges) {
-                // Update existing market with changes only
-                const updateData: Record<string, string | null> = {};
-                for (const change of market.changes || []) {
-                  updateData[change.field] = change.newValue || null;
-                }
+          if (market.existingMarketId && market.hasChanges) {
+            // Update existing market with changes only
+            const updateData: Record<string, string | null> = {};
+            for (const change of market.changes || []) {
+              updateData[change.field] = change.newValue || null;
+            }
 
-                const { error: updateError } = await supabase
-                  .from("markets")
-                  .update(updateData)
-                  .eq("id", market.existingMarketId);
+            const { error: updateError } = await supabase
+              .from("markets")
+              .update(updateData)
+              .eq("id", market.existingMarketId);
 
-                if (updateError) {
-                  console.error(
-                    "Update error for market:",
-                    market.name,
-                    updateError
-                  );
-                  errorCount++;
-                  failedMarkets.push(market.name || market.code);
-                } else {
-                  updatedCount++;
-                }
-              } else if (!market.isDuplicate) {
-                // Insert new market with auto-generated code
-                const marketCode = market.code?.trim() || String(nextSirNumber++);
-
-                const { error: insertError } = await supabase
-                  .from("markets")
-                  .insert({
-                    code: marketCode,
-                    name: marketName,
-                    trader_category: market.trader_category?.trim() || null,
-                    phone: market.phone?.trim() || null,
-                    address: market.address?.trim() || null,
-                    city: market.city?.trim() || null,
-                    zone: market.zone?.trim() || null,
-                  });
-
-                if (insertError) {
-                  console.error(
-                    "Insert error for market:",
-                    market.name,
-                    insertError
-                  );
-                  errorCount++;
-                  failedMarkets.push(`${market.name || marketCode}`);
-                } else {
-                  addedCount++;
-                }
-              }
-            } catch (err) {
-              console.error("Error processing market:", market.name, err);
+            if (updateError) {
+              console.error(
+                "Update error for market:",
+                market.name,
+                updateError
+              );
               errorCount++;
               failedMarkets.push(market.name || market.code);
+            } else {
+              updatedCount++;
             }
-          })
-        );
+          } else if (!market.isDuplicate) {
+            // Generate unique code - check if it exists, if so increment
+            let marketCode = market.code?.trim() || String(nextSirNumber);
+            
+            // Check if code already exists and find a unique one
+            let codeExists = true;
+            let attempts = 0;
+            while (codeExists && attempts < 100) {
+              const { data: existingCode } = await supabase
+                .from("markets")
+                .select("id")
+                .eq("code", marketCode)
+                .maybeSingle();
+              
+              if (!existingCode) {
+                codeExists = false;
+              } else {
+                // Code exists, try next number
+                nextSirNumber++;
+                marketCode = String(nextSirNumber);
+                attempts++;
+              }
+            }
+            
+            nextSirNumber++;
+
+            const { error: insertError } = await supabase
+              .from("markets")
+              .insert({
+                code: marketCode,
+                name: marketName,
+                trader_category: market.trader_category?.trim() || null,
+                phone: market.phone?.trim() || null,
+                address: market.address?.trim() || null,
+                city: market.city?.trim() || null,
+                zone: market.zone?.trim() || null,
+              });
+
+            if (insertError) {
+              console.error(
+                "Insert error for market:",
+                market.name,
+                insertError
+              );
+              errorCount++;
+              failedMarkets.push(`${market.name || marketCode}`);
+            } else {
+              addedCount++;
+            }
+          }
+        } catch (err) {
+          console.error("Error processing market:", market.name, err);
+          errorCount++;
+          failedMarkets.push(market.name || market.code);
+        }
       }
 
       // Show detailed result message
