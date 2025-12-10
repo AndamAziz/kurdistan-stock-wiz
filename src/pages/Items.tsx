@@ -257,121 +257,117 @@ export default function Items() {
         />
 
         {/* Header */}
-        <div className="flex flex-col gap-4 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">مادەکان</h1>
-              <p className="mt-0.5 text-sm lg:text-base text-muted-foreground">
-                بەڕێوەبردنی هەموو مادەکان لە کۆگا
-              </p>
-            </div>
-            
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              {isAdmin && items && items.length > 0 && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 h-9 sm:h-10 text-xs sm:text-sm border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all"
-                  onClick={() => setDeleteAllDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">سڕینەوە</span>
-                </Button>
-              )}
-              <Button 
-                size="sm"
-                className="gap-1.5 h-9 sm:h-10 text-xs sm:text-sm rounded-lg shadow-sm hover:shadow-md transition-all px-4"
-                onClick={() => setAddItemOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                زیادکردن
-              </Button>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 animate-fade-in">
+          <div className="flex-shrink-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">مادەکان</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              بەڕێوەبردنی هەموو مادەکان لە کۆگا
+            </p>
           </div>
-
-          {/* Issues Alert Box - Compact */}
-          {totalIssues > 0 && (
-            <div className="rounded-lg border border-border bg-card/50 px-3 py-2 shadow-sm">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                  <span className="font-medium">{totalIssues} کێشە:</span>
-                </div>
-                
-                <div className="flex flex-wrap gap-1">
-                  {itemIssues.expired.length > 0 && (
-                    <button
-                      onClick={() => setStockFilter('expired')}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all",
-                        stockFilter === 'expired' 
-                          ? "bg-destructive text-destructive-foreground" 
-                          : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                      )}
-                    >
-                      <Calendar className="h-3 w-3" />
-                      {itemIssues.expired.length} بەسەرچوو
-                    </button>
-                  )}
-
-                  {itemIssues.expiringSoon.length > 0 && (
-                    <button
-                      onClick={() => setStockFilter('soon-expire')}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all",
-                        stockFilter === 'soon-expire' 
-                          ? "bg-warning text-warning-foreground" 
-                          : "bg-warning/10 text-warning hover:bg-warning/20"
-                      )}
-                    >
-                      <AlertCircle className="h-3 w-3" />
-                      {itemIssues.expiringSoon.length} نزیکە
-                    </button>
-                  )}
-
-                  {itemIssues.outOfStock.length > 0 && (
-                    <button
-                      onClick={() => setStockFilter('out')}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all",
-                        stockFilter === 'out' 
-                          ? "bg-destructive text-destructive-foreground" 
-                          : "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                      )}
-                    >
-                      <Package className="h-3 w-3" />
-                      {itemIssues.outOfStock.length} نەماوە
-                    </button>
-                  )}
-
-                  {itemIssues.lowStock.length > 0 && (
-                    <button
-                      onClick={() => setStockFilter('low')}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium transition-all",
-                        stockFilter === 'low' 
-                          ? "bg-warning text-warning-foreground" 
-                          : "bg-warning/10 text-warning hover:bg-warning/20"
-                      )}
-                    >
-                      <AlertTriangle className="h-3 w-3" />
-                      {itemIssues.lowStock.length} کەم
-                    </button>
-                  )}
-                </div>
-
-                {stockFilter !== 'all' && (
-                  <button
-                    onClick={() => setStockFilter('all')}
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground hover:bg-muted transition-colors mr-auto"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+          
+          {/* All Action Buttons in One Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Issue Buttons */}
+            {itemIssues.expired.length > 0 && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5 h-8 sm:h-9 text-xs rounded-lg border transition-all",
+                  stockFilter === 'expired' 
+                    ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" 
+                    : "border-destructive/40 text-destructive hover:bg-destructive/10"
                 )}
-              </div>
-            </div>
-          )}
+                onClick={() => setStockFilter(stockFilter === 'expired' ? 'all' : 'expired')}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{itemIssues.expired.length}</span>
+                <span className="hidden sm:inline">بەسەرچوو</span>
+              </Button>
+            )}
+
+            {itemIssues.expiringSoon.length > 0 && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5 h-8 sm:h-9 text-xs rounded-lg border transition-all",
+                  stockFilter === 'soon-expire' 
+                    ? "bg-warning text-warning-foreground border-warning hover:bg-warning/90" 
+                    : "border-warning/40 text-warning hover:bg-warning/10"
+                )}
+                onClick={() => setStockFilter(stockFilter === 'soon-expire' ? 'all' : 'soon-expire')}
+              >
+                <AlertCircle className="h-3.5 w-3.5" />
+                <span>{itemIssues.expiringSoon.length}</span>
+                <span className="hidden sm:inline">نزیکە</span>
+              </Button>
+            )}
+
+            {itemIssues.outOfStock.length > 0 && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5 h-8 sm:h-9 text-xs rounded-lg border transition-all",
+                  stockFilter === 'out' 
+                    ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" 
+                    : "border-destructive/40 text-destructive hover:bg-destructive/10"
+                )}
+                onClick={() => setStockFilter(stockFilter === 'out' ? 'all' : 'out')}
+              >
+                <Package className="h-3.5 w-3.5" />
+                <span>{itemIssues.outOfStock.length}</span>
+                <span className="hidden sm:inline">نەماوە</span>
+              </Button>
+            )}
+
+            {itemIssues.lowStock.length > 0 && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5 h-8 sm:h-9 text-xs rounded-lg border transition-all",
+                  stockFilter === 'low' 
+                    ? "bg-warning text-warning-foreground border-warning hover:bg-warning/90" 
+                    : "border-warning/40 text-warning hover:bg-warning/10"
+                )}
+                onClick={() => setStockFilter(stockFilter === 'low' ? 'all' : 'low')}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{itemIssues.lowStock.length}</span>
+                <span className="hidden sm:inline">کەم</span>
+              </Button>
+            )}
+
+            {/* Separator */}
+            {totalIssues > 0 && (
+              <div className="hidden sm:block w-px h-6 bg-border mx-1" />
+            )}
+
+            {/* Delete All Button */}
+            {isAdmin && items && items.length > 0 && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-8 sm:h-9 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+                onClick={() => setDeleteAllDialogOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">سڕینەوە</span>
+              </Button>
+            )}
+
+            {/* Add Button */}
+            <Button 
+              size="sm"
+              className="gap-1.5 h-8 sm:h-9 text-xs rounded-lg shadow-sm hover:shadow transition-all px-3 sm:px-4"
+              onClick={() => setAddItemOpen(true)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline">زیادکردن</span>
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filters */}
