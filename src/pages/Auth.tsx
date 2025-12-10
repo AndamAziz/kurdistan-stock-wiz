@@ -5,21 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, Lock, Loader2, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Loader2, ShieldCheck, Phone } from 'lucide-react';
 import bakuryLogo from '@/assets/bakury-logo-new.jpg';
 import { z } from 'zod';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
-const loginSchema = z.object({
+const emailLoginSchema = z.object({
   email: z.string().email('ئیمەیڵ نادروستە'),
+  password: z.string().min(6, 'وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت'),
+});
+
+const phoneLoginSchema = z.object({
+  phone: z.string().min(10, 'ژمارەی مۆبایل دەبێت لانیکەم ١٠ پیت بێت'),
   password: z.string().min(6, 'وشەی نهێنی دەبێت لانیکەم ٦ پیت بێت'),
 });
 
 export default function Auth() {
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
   
-  const { signIn, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,22 +37,52 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const validation = loginSchema.safeParse({ email, password });
+      const validation = emailLoginSchema.safeParse({ email, password });
       if (!validation.success) {
         toast.error(validation.error.errors[0].message);
         setLoading(false);
         return;
       }
 
-      const { error } = await signIn(email, password);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('ئیمەیڵ یان وشەی نهێنی هەڵەیە');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.success('بەخێربێیتەوە!');
+        navigate('/');
+      }
+    } catch (err) {
+      toast.error('هەڵەیەک ڕوویدا');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const validation = phoneLoginSchema.safeParse({ phone, password });
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ phone, password });
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە');
         } else {
           toast.error(error.message);
         }
@@ -89,56 +128,124 @@ export default function Auth() {
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
+          <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'email' | 'phone')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="email" className="gap-2">
+                <Mail className="h-4 w-4" />
                 ئیمەیڵ
-              </Label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@example.com"
-                  className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
-                  dir="ltr"
-                  disabled={loading}
-                  autoComplete="email"
-                />
-              </div>
-            </div>
+              </TabsTrigger>
+              <TabsTrigger value="phone" className="gap-2">
+                <Phone className="h-4 w-4" />
+                مەندوب
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                وشەی نهێنی
-              </Label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
-                  dir="ltr"
-                  disabled={loading}
-                  autoComplete="current-password"
-                />
-              </div>
-            </div>
+            <TabsContent value="email">
+              <form onSubmit={handleEmailSubmit} className="space-y-4 sm:space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    ئیمەیڵ
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      dir="ltr"
+                      disabled={loading}
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium gap-2 mt-2 transition-all hover:shadow-lg hover:shadow-primary/25" 
-              disabled={loading}
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              چوونەژوورەوە
-            </Button>
-          </form>
+                <div className="space-y-2">
+                  <Label htmlFor="password-email" className="text-sm font-medium">
+                    وشەی نهێنی
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="password-email"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      dir="ltr"
+                      disabled={loading}
+                      autoComplete="current-password"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium gap-2 mt-2 transition-all hover:shadow-lg hover:shadow-primary/25" 
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  چوونەژوورەوە
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="phone">
+              <form onSubmit={handlePhoneSubmit} className="space-y-4 sm:space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium">
+                    ژمارەی مۆبایل
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="07XXXXXXXXX"
+                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      dir="ltr"
+                      disabled={loading}
+                      autoComplete="tel"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password-phone" className="text-sm font-medium">
+                    وشەی نهێنی
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="password-phone"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10 sm:pr-11 h-10 sm:h-11 text-sm sm:text-base transition-all focus:ring-2 focus:ring-primary/20"
+                      dir="ltr"
+                      disabled={loading}
+                      autoComplete="current-password"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-10 sm:h-11 text-sm sm:text-base font-medium gap-2 mt-2 transition-all hover:shadow-lg hover:shadow-primary/25" 
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  چوونەژوورەوە
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
 
           {/* Info Notice */}
           <div className="mt-6 pt-5 border-t border-border/50">

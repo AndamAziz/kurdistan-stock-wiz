@@ -68,24 +68,46 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, fullName, role } = await req.json();
+    const { email, phone, password, fullName, role } = await req.json();
 
-    if (!email || !password) {
+    if (!password) {
       return new Response(
-        JSON.stringify({ error: 'Email and password are required' }),
+        JSON.stringify({ error: 'Password is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!email && !phone) {
+      return new Response(
+        JSON.stringify({ error: 'Email or phone is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Create the new user using admin API
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+    const createUserData: { 
+      password: string; 
+      email?: string; 
+      phone?: string; 
+      email_confirm?: boolean; 
+      phone_confirm?: boolean;
+      user_metadata: { full_name?: string } 
+    } = {
       password,
-      email_confirm: true,
       user_metadata: {
         full_name: fullName,
       },
-    });
+    };
+
+    if (email) {
+      createUserData.email = email;
+      createUserData.email_confirm = true;
+    } else if (phone) {
+      createUserData.phone = phone;
+      createUserData.phone_confirm = true;
+    }
+
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser(createUserData);
 
     if (createError) {
       console.error('Error creating user:', createError);

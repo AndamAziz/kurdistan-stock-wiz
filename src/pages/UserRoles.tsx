@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
-import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2, Truck } from "lucide-react";
+import { Users, Shield, ShieldCheck, Eye, Loader2, UserPlus, Mail, User, ChevronDown, Trash2, Truck, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,15 +80,25 @@ export default function UserRoles() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
   const [newUserRole, setNewUserRole] = useState<AppRole>("viewer");
   const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; role: AppRole } | null>(null);
 
   const handleCreateUser = async () => {
-    if (!newUserEmail || !newUserPassword) {
-      toast.error("تکایە ئیمەیڵ و وشەی نهێنی بنووسە");
-      return;
+    const isMandwb = newUserRole === 'mandwb';
+    
+    if (isMandwb) {
+      if (!newUserPhone || !newUserPassword) {
+        toast.error("تکایە ژمارەی مۆبایل و وشەی نهێنی بنووسە");
+        return;
+      }
+    } else {
+      if (!newUserEmail || !newUserPassword) {
+        toast.error("تکایە ئیمەیڵ و وشەی نهێنی بنووسە");
+        return;
+      }
     }
 
     if (newUserPassword.length < 6) {
@@ -101,7 +111,8 @@ export default function UserRoles() {
       // Use edge function to create user (prevents logout of current admin)
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
-          email: newUserEmail,
+          email: isMandwb ? undefined : newUserEmail,
+          phone: isMandwb ? newUserPhone : undefined,
           password: newUserPassword,
           fullName: newUserName,
           role: newUserRole,
@@ -114,6 +125,7 @@ export default function UserRoles() {
       toast.success("بەکارهێنەر دروستکرا");
       setIsCreateDialogOpen(false);
       setNewUserEmail("");
+      setNewUserPhone("");
       setNewUserPassword("");
       setNewUserName("");
       setNewUserRole("viewer");
@@ -203,20 +215,37 @@ export default function UserRoles() {
                       className="h-12 rounded-xl text-base"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      ئیمەیڵ *
-                    </Label>
-                    <Input
-                      type="email"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                      placeholder="example@email.com"
-                      className="h-12 rounded-xl text-base"
-                      dir="ltr"
-                    />
-                  </div>
+                  {newUserRole === 'mandwb' ? (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        ژمارەی مۆبایل *
+                      </Label>
+                      <Input
+                        type="tel"
+                        value={newUserPhone}
+                        onChange={(e) => setNewUserPhone(e.target.value)}
+                        placeholder="07XXXXXXXXX"
+                        className="h-12 rounded-xl text-base"
+                        dir="ltr"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        ئیمەیڵ *
+                      </Label>
+                      <Input
+                        type="email"
+                        value={newUserEmail}
+                        onChange={(e) => setNewUserEmail(e.target.value)}
+                        placeholder="example@email.com"
+                        className="h-12 rounded-xl text-base"
+                        dir="ltr"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold">وشەی نهێنی *</Label>
                     <Input
