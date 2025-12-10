@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   LayoutDashboard,
   Store,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -28,7 +30,7 @@ import {
   useCreateVisit,
   useAddVisitItem,
 } from "@/hooks/useDeliveryPersons";
-import { format, differenceInDays } from "date-fns";
+import { format, differenceInDays, isToday, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import { VisitItemsList } from "@/components/mandwb/VisitItemsList";
 
@@ -76,10 +78,35 @@ export default function MandwbDashboard() {
     return { expiredItems: expired, expiringItems: expiring };
   }, [items, reminderDays]);
 
+  // Calculate visited markets today
+  const { visitedMarketIds, visitedToday, remainingToday } = useMemo(() => {
+    const todayStart = startOfDay(new Date());
+    const visitedIds = new Set<string>();
+    
+    myVisits.forEach(visit => {
+      const visitDate = new Date(visit.visit_date);
+      if (isToday(visitDate)) {
+        visitedIds.add(visit.market_id);
+      }
+    });
+    
+    const visited = assignedMarkets.filter(m => visitedIds.has(m.market?.id || ""));
+    const remaining = assignedMarkets.filter(m => !visitedIds.has(m.market?.id || ""));
+    
+    return {
+      visitedMarketIds: visitedIds,
+      visitedToday: visited,
+      remainingToday: remaining,
+    };
+  }, [myVisits, assignedMarkets]);
+
   const filteredMarkets = assignedMarkets.filter(market =>
     market.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     String(market.market?.code || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Check if a market was visited today
+  const isMarketVisitedToday = (marketId: string) => visitedMarketIds.has(marketId);
 
   // Get item expiry info
   const getItemExpiryInfo = (item: typeof items[0]) => {
@@ -388,6 +415,37 @@ export default function MandwbDashboard() {
 
             {/* Markets Tab */}
             <TabsContent value="markets" className="space-y-4 mt-4">
+              {/* Visit Stats */}
+              <div className="grid gap-3 grid-cols-2">
+                <Card className="bg-green-500/10 border-green-500/20">
+                  <CardContent className="pt-4 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-green-600">{visitedToday.length}</p>
+                        <p className="text-xs text-green-600/80">سەردانکراو ئەمڕۆ</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-orange-500/10 border-orange-500/20">
+                  <CardContent className="pt-4 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
+                        <Circle className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-orange-600">{remainingToday.length}</p>
+                        <p className="text-xs text-orange-600/80">ماوە</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -408,36 +466,59 @@ export default function MandwbDashboard() {
                 </Card>
               ) : (
                 <div className="space-y-2">
-                  {filteredMarkets.map((assignment) => (
-                    <Card
-                      key={assignment.id}
-                      className="cursor-pointer hover:shadow-md transition-all"
-                      onClick={() => handleStartVisit({
-                        id: assignment.market?.id || "",
-                        name: assignment.market?.name || "",
-                        code: assignment.market?.code || "",
-                      })}
-                    >
-                      <CardContent className="py-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                              <Store className="h-5 w-5 text-primary" />
+                  {filteredMarkets.map((assignment) => {
+                    const marketId = assignment.market?.id || "";
+                    const visited = isMarketVisitedToday(marketId);
+                    
+                    return (
+                      <Card
+                        key={assignment.id}
+                        className={`cursor-pointer hover:shadow-md transition-all ${
+                          visited ? "border-green-500/30 bg-green-500/5" : ""
+                        }`}
+                        onClick={() => handleStartVisit({
+                          id: marketId,
+                          name: assignment.market?.name || "",
+                          code: assignment.market?.code || "",
+                        })}
+                      >
+                        <CardContent className="py-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                                visited ? "bg-green-500/20" : "bg-primary/10"
+                              }`}>
+                                {visited ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <Store className="h-5 w-5 text-primary" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold">{assignment.market?.name}</p>
+                                  {visited && (
+                                    <Badge variant="outline" className="text-[10px] text-green-600 border-green-500/30 px-1.5 py-0">
+                                      سەردانکرا
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  کۆد: {assignment.market?.code} • {assignment.market?.city || "-"}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold">{assignment.market?.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                کۆد: {assignment.market?.code} • {assignment.market?.city || "-"}
-                              </p>
-                            </div>
+                            <Button 
+                              size="sm" 
+                              variant={visited ? "secondary" : "outline"}
+                            >
+                              {visited ? "دووبارە" : "سەردان"}
+                            </Button>
                           </div>
-                          <Button size="sm" variant="outline">
-                            سەردان
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
           </TabsContent>
