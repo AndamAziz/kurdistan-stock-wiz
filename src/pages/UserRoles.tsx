@@ -108,6 +108,14 @@ export default function UserRoles() {
 
     setIsCreating(true);
     try {
+      // Refresh session before making the call to ensure token is valid
+      const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
+      if (sessionError || !sessionData.session) {
+        toast.error("تکایە دەربچۆ و دووبارە بچۆرەوە");
+        setIsCreating(false);
+        return;
+      }
+
       // Use edge function to create user (prevents logout of current admin)
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
@@ -120,7 +128,7 @@ export default function UserRoles() {
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.details || data.error);
 
       toast.success("بەکارهێنەر دروستکرا");
       setIsCreateDialogOpen(false);
