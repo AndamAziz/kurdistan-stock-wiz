@@ -28,8 +28,11 @@ import {
   Plus,
   Package,
   Calendar,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useItems } from "@/hooks/useItems";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import {
   useCurrentDeliveryPerson,
   useAssignedMarkets,
@@ -44,26 +47,33 @@ export default function MandwbDashboard() {
   const { data: assignedMarkets = [] } = useAssignedMarkets(currentPerson?.id);
   const { data: myVisits = [] } = useMarketVisits(currentPerson?.id);
   const { data: items = [] } = useItems();
+  const { settings } = useNotificationSettings();
   const createVisit = useCreateVisit();
   const addVisitItem = useAddVisitItem();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isVisitDialogOpen, setIsVisitDialogOpen] = useState(false);
-  const [selectedMarket, setSelectedMarket] = useState<{ id: string; name: string } | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<{ id: string; name: string; code: string } | null>(null);
   const [visitNotes, setVisitNotes] = useState("");
   const [selectedItems, setSelectedItems] = useState<Array<{
     item_id: string;
     item_name: string;
+    barcode: string;
     quantity: number;
     issue_type: string;
+    days_info: string;
+    exp_date: string | null;
   }>>([]);
   const [itemSearch, setItemSearch] = useState("");
   const [selectedItemId, setSelectedItemId] = useState("");
   const [itemQuantity, setItemQuantity] = useState(1);
-  const [issueType, setIssueType] = useState("expiring");
+  const [issueTypeFilter, setIssueTypeFilter] = useState<"all" | "expired" | "expiring">("all");
 
-  // Calculate expiring and expired items
-  const { expiredItems, expiringItems } = useMemo(() => {
+  // Get reminder days from settings
+  const reminderDays = settings?.reminderDays || 30;
+
+  // Calculate expiring and expired items based on settings
+  const { expiredItems, expiringItems, problemItems } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -77,42 +87,87 @@ export default function MandwbDashboard() {
       
       if (daysUntilExpiry < 0) {
         expired.push(item);
-      } else if (daysUntilExpiry <= 30) {
+      } else if (daysUntilExpiry <= reminderDays) {
         expiring.push(item);
       }
     });
     
-    return { expiredItems: expired, expiringItems: expiring };
-  }, [items]);
+    // Combine both for the visit dialog - only show problematic items
+    const problem = [...expired, ...expiring];
+    
+    return { expiredItems: expired, expiringItems: expiring, problemItems: problem };
+  }, [items, reminderDays]);
+
+  // Filter problem items for the visit dialog based on search and type filter
+  const filteredProblemItems = useMemo(() => {
+    let filtered = problemItems;
+    
+    // Filter by issue type
+    if (issueTypeFilter === "expired") {
+      filtered = expiredItems;
+    } else if (issueTypeFilter === "expiring") {
+      filtered = expiringItems;
+    }
+    
+    // Filter by search term
+    if (itemSearch) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(itemSearch.toLowerCase()) ||
+        item.barcode.toLowerCase().includes(itemSearch.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [problemItems, expiredItems, expiringItems, issueTypeFilter, itemSearch]);
 
   const filteredMarkets = assignedMarkets.filter(market =>
     market.market?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     market.market?.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(itemSearch.toLowerCase()) ||
-    item.barcode.toLowerCase().includes(itemSearch.toLowerCase())
-  );
+  // Get item expiry info
+  const getItemExpiryInfo = (item: typeof items[0]) => {
+    if (!item.exp_date) return { type: "unknown", label: "نەزانراو", days: 0 };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expDate = new Date(item.exp_date);
+    const days = differenceInDays(expDate, today);
+    
+    if (days < 0) {
+      return { type: "expired", label: `${Math.abs(days)} ڕۆژ تێپەڕیوە`, days };
+    } else if (days === 0) {
+      return { type: "expired", label: "ئەمڕۆ بەسەردەچێت", days: 0 };
+    } else {
+      return { type: "expiring", label: `${days} ڕۆژ ماوە`, days };
+    }
+  };
 
-  const handleStartVisit = (market: { id: string; name: string }) => {
+  const handleStartVisit = (market: { id: string; name: string; code: string }) => {
     setSelectedMarket(market);
     setVisitNotes("");
     setSelectedItems([]);
+    setItemSearch("");
+    setIssueTypeFilter("all");
     setIsVisitDialogOpen(true);
   };
 
-  const handleAddItem = () => {
-    if (!selectedItemId) return;
+  const handleAddItem = (item: typeof items[0]) => {
+    // Check if already added
+    if (selectedItems.some(si => si.item_id === item.id)) {
+      return;
+    }
     
-    const item = items.find(i => i.id === selectedItemId);
-    if (!item) return;
+    const expiryInfo = getItemExpiryInfo(item);
     
     setSelectedItems([...selectedItems, {
       item_id: item.id,
       item_name: item.name,
+      barcode: item.barcode,
       quantity: itemQuantity,
-      issue_type: issueType,
+      issue_type: expiryInfo.type === "expired" ? "expired" : "expiring",
+      days_info: expiryInfo.label,
+      exp_date: item.exp_date,
     }]);
     
     setSelectedItemId("");
@@ -130,7 +185,7 @@ export default function MandwbDashboard() {
     createVisit.mutate({
       delivery_person_id: currentPerson.id,
       market_id: selectedMarket.id,
-      notes: visitNotes,
+      notes: visitNotes || `سەردانی ماڕکێت: ${selectedMarket.name} (${selectedMarket.code})`,
     }, {
       onSuccess: (visit) => {
         // Add visit items
@@ -185,7 +240,7 @@ export default function MandwbDashboard() {
             <div>
               <h1 className="text-2xl font-bold">بەخێربێیت، {currentPerson.name}</h1>
               <p className="text-sm text-muted-foreground">
-                داشبۆردی مەندوب
+                داشبۆردی مەندوب - چاودێری بەسەرچوون
               </p>
             </div>
           </div>
@@ -222,27 +277,79 @@ export default function MandwbDashboard() {
           </Card>
         </div>
 
+        {/* Info Card about reporting */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-primary mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-primary">ڕاپۆرتکردنی کێشە</p>
+                <p className="text-xs text-muted-foreground">
+                  کاتێک سەردانی ماڕکێتێک دەکەیت، تەنها مادە بەسەرچووەکان و نزیک بەسەرچوونەکان پیشانی دەدرێت. 
+                  کۆمپانیا ئاگادار دەکرێتەوە بۆ نوێکردنەوە یان لابردنی مادەکان.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Expired Items Alert */}
+        {expiredItems.length > 0 && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                مادە بەسەرچووەکان ({expiredItems.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {expiredItems.slice(0, 10).map(item => {
+                  const expiryInfo = getItemExpiryInfo(item);
+                  return (
+                    <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+                      <div className="flex items-center gap-2">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <div>
+                          <span className="text-sm font-medium">{item.name}</span>
+                          <p className="text-xs text-muted-foreground">{item.barcode}</p>
+                        </div>
+                      </div>
+                      <Badge variant="destructive">
+                        {expiryInfo.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Expiring Items Alert */}
         {expiringItems.length > 0 && (
           <Card className="border-warning/30 bg-warning/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2 text-warning">
-                <AlertTriangle className="h-4 w-4" />
+                <Clock className="h-4 w-4" />
                 مادە نزیک بەسەرچوون ({expiringItems.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {expiringItems.slice(0, 10).map(item => {
-                  const daysLeft = differenceInDays(new Date(item.exp_date!), new Date());
+                  const expiryInfo = getItemExpiryInfo(item);
                   return (
                     <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
                       <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{item.name}</span>
+                        <RefreshCw className="h-4 w-4 text-warning" />
+                        <div>
+                          <span className="text-sm font-medium">{item.name}</span>
+                          <p className="text-xs text-muted-foreground">{item.barcode}</p>
+                        </div>
                       </div>
                       <Badge variant="outline" className="text-warning border-warning/30">
-                        {daysLeft} ڕۆژ ماوە
+                        {expiryInfo.label}
                       </Badge>
                     </div>
                   );
@@ -297,6 +404,7 @@ export default function MandwbDashboard() {
                         onClick={() => handleStartVisit({
                           id: assignment.market?.id || "",
                           name: assignment.market?.name || "",
+                          code: assignment.market?.code || "",
                         })}
                       >
                         سەردان
@@ -350,93 +458,142 @@ export default function MandwbDashboard() {
         </Card>
       </div>
 
-      {/* Visit Dialog */}
+      {/* Visit Dialog - Only shows problem items */}
       <Dialog open={isVisitDialogOpen} onOpenChange={setIsVisitDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>تۆمارکردنی سەردان - {selectedMarket?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              سەردانی {selectedMarket?.name}
+              <Badge variant="outline" className="ml-2">{selectedMarket?.code}</Badge>
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Add Items */}
+            {/* Filter by issue type */}
+            <div className="flex gap-2">
+              <Button
+                variant={issueTypeFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIssueTypeFilter("all")}
+                className="flex-1"
+              >
+                هەموو ({problemItems.length})
+              </Button>
+              <Button
+                variant={issueTypeFilter === "expired" ? "destructive" : "outline"}
+                size="sm"
+                onClick={() => setIssueTypeFilter("expired")}
+                className="flex-1"
+              >
+                بەسەرچوو ({expiredItems.length})
+              </Button>
+              <Button
+                variant={issueTypeFilter === "expiring" ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setIssueTypeFilter("expiring")}
+                className="flex-1"
+              >
+                نزیک ({expiringItems.length})
+              </Button>
+            </div>
+
+            {/* Search items */}
             <div className="space-y-3">
-              <Label>زیادکردنی مادەی کێشەدار</Label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    value={itemSearch}
-                    onChange={(e) => setItemSearch(e.target.value)}
-                    placeholder="گەڕان بە ناو یان بارکۆد..."
-                  />
-                </div>
+              <Label>گەڕان لە مادە کێشەدارەکان</Label>
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  placeholder="گەڕان بە ناو یان بارکۆد..."
+                  className="pr-10"
+                />
               </div>
+            </div>
               
-              {itemSearch && (
-                <div className="max-h-32 overflow-y-auto border rounded-lg">
-                  {filteredItems.slice(0, 10).map(item => (
+            {/* Problem items list */}
+            <div className="max-h-60 overflow-y-auto border rounded-lg divide-y">
+              {filteredProblemItems.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">
+                  هیچ مادە کێشەدارێک نییە
+                </div>
+              ) : (
+                filteredProblemItems.map(item => {
+                  const expiryInfo = getItemExpiryInfo(item);
+                  const isAlreadyAdded = selectedItems.some(si => si.item_id === item.id);
+                  
+                  return (
                     <div
                       key={item.id}
-                      className={`p-2 cursor-pointer hover:bg-muted/50 ${
-                        selectedItemId === item.id ? "bg-primary/10" : ""
+                      className={`p-3 flex items-center justify-between gap-2 hover:bg-muted/50 transition-colors ${
+                        isAlreadyAdded ? "bg-primary/5 opacity-60" : "cursor-pointer"
                       }`}
-                      onClick={() => setSelectedItemId(item.id)}
+                      onClick={() => !isAlreadyAdded && handleAddItem(item)}
                     >
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.barcode}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {expiryInfo.type === "expired" ? (
+                            <Trash2 className="h-4 w-4 text-destructive flex-shrink-0" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 text-warning flex-shrink-0" />
+                          )}
+                          <p className="text-sm font-medium truncate">{item.name}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mr-6">{item.barcode}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={expiryInfo.type === "expired" ? "destructive" : "outline"}
+                          className={expiryInfo.type !== "expired" ? "text-warning border-warning/30" : ""}
+                        >
+                          {expiryInfo.label}
+                        </Badge>
+                        {isAlreadyAdded ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Plus className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })
               )}
-              
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  value={itemQuantity}
-                  onChange={(e) => setItemQuantity(Number(e.target.value))}
-                  placeholder="ژمارە"
-                  className="w-20"
-                />
-                <Select value={issueType} onValueChange={setIssueType}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expired">بەسەرچوو</SelectItem>
-                    <SelectItem value="expiring">نزیک بەسەرچوون</SelectItem>
-                    <SelectItem value="damaged">خراپ</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={handleAddItem} disabled={!selectedItemId}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
 
             {/* Selected Items */}
             {selectedItems.length > 0 && (
               <div className="space-y-2">
-                <Label>مادە هەڵبژێردراوەکان</Label>
-                {selectedItems.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                    <div>
-                      <p className="text-sm font-medium">{item.item_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.quantity} دانە • {
-                          item.issue_type === "expired" ? "بەسەرچوو" :
-                          item.issue_type === "expiring" ? "نزیک بەسەرچوون" : "خراپ"
-                        }
-                      </p>
+                <Label className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  مادە هەڵبژێردراوەکان ({selectedItems.length})
+                </Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedItems.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {item.issue_type === "expired" ? (
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 text-warning" />
+                          )}
+                          <p className="text-sm font-medium truncate">{item.item_name}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mr-6">
+                          {item.barcode} • {item.days_info}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveItem(index)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        سڕینەوە
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveItem(index)}
-                      className="text-destructive"
-                    >
-                      سڕینەوە
-                    </Button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
@@ -453,10 +610,10 @@ export default function MandwbDashboard() {
 
             <Button
               onClick={handleSubmitVisit}
-              disabled={createVisit.isPending}
+              disabled={createVisit.isPending || selectedItems.length === 0}
               className="w-full"
             >
-              {createVisit.isPending ? "چاوەڕێ بکە..." : "تۆمارکردنی سەردان"}
+              {createVisit.isPending ? "چاوەڕێ بکە..." : `ناردنی ڕاپۆرت (${selectedItems.length} مادە)`}
             </Button>
           </div>
         </DialogContent>
