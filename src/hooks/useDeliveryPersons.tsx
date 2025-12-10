@@ -125,6 +125,39 @@ export function useAssignedMarkets(deliveryPersonId: string | undefined) {
   });
 }
 
+// Hook for all market assignments with delivery person info
+export function useAllMarketAssignments() {
+  return useQuery({
+    queryKey: ['all-market-assignments'],
+    queryFn: async () => {
+      // Fetch in batches to handle large datasets
+      const allAssignments: (MarketAssignment & { delivery_person?: { id: string; name: string } })[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      
+      while (true) {
+        const { data, error } = await supabase
+          .from('market_assignments')
+          .select(`
+            *,
+            market:markets(id, code, name, phone, city, zone),
+            delivery_person:delivery_persons(id, name)
+          `)
+          .range(offset, offset + batchSize - 1);
+        
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        
+        allAssignments.push(...data);
+        if (data.length < batchSize) break;
+        offset += batchSize;
+      }
+      
+      return allAssignments;
+    },
+  });
+}
+
 // Hook for market visits
 export function useMarketVisits(deliveryPersonId?: string | null, status?: string) {
   return useQuery({
