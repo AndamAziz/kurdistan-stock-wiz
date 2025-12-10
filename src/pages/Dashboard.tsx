@@ -150,24 +150,26 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="animate-fade-in grid grid-cols-2 gap-3">
+        <div className="animate-fade-in grid grid-cols-2 gap-3 sm:gap-4">
           <button
             onClick={() => navigate('/markets')}
-            className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-primary/10 transition-all duration-300 group"
+            className="relative overflow-hidden flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200/60 dark:border-emerald-800/40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 group"
           >
-            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <Store className="h-5 w-5 text-primary" />
+            <div className="relative z-10 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30 group-hover:shadow-emerald-500/50 group-hover:scale-110 transition-all duration-300">
+              <Store className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
-            <span className="text-sm font-semibold text-foreground">ماڕکێتەکان</span>
+            <span className="relative z-10 text-sm sm:text-base font-bold text-emerald-800 dark:text-emerald-200">ماڕکێتەکان</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/0 via-emerald-400/10 to-emerald-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </button>
           <button
             onClick={() => navigate('/visit-reports')}
-            className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500/10 to-orange-500/5 border border-orange-500/20 hover:border-orange-500/40 hover:from-orange-500/15 hover:to-orange-500/10 transition-all duration-300 group"
+            className="relative overflow-hidden flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border border-amber-200/60 dark:border-amber-800/40 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 group"
           >
-            <div className="p-2 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-              <ClipboardList className="h-5 w-5 text-orange-500" />
+            <div className="relative z-10 p-2.5 sm:p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30 group-hover:shadow-amber-500/50 group-hover:scale-110 transition-all duration-300">
+              <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
-            <span className="text-sm font-semibold text-foreground">ڕاپۆرتی سەردان</span>
+            <span className="relative z-10 text-sm sm:text-base font-bold text-amber-800 dark:text-amber-200">ڕاپۆرتی سەردان</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </button>
         </div>
 
