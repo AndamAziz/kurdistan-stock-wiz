@@ -8,7 +8,7 @@ export function NotificationChecker() {
   const { user } = useAuth();
   const { permission, isSupported, checkAndNotify } = usePushNotifications();
   const { settings, getIntervalMs } = useNotificationSettings();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasRunInitialCheck = useRef(false);
 
   const runCheck = useCallback(async () => {

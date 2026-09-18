@@ -349,7 +349,9 @@ export function MarketImportResultDialog({
 
           if (market.existingMarketId && market.hasChanges) {
             // Update existing market with changes only
-            const updateData: Record<string, string | null> = {};
+            const updateData: Partial<
+              import("@/integrations/supabase/types").Database["public"]["Tables"]["markets"]["Update"]
+            > = {};
             for (const change of market.changes || []) {
               updateData[change.field] = change.newValue || null;
             }
